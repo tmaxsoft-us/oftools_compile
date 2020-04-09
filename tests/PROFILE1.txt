@@ -1,0 +1,13 @@
+[directory]
+openframe_home = $OPENFRAME_HOME
+default_volume = volume_default
+
+[database]
+db_sid = TVSAM
+db_type = Tibero
+db_port = 8629
+db_user = tibero
+db_pass = tmax
+
+[ofcbpp]
+fix_periods = True
