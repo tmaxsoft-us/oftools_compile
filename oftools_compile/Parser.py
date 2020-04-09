@@ -24,6 +24,10 @@ class Parser:
         self.db_pass = 'tmax'
         self.fix_periods = True
 
+class ProfileParser(Parser):
+    def __init__(self):
+        pass
+    
     def get_sections(self):
         for section in self.config.sections():
             self.section_switcher(section)
@@ -84,3 +88,8 @@ class Parser:
         else:
             print('Unrecognized Option: ' + option)
             sys.exit(2)
+
+
+class CobolParser(Parser):
+    def __init__(self):
+        pass

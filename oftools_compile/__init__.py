@@ -4,10 +4,10 @@ import getopt
 from .Listing import Listing
 from .Parser import Parser
 
+
 def run_oftools_compile(argv):
     source_name = ""
     profile_name = ""
-    print("this is local")
     try:
         opts, args = getopt.getopt(argv, "hp:s:",
                                    ["profile_name=", "source_name="])
@@ -41,3 +41,4 @@ def run_oftools_compile(argv):
 
     listing_1 = Listing(source_name, profile_name)
     parser_1 = Parser(listing_1)
+
