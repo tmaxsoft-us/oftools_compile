@@ -24,10 +24,12 @@ class Parser:
         self.db_pass = 'tmax'
         self.fix_periods = True
 
+
 class ProfileParser(Parser):
+
     def __init__(self):
         pass
-    
+
     def get_sections(self):
         for section in self.config.sections():
             self.section_switcher(section)
@@ -58,11 +60,9 @@ class ProfileParser(Parser):
 
     def directory_switcher(self, option):
         if option == 'openframe_home':
-            self.openframe_home = self.config.get('directory',
-                                                  'openframe_home')
+            self.openframe_home = self.config.get('directory', 'openframe_home')
         elif option == 'default_volume':
-            self.default_volume = self.config.get('directory',
-                                                  'default_volume')
+            self.default_volume = self.config.get('directory', 'default_volume')
         else:
             print('Unrecognized Option: ' + option)
             sys.exit(2)
@@ -91,5 +91,6 @@ class ProfileParser(Parser):
 
 
 class CobolParser(Parser):
+
     def __init__(self):
         pass

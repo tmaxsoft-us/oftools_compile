@@ -13,7 +13,7 @@ install:
 	pip3 install dist/*.tar.gz
 
 yapf:
-	yapf3 --style='{ based_on_style: google, indent_width:4 ,  column_limit:79}' *.py -ir
+	yapf3 --style='{ based_on_style: google }' *.py -ir
 
 test:
 	pytest -s -v
