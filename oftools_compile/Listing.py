@@ -6,18 +6,18 @@ from pathlib import Path
 
 class Listing:
     # The below line will be uncommented for actual testing
-    # root_dir = "$OPENFRAME_HOME"
-    # Below is the temporary root_dir for testing
-    root_dir = os.path.join(os.getcwd(), "..")
-    root_listing_dir = os.path.join(root_dir, "cob_listings")
-
+    # compile_dir = "$OPENFRAME_HOME"
+    # Below is the temporary compile_dir for testing
     def __init__(self, source_name, profile):
+        compile_dir = os.environ.get('COMPILE_HOME')
+        if compile_dir is None:
+            sys.exit(255)
+        compile_dir += "/listing"
+        
         print("Instantiating Listing Object...")
-        print(self.root_dir)
-        self.source_name = source_name
-        self.check_dir_create(self.root_listing_dir)
-        self.listing_dir = os.path.join(self.root_listing_dir,
-                                        source_name + self.get_current_time())
+        self.source_name = source_name.rsplit('/', 1)[1]
+        self.check_dir_create(compile_dir)
+        self.listing_dir = compile_dir + self.source_name + self.get_current_time()
         self.check_dir_create(self.listing_dir)
         self.log_file = os.path.join(self.listing_dir,
                                      source_name + '_log.txt')

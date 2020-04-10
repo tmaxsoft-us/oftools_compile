@@ -16,4 +16,4 @@ yapf:
 	yapf3 --style='{ based_on_style: google, indent_width:4 ,  column_limit:79}' *.py -ir
 
 test:
-	nosetests tests
+	pytest -s -v
