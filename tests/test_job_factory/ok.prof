@@ -1,0 +1,9 @@
+[setup]
+workdir = '~/listing' 
+
+[ofcob]
+option = '-g -x'
+
+[deploy]
+batch = 'volume_default/SYS1.USERLIB:volume_default/SYS1.TESTLIB'
+online = 'OSCOIVP1'
