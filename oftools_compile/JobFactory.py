@@ -31,7 +31,7 @@ class JobFactory:
             self._is_compile = True
             return CompileJob()
 
-    def isFine(self):
+    def is_fine(self):
         if self._is_setup is False:
             print('setup section missing in profile')
         if self._is_compile is False:

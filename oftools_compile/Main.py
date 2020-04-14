@@ -21,16 +21,12 @@ class Main:
         rc = 0
 
         # read stdin & profile
-        try:
-            # get profile_path and source_path
-            profile_path, source_path = self._parse_arg()
+        # get profile_path and source_path
+        profile_path, source_path = self._parse_arg()
 
-            # get config
-            config = ConfigParser()
-            config.read(profile_path)
-        except:
-            traceback.print_exc()
-            return -1
+        # get config
+        config = ConfigParser()
+        config.read(profile_path)
 
         # create profiles
         profiles = []
@@ -55,7 +51,7 @@ class Main:
                 return -2
 
         # analyze created jobs
-        if job_factory.isFine() is not True:
+        if job_factory.is_fine() is not True:
             print('Missing jobs found. abort!')
             return -2
 
