@@ -25,7 +25,7 @@ class JobFactory:
         elif section == "deploy":
             print('create deploy job')
             self._is_deploy = True
-            return DeployJob()
+            return DeployJob(config)
         else:
             print('create compile job')
             self._is_compile = True

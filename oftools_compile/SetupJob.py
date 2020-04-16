@@ -34,7 +34,7 @@ class SetupJob(Job):
         # copy source to workdir
         shutil.copy(in_file, tempdir)
         # change directory to workdir
-        os.chdir(cur_workdir)
+        os.chdir(tempdir)
 
         out_file = in_file.rsplit('/', 1)[1]
 

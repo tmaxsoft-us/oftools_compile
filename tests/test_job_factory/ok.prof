@@ -5,5 +5,5 @@ workdir = ~/listing
 option = -g -x
 
 [deploy]
-batch = volume_default/SYS1.USERLIB:volume_default/SYS1.TESTLIB
-online = OSCOIVP1
+volume = /home/mkoziel/GitLab/volume_default/SYS1.USERLIB:/home/mkoziel/GitLab/volume_default/SYS1.TESTLIB
+region = OSCOIVP1
