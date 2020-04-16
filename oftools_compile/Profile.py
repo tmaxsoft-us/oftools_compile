@@ -5,6 +5,7 @@ class Profile:
 
     def __init__(self, section, options):
         self._section = section
+        self._options = options
         return
 
     @property

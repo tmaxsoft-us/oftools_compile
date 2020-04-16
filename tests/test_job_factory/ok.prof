@@ -1,9 +1,9 @@
 [setup]
-workdir = '~/listing' 
+workdir = ~/listing
 
 [ofcob]
-option = '-g -x'
+option = -g -x
 
 [deploy]
-batch = 'volume_default/SYS1.USERLIB:volume_default/SYS1.TESTLIB'
-online = 'OSCOIVP1'
+batch = volume_default/SYS1.USERLIB:volume_default/SYS1.TESTLIB
+online = OSCOIVP1

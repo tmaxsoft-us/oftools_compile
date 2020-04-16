@@ -29,26 +29,15 @@ class Main:
         config.read(profile_path)
 
         # create profiles
-        profiles = []
-        for section in config.sections():
-            try:
-                options = config.options(section)
-                profile = Profile(section, options)
-                profiles.append(profile)
-            except:
-                traceback.print_exc()
-                return -1
-
-        # create jobs
         jobs = []
         job_factory = JobFactory()
-        for profile in profiles:
+        for section in config.sections():
             try:
-                job = job_factory.create(profile)
+                job = job_factory.create(section, config)
                 jobs.append(job)
             except:
                 traceback.print_exc()
-                return -2
+                return -1
 
         # analyze created jobs
         if job_factory.is_fine() is not True:
@@ -75,14 +64,10 @@ class Main:
 
         # add parse arguments
         arg_parser = argparse.ArgumentParser()
-        arg_parser.add_argument('-s',
-                                '--source',
-                                help='source code path',
-                                required=True)
-        arg_parser.add_argument('-p',
-                                '--profile',
-                                help='profile path',
-                                required=True)
+        arg_parser.add_argument(
+            '-s', '--source', help='source code path', required=True)
+        arg_parser.add_argument(
+            '-p', '--profile', help='profile path', required=True)
 
         # do the parsing
         args = arg_parser.parse_args()

@@ -6,10 +6,16 @@ from .Job import Job
 
 
 class SetupJob(Job):
-    base_dir = os.environ.get("OPENFRAME_HOME")
-    listing_dir = os.path.join(base_dir, "cob_listings")
 
-    def __init__(self):
+    def __init__(self, config):
+        user_home = os.getenv("HOME")
+        for opt in config.options('setup'):
+            if opt == "workdir":
+                self.workdir = config.get('setup', 'workdir')
+                self.workdir = self.workdir.replace("~", user_home)
+                if not os.path.isdir(self.workdir):
+                    os.mkdir(self.workdir)
+                print(self.workdir)
         self.now = datetime.now()
         self.nowsuffix = self.now.strftime("_%Y%m%d_%H%M%S")
         return
@@ -18,17 +24,17 @@ class SetupJob(Job):
         print('run SetupJob')
 
         # create_workdir
-        time_workdir = in_file.rsplit('/', 1)[1] + self.nowsuffix
-        workdir = os.path.join(self.listing_dir, time_workdir)
-        os.mkdir(workdir)
-        tempdir = os.path.join(workdir, "temps")
+        in_file_time = in_file.rsplit('/', 1)[1] + self.nowsuffix
+        cur_workdir = os.path.join(self.workdir, in_file_time)
+        os.mkdir(cur_workdir)
+        tempdir = os.path.join(cur_workdir, "temps")
         os.mkdir(tempdir)
-        logdir = os.path.join(workdir, "logs")
+        logdir = os.path.join(cur_workdir, "logs")
         os.mkdir(logdir)
         # copy source to workdir
         shutil.copy(in_file, tempdir)
         # change directory to workdir
-        os.chdir(str(workdir))
+        os.chdir(cur_workdir)
 
         out_file = in_file.rsplit('/', 1)[1]
 
