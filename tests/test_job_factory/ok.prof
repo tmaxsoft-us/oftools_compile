@@ -5,5 +5,5 @@ workdir = ~/listing
 option = -g -x
 
 [deploy]
-volume = /home/mkoziel/GitLab/volume_default/SYS1.USERLIB:/home/mkoziel/GitLab/volume_default/SYS1.TESTLIB
+volume = ~/Gitlab/volume_default/SYS1.USERLIB:~/Gitlab/volume_default/SYS1.TESTLIB
 region = OSCOIVP1
