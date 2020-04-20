@@ -1,9 +1,9 @@
 [setup]
-workdir = ~/listing
+workdir = /opt/tmaxapp/listing
 
 [ofcob]
 option = -g -x
 
 [deploy]
-volume = ~/Gitlab/volume_default/SYS1.USERLIB:~/Gitlab/volume_default/SYS1.TESTLIB
-region = OSCOIVP1
+volume = /opt/tmaxapp/OpenFrame/volume_default/SYS1.USERLIB:/opt/tmaxapp/OpenFrame/volume_default/SYS1.TESTLIB
+region = /opt/tmaxapp/OpenFrame/osc/region/OSCOIVP1/tdl/mod

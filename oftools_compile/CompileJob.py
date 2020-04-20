@@ -29,7 +29,8 @@ class CompileJob(Job):
         print(self.full_command)
         # TODO Use subprocess to call ofcob and create .ofcob out_file
         # subprocess.call([self.full_command])
-        subprocess.call(['touch', 'add01.ofcob'])
+        # subprocess.call(['touch', 'add01.ofcob'])
+        subprocess.call([self.full_command])
         print(out_file)
         return 0, out_file
 
