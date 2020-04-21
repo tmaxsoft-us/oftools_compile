@@ -2,6 +2,7 @@ import os
 import shutil
 from datetime import datetime
 
+from .Logger import MyLogger
 from .Job import Job
 
 
@@ -21,20 +22,23 @@ class SetupJob(Job):
         return
 
     def run(self, in_file):
-        print('run SetupJob')
-
-        # create_workdir
+        print(in_file)
+        print(os.getcwd())
+        # Create the name for the workdir by adding suffix to in_file
         in_file_time = in_file.rsplit('/', 1)[1] + self.nowsuffix
         cur_workdir = os.path.join(self.workdir, in_file_time)
-        os.mkdir(cur_workdir)
-        tempdir = os.path.join(cur_workdir, "temps")
-        os.mkdir(tempdir)
-        logdir = os.path.join(cur_workdir, "logs")
-        os.mkdir(logdir)
+        # create_workdir
+        if not os.path.isdir(cur_workdir):
+            os.mkdir(cur_workdir)
         # copy source to workdir
-        shutil.copy(in_file, tempdir)
+        shutil.copy(in_file, cur_workdir)
         # change directory to workdir
-        os.chdir(tempdir)
+        os.chdir(cur_workdir)
+        # Create logger object
+        self._logger = MyLogger.__call__().get_logger()
+        self._logger.info("Run SetupJob")
+        self._logger.info("SetupJob Completed")
+        del self._logger
 
         out_file = in_file.rsplit('/', 1)[1]
 
