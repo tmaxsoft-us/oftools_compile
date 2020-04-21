@@ -1,4 +1,5 @@
 from .Job import Job
+from .Logger import Logger
 import subprocess
 import shutil
 import os
@@ -12,6 +13,7 @@ class CompileJob(Job):
             for opt in config.options('ofcob'):
                 if opt == "option":
                     self.options = config.get('ofcob', 'option')
+        self.compile_logger = Logger()
 
         return
 
@@ -24,8 +26,10 @@ class CompileJob(Job):
                           + self.options + " -o " \
                           + out_file + " "        \
                           + in_file
-        print(os.getcwd())
+        self.compile_logger.logger.info(os.getcwd())
+        # print(os.getcwd())
         # TODO Replace with log command
+        self.compile_logger.logger.info('Full Command: ' + self.full_command)
         print(self.full_command)
         # TODO Use subprocess to call ofcob and create .ofcob out_file
         # subprocess.call([self.full_command])
