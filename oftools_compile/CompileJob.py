@@ -1,8 +1,19 @@
-from .Job import Job
-from .Log import Log
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""Description of the class in one sentence.
+
+Description more in details.
+"""
+# Generic/Built-in modules
 import subprocess
 import shutil
 import os
+
+# Third-party modules
+
+# Owned modules
+from .Job import Job
+from .Log import Log
 
 
 class CompileJob(Job):
