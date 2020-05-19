@@ -1,45 +1,63 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""Description of the class in one sentence.
+
+Description more in details.
+"""
+# Generic/Built-in modules
 import os
 import shutil
 from datetime import datetime
 
-from .Logger import MyLogger
+# Third-party modules
+
+# Owned modules
+from .Log import Log
 from .Job import Job
 
 
 class SetupJob(Job):
 
     def __init__(self, config):
-        user_home = os.getenv("HOME")
-        for opt in config.options('setup'):
-            if opt == "workdir":
-                self.workdir = config.get('setup', 'workdir')
-                self.workdir = self.workdir.replace("~", user_home)
-                if not os.path.isdir(self.workdir):
-                    os.mkdir(self.workdir)
-                print(self.workdir)
-        self.now = datetime.now()
-        self.nowsuffix = self.now.strftime("_%Y%m%d_%H%M%S")
+        self._config = config
         return
 
     def run(self, in_file):
-        print(in_file)
-        print(os.getcwd())
+
+        # resolve work dir
+        if self._config.has_option('setup', 'workdir') is False:
+            print('cannot find workdir section in the profile')
+            exit(-1)
+        workdir = os.path.expandvars(self._config.get('setup', 'workdir'))
+        if os.path.isdir(workdir) is False:
+            print('work dir not valid = ' + workdir)
+            exit(-1)
+
         # Create the name for the workdir by adding suffix to in_file
-        in_file_time = in_file.rsplit('/', 1)[1] + self.nowsuffix
-        cur_workdir = os.path.join(self.workdir, in_file_time)
+        try:
+            file_name = in_file.rsplit('/', 1)[1]
+        except:
+            file_name = in_file
+
+        time_stamp = datetime.now().strftime("_%Y%m%d_%H%M%S")
+        in_file_time = file_name + time_stamp
+        cur_workdir = os.path.join(workdir, in_file_time)
+
         # create_workdir
         if not os.path.isdir(cur_workdir):
             os.mkdir(cur_workdir)
+
         # copy source to workdir
         shutil.copy(in_file, cur_workdir)
+
         # change directory to workdir
         os.chdir(cur_workdir)
+
+        out_file = file_name
+
         # Create logger object
-        self._logger = MyLogger.__call__().get_logger()
-        self._logger.info("Run SetupJob")
-        self._logger.info("SetupJob Completed")
-        del self._logger
+        Log().info("Run SetupJob")
+        Log().info('create directory ' + cur_workdir)
+        Log().info("SetupJob Completed")
 
-        out_file = in_file.rsplit('/', 1)[1]
-
-        return 0, out_file
+        return out_file

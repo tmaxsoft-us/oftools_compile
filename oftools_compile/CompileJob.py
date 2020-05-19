@@ -1,5 +1,5 @@
 from .Job import Job
-from .Logger import MyLogger
+from .Log import Log
 import subprocess
 import shutil
 import os
@@ -8,29 +8,41 @@ import os
 class CompileJob(Job):
 
     def __init__(self, section, config):
-        if section == 'ofcob':
-            self.command = 'ofcob'
-            for opt in config.options('ofcob'):
-                if opt == "option":
-                    self.options = config.get('ofcob', 'option')
+        self._section = section
+        self._config = config
         return
 
     def run(self, in_file):
-        self._logger = MyLogger.__call__().get_logger()
-        self._logger.info("Run CompileJob")
-        self._logger.info("in_file: " + in_file)
+        Log().info("Run CompileJob")
+        Log().info("in_file: " + in_file)
+
+        # build command
+        option = self._config.get(self._section, 'option')
         base_name = self.get_base_name(in_file)
-        out_file = base_name + '.ofcob'
-        self.full_command = self.command + " "    \
-                          + self.options + " -o " \
-                          + out_file + " "        \
-                          + in_file
-        # print(self.full_command)
-        self._logger.info("Full Command: " + self.full_command)
-        subprocess.run(self.full_command, shell=True)
-        self._logger.info("out_file: " + out_file)
-        del self._logger
-        return 0, out_file
+        out_file = base_name + '.' + self._section
+
+        shell_cmd = self._section + " "
+        shell_cmd += option
+        shell_cmd += ' -o ' + out_file + ' ' + in_file
+
+        # run command
+        Log().info("Command: " + shell_cmd)
+        proc = subprocess.Popen([shell_cmd],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True)
+        out, err = proc.communicate()
+
+        # handle resultget
+        if proc.returncode != 0:
+            Log().error(self._section + ' error detected')
+            Log().error(out.decode('utf-8'))
+            Log().error(err.decode('utf-8'))
+            exit(proc.returncode)
+
+        Log().info("out_file: " + out_file)
+
+        return out_file
 
     @staticmethod
     def get_base_name(in_file):

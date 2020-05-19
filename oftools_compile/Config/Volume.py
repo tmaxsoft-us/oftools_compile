@@ -9,11 +9,3 @@ Description more in details.
 # Third-party modules
 
 # Owned modules
-
-
-class Job(object):
-    _in_file = None
-    _out_file = None
-
-    def __init__(self):
-        return
