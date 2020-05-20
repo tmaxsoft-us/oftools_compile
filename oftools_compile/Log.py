@@ -27,31 +27,45 @@ class SingletonType(type):
 class Log(object, metaclass=SingletonType):
     _logger = None
     _file_handler = None
+    _formatter = None
 
     def __init__(self):
         self._logger = logging.getLogger("Logger")
-        self._logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
+        self._logger.setLevel(logging.INFO)
+        self._formatter = logging.Formatter(
             '%(asctime)s [%(levelname)s | %(filename)s:%(lineno)s] > %(message)s'
         )
 
-        file_handler = logging.FileHandler("./oftools_compile.log")
-        file_handler.setFormatter(formatter)
-        self._logger.addHandler(file_handler)
-        self._file_handler = file_handler
+        self._file_handler = logging.FileHandler("./oftools_compile.log")
+        self._file_handler.setFormatter(self._formatter)
+        self._logger.addHandler(self._file_handler)
 
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
+        stream_handler.setFormatter(self._formatter)
         self._logger.addHandler(stream_handler)
 
     def __del__(self):
         self._file_handler.close()
 
-    def info(self, msg):
-        self._logger.info(msg)
+    def set_file(self, file):
+        if self._file_handler is not None:
+            return
 
-    def error(self, msg):
-        self._logger.error(msg)
+        self._file_handler = logging.FileHandler("./oftools_compile.log")
+        self._file_handler.setFormatter(self._formatter)
+        self._logger.addHandler(self._file_handler)
 
-    def get_logger(self):
+    def set_level(self, level):
+        if level == "DEBUG":
+            self._logger.setLevel(logging.DEBUG)
+        elif level == "INFO":
+            self._logger.setLevel(logging.INFO)
+        elif level == "WARNING":
+            self._logger.setLevel(logging.WARNING)
+        elif level == "ERROR":
+            self._logger.setLevel(logging.ERROR)
+        elif level == "CRITICAL":
+            self._logger.setLevel(logging.CRITICAL)
+
+    def get(self):
         return self._logger

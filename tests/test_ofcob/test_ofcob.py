@@ -11,6 +11,8 @@ from oftools_compile.Main import Main
 def test_listing():
     pwd = os.getcwd() + '/tests/test_ofcob'
     sys.argv = [sys.argv[0]]
+    sys.argv.append('-l')
+    sys.argv.append('DEBUG')
     sys.argv.append('-p')
     sys.argv.append(pwd + '/ok.prof')
     sys.argv.append('-s')

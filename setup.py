@@ -8,9 +8,15 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
+
+def get_version():
+    version = "0.0.0"
+    return version
+
+
 setup(
     name='oftools_compile',
-    version='0.0.1',
+    version=get_version(),
     description='compiler frontend for Openframe compilers',
     long_description=readme,
     author='Tmaxsoft Inc.',

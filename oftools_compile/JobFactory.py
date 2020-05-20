@@ -13,16 +13,14 @@ from .DeployJob import DeployJob
 from .CompileJob import CompileJob
 from .SetupJob import SetupJob
 
-from .Config.Profile import Profile
-
 
 class JobFactory:
     _is_setup = False
     _is_compile = False
     _is_deploy = False
 
-    def __init__(self, config):
-        self._config = config
+    def __init__(self, profile):
+        self._profile = profile
         return
 
     def create(self, section):
@@ -30,13 +28,13 @@ class JobFactory:
             return None
         elif section == "setup":
             self._is_setup = True
-            return SetupJob(self._config)
+            return SetupJob(self._profile)
         elif section == "deploy":
             self._is_deploy = True
-            return DeployJob(self._config)
+            return DeployJob(self._profile)
         else:
             self._is_compile = True
-            return CompileJob(section, self._config)
+            return CompileJob(section, self._profile)
 
     def is_fine(self):
         if self._is_setup is False:

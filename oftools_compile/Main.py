@@ -9,16 +9,18 @@ import os
 import argparse
 import traceback
 import sys
+import time
 from configparser import ConfigParser
 
 # Third-party modules
 
 # Owned modules
-from .Config.Profile import Profile
 from .JobFactory import JobFactory
 from .CompileJob import CompileJob
 from .SetupJob import SetupJob
 from .DeployJob import DeployJob
+from .Log import Log
+from .Utils import Utils
 
 
 class Main:
@@ -26,10 +28,10 @@ class Main:
     def __init__(self):
         return
 
-    def _create_jobs(self, config):
+    def _create_jobs(self, profile):
         jobs = []
-        job_factory = JobFactory(config)
-        for section in config.sections():
+        job_factory = JobFactory(profile)
+        for section in profile.sections():
             try:
                 job = job_factory.create(section)
                 jobs.append(job)
@@ -50,7 +52,7 @@ class Main:
         arg_parser = argparse.ArgumentParser()
         arg_parser.add_argument('-s',
                                 '--source',
-                                help='Source path. Source must be a file.',
+                                help='name of the source which must be a file.',
                                 required=True)
 
         arg_parser.add_argument(
@@ -60,16 +62,29 @@ class Main:
             'Path to the profile which contains description of the compilation target.',
             required=True)
 
+        arg_parser.add_argument(
+            '-i',
+            '--import',
+            help=
+            'import csv formatted manifest which contains source and profile.',
+            required=False)
+
+        arg_parser.add_argument(
+            '-l',
+            '--log',
+            help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
+            required=False)
+
         # do the parsing
         args = arg_parser.parse_args()
 
         # analyze parsing result
-        if os.path.isfile(args.profile) is False:
-            print('profile does not exist')
+        if os.path.isfile(os.path.expandvars(args.profile)) is False:
+            print('cannot access profile: ' + args.profile)
             exit(-1)
 
-        if os.path.isfile(args.source) is False:
-            print('source does not exist')
+        if os.path.isfile(os.path.expandvars(args.source)) is False:
+            print('cannot access source: ' + args.source)
             exit(-1)
 
         return args
@@ -80,22 +95,35 @@ class Main:
         # parse inline command
         args = self._parse_arg()
 
-        # read config
-        config = ConfigParser()
-        config.read(args.profile)
+        # set log level
+        Log().set_level(args.log)
 
-        # create jobs
-        jobs = self._create_jobs(config)
+        # start time
+        start_time = time.time()
+
+        # read profile
+        profile = ConfigParser()
+        profile.optionxform = str
+        profile.read(os.path.expandvars(args.profile))
+
+        # clear context of Utils
+        Utils().clear()
 
         # run jobs
         in_file = ""
         out_file = args.source
+        jobs = self._create_jobs(profile)
         for job in jobs:
             try:
                 in_file = out_file
                 out_file = job.run(in_file)
             except:
                 traceback.print_exc()
-                return -3
+                rc = -3
+                break
+
+        end_time = time.time()
+
+        Log().get().info('elapsed time: ' + str(end_time - start_time))
 
         return rc
