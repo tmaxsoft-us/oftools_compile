@@ -8,6 +8,7 @@ Description more in details.
 import logging
 import os
 import time
+import datetime
 
 # Third-party modules
 
@@ -33,19 +34,16 @@ class Log(object, metaclass=SingletonType):
         self._logger = logging.getLogger("Logger")
         self._logger.setLevel(logging.INFO)
         self._formatter = logging.Formatter(
-            '%(asctime)s [%(levelname)s | %(filename)s:%(lineno)s] > %(message)s'
-        )
-
-        self._file_handler = logging.FileHandler("./oftools_compile.log")
-        self._file_handler.setFormatter(self._formatter)
-        self._logger.addHandler(self._file_handler)
+            "[%(levelname)8s] %(message)-100s (%(filename)s:%(lineno)s)",
+            "%Y-%m-%d %H:%M:%S")
 
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(self._formatter)
         self._logger.addHandler(stream_handler)
 
     def __del__(self):
-        self._file_handler.close()
+        if self._file_handler is not None:
+            self._file_handler.close()
 
     def set_file(self, file):
         if self._file_handler is not None:
@@ -69,3 +67,9 @@ class Log(object, metaclass=SingletonType):
 
     def get(self):
         return self._logger
+
+    def clear(self):
+        if self._file_handler is not None:
+            self._logger.removeHandler(self._file_handler)
+            self._file_handler.close()
+            self._file_handler = None

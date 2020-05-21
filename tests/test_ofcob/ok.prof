@@ -3,11 +3,9 @@ workdir   = /opt/tmaxapp/compile
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook
 
 [ofcob]
-option    = -g -x -o $OUTNAME $INNAME
-filter    = "grep -av '^......\*' $INNAME | grep -a 'EXEC' | grep -a 'SQL'" 
-
+option    = -g -x -o $OUTNAME $INNAME --enable-SQL
 [deploy]
 file      = $BASENAME.so
 dataset   = SYS1.USERLIB:SYS1.TEMPLIB
-region    = OSCOIVP1
+#region   = OSCOIVP1
 #tdl      = $TMAXDIR

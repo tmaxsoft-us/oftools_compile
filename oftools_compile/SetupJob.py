@@ -12,91 +12,102 @@ from datetime import datetime
 # Third-party modules
 
 # Owned modules
-from .Log import Log
 from .Job import Job
-from .Utils import Utils
+from .Log import Log
+from .Context import Context
 
 
 class SetupJob(Job):
 
-    def __init__(self, profile):
-        self._profile = profile
-        return
-
     def _analyze(self):
 
         # check if workdir is defined in the profile
-        if self._profile.has_option('setup', 'workdir') is False:
-            print('cannot find workdir section in the profile')
+        if self._profile.has_option(self._section, 'workdir') is False:
+            Log().get().critical('cannot find workdir section in the profile')
             exit(-1)
 
-        # check if wordir accessable
-        workdir = self._profile.get('setup', 'workdir')
+        # check if workdir is accessable
+        workdir = self._profile.get(self._section, 'workdir')
         workdir = os.path.expandvars(workdir)
         if os.path.isdir(workdir) is False:
             if os.access(workdir, os.W_OK) is False:
                 Log().get().critical('no write access on workdir = ' + workdir)
                 exit(-1)
 
+        # check if given section is already completed
+        if Context().is_section_complete(self._section):
+            return -1
+
         return 0
 
-    def _process_workdir(self, workdir, in_file):
+    def _process_workdir(self, workdir, in_name):
 
-        # Create the name for the workdir by adding suffix to in_file
+        # Create the name for the workdir by adding suffix to in_name
         workdir = os.path.expandvars(workdir)
-        try:
-            file_name = in_file.rsplit('/', 1)[1]
-        except:
-            file_name = in_file
+        Context().set_root_workdir(workdir)
 
-        cur_workdir = os.path.join(
-            workdir, file_name + datetime.now().strftime("_%Y%m%d_%H%M%S"))
+        try:
+            file_name = in_name.rsplit('/', 1)[1]
+        except:
+            file_name = in_name
+
+        cur_workdir = os.path.join(workdir,
+                                   file_name + Context().get_time_stamp())
 
         # create_workdir
         if not os.path.isdir(cur_workdir):
             os.mkdir(cur_workdir)
 
+        Log().get().debug(os.getcwd())
+        Log().get().debug(in_name)
+
         # copy source to workdir
-        shutil.copy(in_file, cur_workdir)
+        shutil.copy(in_name, cur_workdir)
 
         # change directory to workdir
         os.chdir(cur_workdir)
+        Context().set_cur_workdir(cur_workdir)
 
         # set log file handle
-        Log().set_file('')
+        Log().set_file('./oftools_compile.out')
 
         return file_name
 
-    def _process_env(self, key, value):
-        Log().get().debug('key: ' + key)
-        Log().get().debug('value: ' + value)
+    def run(self, in_name):
+        # analyze section
+        if self._analyze() < 0:
+            Log().get().info("[" + self._section + "")
+            return in_name
 
-        env = Utils().get_env()
-        env[key[1:]] = os.path.expandvars(value)
-        Utils().set_env(env)
+        # start section
+        Log().get().info("" + self._section + "")
 
-        return
+        # add environment variables and filters
+        for key in self._profile.options(self._section):
+            value = self._profile.get(self._section, key)
 
-    def run(self, in_file):
+            if key.startswith('$'):
+                self._add_env(key, value)
 
-        Log().get().debug("Run SetupJob")
-        out_file = ""
+            elif key.startswith('?'):
+                self._add_filter(key, value)
 
-        # analyze setup section
-        if self._profile.has_option('setup', 'workdir') is False:
-            print('cannot find workdir section in the profile')
-            exit(-1)
+        # process workdir
+        key = self._profile.get(self._section, 'workdir')
+        out_name = self._process_workdir(key, in_name)
 
-        # process setup section
-        for key in self._profile.options('setup'):
-            value = self._profile.get('setup', key)
+        # set the mandatory section
+        sections = self._profile.sections()
+        for section in reversed(sections):
+            if section.startswith('deploy') is False:
+                Log().get().debug('mandatory section? ' + section)
+                Context().set_mandatory_section(section)
+                break
 
-            # handle workdir
-            if key == "workdir":
-                out_file = self._process_workdir(value, in_file)
+        # set setup section as completed
+        Context().set_section_complete(self._section)
 
-            # handle environment variables
-            elif key.startswith('$'):
-                self._process_env(key, value)
+        # end section
+        Log().get().info("[" + self._section + "")
 
-        return out_file
+        return out_name

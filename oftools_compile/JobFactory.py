@@ -28,10 +28,10 @@ class JobFactory:
             return None
         elif section == "setup":
             self._is_setup = True
-            return SetupJob(self._profile)
-        elif section == "deploy":
+            return SetupJob(section, self._profile)
+        elif section.startswith("deploy"):
             self._is_deploy = True
-            return DeployJob(self._profile)
+            return DeployJob(section, self._profile)
         else:
             self._is_compile = True
             return CompileJob(section, self._profile)

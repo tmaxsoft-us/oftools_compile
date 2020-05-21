@@ -1,0 +1,27 @@
+[setup]
+workdir   = /opt/tmaxapp/compile
+$OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook
+?sql      = "grep -av '^......\*' $INNAME | grep -a 'EXEC' | grep -a 'SQL'"
+?online   = "grep -av '^......\*' $INNAME | grep -a 'EXEC' | grep -a 'CICS'"
+
+[ofcob?sql]
+$OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook2
+option    = -x -o $OUTNAME $INNAME
+
+[ofcob?online]
+option    = -g -x -o $OUTNAME $INNAME
+
+[ofcob]
+option    = -x -o $OUTNAME $INNAME
+
+[deploy?grep1]
+file      = $BASENAME.so
+dataset   = SYS1.USERLIB:SYS1.TEMPLIB
+#region   = OSCOIVP1
+#tdl      = $TMAXDIR
+
+[deploy]
+file      = $BASENAME.so
+#dataset  = SYS1.USERLIB:SYS1.TEMPLIB
+region    = OSCOIVP1
+#tdl      = $TMAXDIR

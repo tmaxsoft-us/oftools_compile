@@ -10,7 +10,11 @@ with open('LICENSE') as f:
 
 
 def get_version():
-    version = "0.0.0"
+    version = "0.0.1"
+
+    #git rev-list --count master => 1.0.<rev>.<branch>
+    #git rev-parse --abbrev-ref HEAD
+
     return version
 
 
