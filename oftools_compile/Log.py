@@ -33,9 +33,10 @@ class Log(object, metaclass=SingletonType):
     def __init__(self):
         self._logger = logging.getLogger("Logger")
         self._logger.setLevel(logging.INFO)
-        self._formatter = logging.Formatter(
-            "[%(levelname)8s] %(message)-100s (%(filename)s:%(lineno)s)",
-            "%Y-%m-%d %H:%M:%S")
+        #self._formatter = logging.Formatter(
+        #    "%(asctime)-15s [%(levelname)8s] %(message)-100s (%(filename)s:%(lineno)s)",
+        #    "%Y-%m-%d %H:%M:%S")
+        self._formatter = logging.Formatter("[%(levelname)8s] %(message)s")
 
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(self._formatter)
@@ -45,11 +46,12 @@ class Log(object, metaclass=SingletonType):
         if self._file_handler is not None:
             self._file_handler.close()
 
-    def set_file(self, file):
+    def set_file(self, cwd):
         if self._file_handler is not None:
             return
 
-        self._file_handler = logging.FileHandler("./oftools_compile.log")
+        self._file_handler = logging.FileHandler(
+            os.path.join(cwd, "oftools_compile.log"))
         self._file_handler.setFormatter(self._formatter)
         self._logger.addHandler(self._file_handler)
 
@@ -69,6 +71,7 @@ class Log(object, metaclass=SingletonType):
         return self._logger
 
     def clear(self):
+        # oftools_compile.log
         if self._file_handler is not None:
             self._logger.removeHandler(self._file_handler)
             self._file_handler.close()

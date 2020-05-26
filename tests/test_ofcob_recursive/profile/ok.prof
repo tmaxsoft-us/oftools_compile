@@ -1,8 +1,8 @@
 [setup]
 workdir   = /opt/tmaxapp/compile
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybookjwhan
-?sql      = "grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'SQL'"
-?online   = "grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'CICS'"
+?sql      = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'SQL'
+?online   = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'CICS'
 
 [ofcob?sql]
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook2

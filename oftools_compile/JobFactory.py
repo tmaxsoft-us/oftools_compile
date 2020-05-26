@@ -41,7 +41,5 @@ class JobFactory:
             print('setup section missing in profile')
         if self._is_compile is False:
             print('compile section missing in profile')
-        if self._is_deploy is False:
-            print('deploy section missing in profile')
 
-        return self._is_setup and self._is_compile and self._is_deploy
+        return self._is_setup and self._is_compile

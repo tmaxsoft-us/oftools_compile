@@ -53,7 +53,7 @@ class DeployJob(Job):
             shell_cmd += ' ' + region
             shell_cmd += ' ' + self._resolve_base_name(out_name)
 
-            Log().get().info('| [' + self._section + '] ' + shell_cmd)
+            Log().get().info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -62,8 +62,8 @@ class DeployJob(Job):
 
             # handle resultget
             if proc.returncode != 0:
-                Log().get().error(out.decode('utf-8'))
                 Log().get().error(err.decode('utf-8'))
+                Log().get().error(out.decode('utf-8'))
                 exit(proc.returncode)
 
         return
@@ -82,7 +82,7 @@ class DeployJob(Job):
             shell_cmd += ' -r ' + os.path.join(
                 os.path.expandvars(tdl) + '/tdl/mod')
 
-            Log().get().info('| [' + self._section + '] ' + shell_cmd)
+            Log().get().info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -91,8 +91,8 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(out.decode('utf-8'))
                 Log().get().error(err.decode('utf-8'))
+                Log().get().error(out.decode('utf-8'))
                 exit(proc.returncode)
 
         return
@@ -108,7 +108,7 @@ class DeployJob(Job):
         for dataset in datasets:
             shell_cmd = 'dlupdate ' + os.path.join(os.getcwd(),
                                                    out_name) + ' ' + dataset
-            Log().get().info('| [' + self._section + '] ' + shell_cmd)
+            Log().get().info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -117,8 +117,8 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(out.decode('utf-8'))
                 Log().get().error(err.decode('utf-8'))
+                Log().get().error(out.decode('utf-8'))
                 exit(proc.returncode)
 
         return
@@ -131,8 +131,8 @@ class DeployJob(Job):
             out_name = out_name.replace("$OF_COMPILE_BASE",
                                         self._resolve_base_name(in_name))
 
-            Log().get().info('| [' + self._section + '] ' + 'rename ' +
-                             in_name + ' ' + out_name)
+            Log().get().info('[' + self._section + '] ' + 'rename ' + in_name +
+                             ' ' + out_name)
             shutil.move(in_name, out_name)
 
         except:

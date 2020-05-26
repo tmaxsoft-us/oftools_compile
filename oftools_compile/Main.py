@@ -141,7 +141,6 @@ class Main:
                                                                     f)))
         else:
             source_list = [args.source]
-        Log().get().debug(source_list)
 
         # run jobs through sources
         report_generator = ReportGenerator()
@@ -166,7 +165,9 @@ class Main:
                     rc = -255
                     break
                 except:
-                    traceback.print_exc()
+                    trace_list = traceback.format_exc().splitlines()
+                    for trace in trace_list:
+                        Log().get().error(trace)
                     rc = -3
                     break
 

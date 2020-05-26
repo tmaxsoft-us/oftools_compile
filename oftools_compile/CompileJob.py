@@ -58,7 +58,7 @@ class CompileJob(Job):
 
         # run command
         #Log().get().info("shell_cmd: " + shell_cmd)
-        Log().get().info('| [' + self._section + '] ' + shell_cmd)
+        Log().get().info('[' + self._section + '] ' + shell_cmd)
         env = Context().get_env()
         proc = subprocess.Popen([shell_cmd],
                                 stdout=subprocess.PIPE,
@@ -69,9 +69,8 @@ class CompileJob(Job):
 
         # handle error
         if proc.returncode != 0:
-            Log().get().error(self._section + ' error detected')
-            Log().get().error(out.decode('utf-8'))
             Log().get().error(err.decode('utf-8'))
+            Log().get().error(out.decode('utf-8'))
             exit(proc.returncode)
 
         return
@@ -99,13 +98,14 @@ class CompileJob(Job):
             if key.startswith('$'):
                 Context().add_env(key, value)
 
-        # process option
-        key = self._profile.get(self._section, 'option')
-        self._process_option()
+            elif key.startswith('?'):
+                self._add_filter(key, value, in_name)
 
-        out_name = Context().get_env().get('OF_COMPILE_OUT')
-        if os.path.isfile(out_name) is not True:
-            out_name = in_name
+            elif key == "option":
+                self._process_option()
+                out_name = Context().get_env().get('OF_COMPILE_OUT')
+                if os.path.isfile(out_name) is not True:
+                    out_name = in_name
 
         # set section as completed
         Context().set_section_complete(self._section)

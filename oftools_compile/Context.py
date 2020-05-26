@@ -18,6 +18,7 @@ from datetime import datetime
 # Third-party modules
 
 # Owned modules
+from .Log import Log
 
 
 class SingletonMeta(type):
@@ -102,13 +103,23 @@ class Context(metaclass=SingletonMeta):
     def get_mandatory_section(self):
         return self._mandatory
 
-    def add_filter(self, key, value):
+    def add_filter_result(self, key, value):
         self._filter_dict[key] = value
+        Log().get().debug('add_filter_result: ' + key + '/' + str(value))
 
-    def get_filter_value(self, key):
+    def get_filter_result(self, key):
+        result = False
+        index = key.find('?')
+        if index > 0:
+            key = key[index:]
+
         if key in self._filter_dict:
-            return self._filter_dict[key]
-        return False
+            result = self._filter_dict[key]
+
+        Log().get().debug(
+            ('get_filter_result: ' + key + '/' + str(self._filter_dict[key])))
+
+        return result
 
     def clear(self):
         self._env = self._init_env

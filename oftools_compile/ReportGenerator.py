@@ -57,9 +57,9 @@ class ReportGenerator(object):
 
         self._total_time += time
 
-        Log().get().info('| last section: ' + section)
-        Log().get().info('| success: ' + success)
-        Log().get().info('| elapsed time: ' + str(round(time, 4)))
+        Log().get().info('last section: ' + section)
+        Log().get().info('success: ' + success)
+        Log().get().info('elapsed time: ' + str(round(time, 4)))
         Log().get().info(
             '===================================================================================================='
         )
@@ -74,12 +74,12 @@ class ReportGenerator(object):
         Log().get().info(
             '= SUMMARY =========================================================================================='
         )
-        Log().get().info('| total elapsed time: ' +
+        Log().get().info('total elapsed time: ' +
                          str(round(self._total_time, 4)))
-        Log().get().info('| total count: ' +
+        Log().get().info('total count: ' +
                          str(self._success_count + self._fail_count))
-        Log().get().info('| success count: ' + str(self._success_count))
-        Log().get().info('| fail count: ' + str(self._fail_count))
+        Log().get().info('success count: ' + str(self._success_count))
+        Log().get().info('fail count: ' + str(self._fail_count))
         Log().get().info(
             '===================================================================================================='
         )

@@ -24,19 +24,12 @@ class Job(object):
         self._profile = profile
 
     def _add_filter(self, key, value, in_name):
-        Log().get().debug('add_filter: [' + key + ',' + value + ']')
+        Log().get().debug('add_filter: [' + key + ',' +
+                          os.path.expandvars(value) + ']')
 
         result = False
-        shell_cmd = ""
-        try:
-            filter_key = self._resolve_section_filter(section)
-            shell_cmd = Context().get_filter_value(filter_key)
-        except:
-            return True
-
-        shell_cmd = shell_cmd.replace("$OF_COMPILE_IN", in_name)
+        shell_cmd = os.path.expandvars(value)
         Log().get().debug(os.getcwd())
-        Log().get().info("run shell_cmd: " + shell_cmd)
 
         env = Context().get_env()
         proc = subprocess.Popen([shell_cmd],
@@ -45,18 +38,24 @@ class Job(object):
                                 shell=True,
                                 env=env)
         out, err = proc.communicate()
+        Log().get().debug(err.decode('utf-8'))
+        Log().get().debug(out.decode('utf-8'))
+        Log().get().debug('filter rc = ' + str(proc.returncode))
 
         # grep returns 0 if line matches
         if proc.returncode == 0:
             result = True
 
-        Context().add_filter(key, result)
+        Log().get().debug('add_filter_result: ' + key + '/' + str(result))
+
+        Context().add_filter_result(key, result)
 
     def _evaluate_filter(self, section, in_name):
         if "?" not in section:
             return True
 
-        return Context().get_filter_value(section)
+        result = Context().get_filter_result(section)
+        return result
 
     def _resolve_base_name(self, in_name):
         return in_name.rsplit('.', 1)[0]
