@@ -49,8 +49,13 @@ class Context(metaclass=SingletonMeta):
         self.set_time_stamp()
         return
 
-    def set_env(self, env):
-        self._env = env
+    def add_env(self, key, value):
+        if key.startswith('$') is False:
+            #warning
+            return
+
+        self._env[key[1:]] = os.path.expandvars(value)
+        os.environ.update(self._env)
 
     def get_env(self):
         return self._env
@@ -101,10 +106,13 @@ class Context(metaclass=SingletonMeta):
         self._filter_dict[key] = value
 
     def get_filter_value(self, key):
-        return self._filter_dict[key]
+        if key in self._filter_dict:
+            return self._filter_dict[key]
+        return False
 
     def clear(self):
         self._env = self._init_env
+        os.environ.update(self._init_env)
 
         self._cur_workdir = ""
         self._mandatory = ""

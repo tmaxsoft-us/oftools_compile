@@ -58,8 +58,18 @@ class SetupJob(Job):
         if not os.path.isdir(cur_workdir):
             os.mkdir(cur_workdir)
 
-        Log().get().debug(os.getcwd())
-        Log().get().debug(in_name)
+        # create_reportdir
+        report_workdir = os.path.join(workdir, 'report')
+        if not os.path.isdir(report_workdir):
+            os.mkdir(report_workdir)
+
+        # set log file handle
+        Log().set_file(os.path.join(workdir, 'oftools_compile.out'))
+        Log().get().info(
+            '===================================================================================================='
+        )
+        Log().get().info('| [' + self._section + '] ' + 'source: ' + in_name)
+        Log().get().info('| [' + self._section + '] ' + 'mkdir ' + cur_workdir)
 
         # copy source to workdir
         shutil.copy(in_name, cur_workdir)
@@ -68,29 +78,26 @@ class SetupJob(Job):
         os.chdir(cur_workdir)
         Context().set_cur_workdir(cur_workdir)
 
-        # set log file handle
-        Log().set_file('./oftools_compile.out')
-
         return file_name
 
     def run(self, in_name):
         # analyze section
         if self._analyze() < 0:
-            Log().get().info("[" + self._section + "")
+            Log().get().debug("[" + self._section + "] skip section")
             return in_name
 
         # start section
-        Log().get().info("" + self._section + "")
+        Log().get().debug("[" + self._section + "] start section")
 
         # add environment variables and filters
         for key in self._profile.options(self._section):
             value = self._profile.get(self._section, key)
 
             if key.startswith('$'):
-                self._add_env(key, value)
+                Context().add_env(key, value)
 
             elif key.startswith('?'):
-                self._add_filter(key, value)
+                self._add_filter(key, value, in_name)
 
         # process workdir
         key = self._profile.get(self._section, 'workdir')
@@ -104,10 +111,16 @@ class SetupJob(Job):
                 Context().set_mandatory_section(section)
                 break
 
+        # update predefined environment variable
+        base_name = self._resolve_base_name(out_name)
+        Context().add_env('$OF_COMPILE_IN', out_name)
+        Context().add_env('$OF_COMPILE_OUT', out_name)
+        Context().add_env('$OF_COMPILE_BASE', base_name)
+
         # set setup section as completed
         Context().set_section_complete(self._section)
 
         # end section
-        Log().get().info("[" + self._section + "")
+        Log().get().debug("[" + self._section + "] end section")
 
         return out_name

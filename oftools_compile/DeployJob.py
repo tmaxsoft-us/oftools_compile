@@ -47,28 +47,24 @@ class DeployJob(Job):
         if self._profile.has_option(self._section, 'region') is False:
             return
 
-        try:
-            regions = self._profile.get(self._section, 'region').split(':')
-            for region in regions:
-                shell_cmd = 'osctdlupdate'
-                shell_cmd += ' ' + region
-                shell_cmd += ' ' + self._resolve_base_name(out_name)
+        regions = self._profile.get(self._section, 'region').split(':')
+        for region in regions:
+            shell_cmd = 'osctdlupdate'
+            shell_cmd += ' ' + region
+            shell_cmd += ' ' + self._resolve_base_name(out_name)
 
-                Log().get().info("deploy region: " + shell_cmd)
-                proc = subprocess.Popen([shell_cmd],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        shell=True)
-                out, err = proc.communicate()
+            Log().get().info('| [' + self._section + '] ' + shell_cmd)
+            proc = subprocess.Popen([shell_cmd],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True)
+            out, err = proc.communicate()
 
-                # handle resultget
-                if proc.returncode != 0:
-                    Log().get().error(out.decode('utf-8'))
-                    Log().get().error(err.decode('utf-8'))
-                    exit(proc.returncode)
-        except:
-            Log().get().error('Failed to deploy to region ' + region)
-            exit(-1)
+            # handle resultget
+            if proc.returncode != 0:
+                Log().get().error(out.decode('utf-8'))
+                Log().get().error(err.decode('utf-8'))
+                exit(proc.returncode)
 
         return
 
@@ -85,7 +81,8 @@ class DeployJob(Job):
             shell_cmd += ' -m ' + self._resolve_base_name(out_name)
             shell_cmd += ' -r ' + os.path.join(
                 os.path.expandvars(tdl) + '/tdl/mod')
-            Log().get().info("deploy tdl: " + shell_cmd)
+
+            Log().get().info('| [' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -111,7 +108,7 @@ class DeployJob(Job):
         for dataset in datasets:
             shell_cmd = 'dlupdate ' + os.path.join(os.getcwd(),
                                                    out_name) + ' ' + dataset
-            Log().get().info("deploy dataset: " + shell_cmd)
+            Log().get().info('| [' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -123,31 +120,7 @@ class DeployJob(Job):
                 Log().get().error(out.decode('utf-8'))
                 Log().get().error(err.decode('utf-8'))
                 exit(proc.returncode)
-        """
-        try:
-            datasets = self._profile.get('deploy', 'dataset').split(':')
-            for dataset in datasets:
-                shell_cmd = 'dlupdate ' + os.path.join(os.getcwd(),
-                                                       out_name) + ' ' + dataset
-                Log().get().info("shell command: " + shell_cmd)
-                proc = subprocess.Popen([shell_cmd],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        shell=True)
-                out, err = proc.communicate()
 
-                Log().get().info('rc = ' + proc.returncode)
-
-                # handle resultget
-                if proc.returncode != 0:
-                    Log().get().error(out.decode('utf-8'))
-                    Log().get().error(err.decode('utf-8'))
-                    exit(proc.returncode)
-        except:
-            Log().get().error('Failed to deploy to dataset ')
-            Log().get().error(out.decode('utf-8'))
-            Log().get().error(err.decode('utf-8'))
-        """
         return
 
     def _process_file(self, in_name):
@@ -155,13 +128,11 @@ class DeployJob(Job):
 
         try:
             out_name = self._profile.get(self._section, 'file')
-
-            Log().get().debug(in_name)
-            Log().get().debug(out_name)
-            out_name = out_name.replace("$BASENAME",
+            out_name = out_name.replace("$OF_COMPILE_BASE",
                                         self._resolve_base_name(in_name))
 
-            Log().get().debug('rename: ' + out_name)
+            Log().get().info('| [' + self._section + '] ' + 'rename ' +
+                             in_name + ' ' + out_name)
             shutil.move(in_name, out_name)
 
         except:
@@ -173,18 +144,25 @@ class DeployJob(Job):
     def run(self, in_name):
         # analyze section
         if self._analyze(in_name) < 0:
-            Log().get().info("[" + self._section + "] skip section")
+            Log().get().debug("[" + self._section + "] skip section")
             return in_name
 
         # start section
-        Log().get().info("[" + self._section + "] start section")
+        Log().get().debug("[" + self._section + "] start section")
+
+        # update predefined environment variable
+        base_name = self._resolve_base_name(in_name)
+        out_name = base_name + '.' + self._section
+        Context().add_env('$OF_COMPILE_IN', in_name)
+        Context().add_env('$OF_COMPILE_OUT', out_name)
+        Context().add_env('$OF_COMPILE_BASE', base_name)
 
         # add environment variables
         for key in self._profile.options(self._section):
             value = self._profile.get(self._section, key)
 
             if key.startswith('$'):
-                self._add_env(key, value)
+                Context().add_env(key, value)
 
         # process others
         out_name = self._process_file(in_name)
@@ -196,6 +174,6 @@ class DeployJob(Job):
         Context().set_section_complete(self._section)
 
         # end section
-        Log().get().info("[" + self._section + "] end section")
+        Log().get().debug("[" + self._section + "] end section")
 
         return out_name

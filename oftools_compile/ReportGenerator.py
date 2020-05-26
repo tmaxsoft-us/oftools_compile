@@ -56,6 +56,14 @@ class ReportGenerator(object):
             self._fail_count += 1
 
         self._total_time += time
+
+        Log().get().info('| last section: ' + section)
+        Log().get().info('| success: ' + success)
+        Log().get().info('| elapsed time: ' + str(round(time, 4)))
+        Log().get().info(
+            '===================================================================================================='
+        )
+
         return
 
     def generate(self, export):

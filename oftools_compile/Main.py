@@ -111,7 +111,6 @@ class Main:
     def run(self):
         # initialize
         rc = 0
-        total_time = 0
         source_list = []
 
         # parse inline command
@@ -133,12 +132,15 @@ class Main:
             directory = os.path.expandvars(args.source)
 
             for dirpath, _, filenames in os.walk(directory):
+                if dirpath.startswith('.'):
+                    continue
                 for f in filenames:
+                    if f.startswith('.'):
+                        continue
                     source_list.append(os.path.abspath(os.path.join(dirpath,
                                                                     f)))
         else:
             source_list = [args.source]
-
         Log().get().debug(source_list)
 
         # run jobs through sources
@@ -173,25 +175,16 @@ class Main:
                 break
 
             unit_time = time.time() - start_time
-            Log().get().info('elapsed time: ' + str(round(unit_time, 4)))
-            total_time += unit_time
 
             success = 'Y'
             if rc < 0:
                 success = 'N'
 
-            Log().get().debug('rc: ' + str(rc))
-            Log().get().debug('success: ' + success)
-
-            last_section = ""
-            if Context().is_mandatory_complete() is not True:
-                last_section = Context().get_mandatory_section()
-            else:
-                last_section = last_job.get_section()
-                last_index = last_section.find('?')
-                if last_index > 0:
-                    last_section = last_section[:last_index]
-                    Log().get().debug('?:' + last_section)
+            last_section = last_job._resolve_section_base(
+                last_job.get_section())
+            if last_section.startswith('deploy'):
+                if Context().is_mandatory_complete() is not True:
+                    last_section = Context().get_mandatory_section()
 
             report_generator.add(source,
                                  Context().get_cur_workdir(), last_section,
