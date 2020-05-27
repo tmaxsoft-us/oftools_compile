@@ -84,6 +84,7 @@ class SetupJob(Job):
         Log().get().info('[' + self._section + '] ' + 'mkdir ' + cur_workdir)
         Log().get().info('[' + self._section + '] ' + 'cp ' + in_name + ' ' +
                          cur_workdir)
+        Log().get().info('[' + self._section + '] ' + 'cd ' + cur_workdir)
 
         return file_name
 
