@@ -23,7 +23,8 @@ class SetupJob(Job):
 
         # check if workdir is defined in the profile
         if self._profile.has_option(self._section, 'workdir') is False:
-            Log().get().critical('cannot find workdir section in the profile')
+            Log().get().critical('[' + self._section +
+                                 '] cannot find workdir section in the profile')
             exit(-1)
 
         # check if workdir is accessable
@@ -31,7 +32,9 @@ class SetupJob(Job):
         workdir = os.path.expandvars(workdir)
         if os.path.isdir(workdir) is False:
             if os.access(workdir, os.W_OK) is False:
-                Log().get().critical('no write access on workdir = ' + workdir)
+                Log().get().critical('[' + self._section +
+                                     '] no write access on workdir = ' +
+                                     workdir)
                 exit(-1)
 
         # check if given section is already completed
@@ -73,11 +76,14 @@ class SetupJob(Job):
         # set log file handle
         Log().set_file(cur_workdir)
 
-        Log().get().info(
-            '===================================================================================================='
-        )
-        Log().get().info('[' + self._section + '] ' + 'source: ' + in_name)
+        header = '============================================================'
+        header = header[:1] + ' ' + file_name + ' ' + header[len(file_name) +
+                                                             2:]
+
+        Log().get().info(header)
         Log().get().info('[' + self._section + '] ' + 'mkdir ' + cur_workdir)
+        Log().get().info('[' + self._section + '] ' + 'cp ' + in_name + ' ' +
+                         cur_workdir)
 
         return file_name
 
@@ -86,9 +92,6 @@ class SetupJob(Job):
         if self._analyze() < 0:
             Log().get().debug("[" + self._section + "] skip section")
             return in_name
-
-        # start section
-        Log().get().debug("[" + self._section + "] start section")
 
         # update predefined environment variable
         try:
@@ -115,19 +118,16 @@ class SetupJob(Job):
                 out_name = self._process_workdir(value, in_name)
 
         # set the mandatory section
-        Log().get().debug("[" + self._section + "] set mandatory section")
         sections = self._profile.sections()
         if "deploy" in sections:
             for section in reversed(sections):
                 if section.startswith('deploy') is False:
-                    Log().get().debug('mandatory section: ' + section)
+                    Log().get().debug('[' + self._section +
+                                      '] mandatory section: ' + section)
                     Context().set_mandatory_section(section)
                     break
 
         # set section as completed
         Context().set_section_complete(self._section)
-
-        # end section
-        Log().get().debug("[" + self._section + "] end section")
 
         return out_name

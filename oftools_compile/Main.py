@@ -127,7 +127,6 @@ class Main:
         Log().get().debug('sections: ' + str(profile.sections()))
 
         # build source list
-        Log().get().debug('arg recursive: ' + str(args.recursive))
         if args.recursive:
             directory = os.path.expandvars(args.source)
 
@@ -141,6 +140,8 @@ class Main:
                                                                     f)))
         else:
             source_list = [args.source]
+
+        source_list.sort()
 
         # run jobs through sources
         report_generator = ReportGenerator()

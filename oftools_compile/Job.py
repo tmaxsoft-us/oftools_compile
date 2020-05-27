@@ -24,12 +24,11 @@ class Job(object):
         self._profile = profile
 
     def _add_filter(self, key, value, in_name):
-        Log().get().debug('add_filter: [' + key + ',' +
-                          os.path.expandvars(value) + ']')
+        #Log().get().debug('add_filter: [' + key + ',' +
+        #                  os.path.expandvars(value) + ']')
 
         result = False
         shell_cmd = os.path.expandvars(value)
-        Log().get().debug(os.getcwd())
 
         env = Context().get_env()
         proc = subprocess.Popen([shell_cmd],
@@ -38,15 +37,15 @@ class Job(object):
                                 shell=True,
                                 env=env)
         out, err = proc.communicate()
-        Log().get().debug(err.decode('utf-8'))
-        Log().get().debug(out.decode('utf-8'))
-        Log().get().debug('filter rc = ' + str(proc.returncode))
+
+        if b'' != out:
+            Log().get().debug(err.decode('utf-8'))
+        if b'' != err:
+            Log().get().debug(out.decode('utf-8'))
 
         # grep returns 0 if line matches
         if proc.returncode == 0:
             result = True
-
-        Log().get().debug('add_filter_result: ' + key + '/' + str(result))
 
         Context().add_filter_result(key, result)
 

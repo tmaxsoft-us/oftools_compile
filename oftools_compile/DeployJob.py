@@ -36,8 +36,9 @@ class DeployJob(Job):
 
         # evaluate filter to decide whether this section should run or not
         if self._evaluate_filter(self._section, in_name) is False:
-            Log().get().debug('filter is False. skipping [' + self._section +
-                              '] section.')
+            Log().get().debug('[' + self._section + '] ' +
+                              self._resolve_section_filter(self._section) +
+                              ' is False. skipping section.')
             return -1
 
         return 0
@@ -49,7 +50,11 @@ class DeployJob(Job):
 
         regions = self._profile.get(self._section, 'region').split(':')
         for region in regions:
-            shell_cmd = 'osctdlupdate'
+            shell_cmd = 'cp ' + out_name + ' ' + os.path.join(
+                '$OPENFRAME_HOME/osc/region',
+                os.path.expandvars(region) + '/tdl/mod')
+            shell_cmd += '; '
+            shell_cmd += 'osctdlupdate'
             shell_cmd += ' ' + region
             shell_cmd += ' ' + self._resolve_base_name(out_name)
 
@@ -131,12 +136,13 @@ class DeployJob(Job):
             out_name = out_name.replace("$OF_COMPILE_BASE",
                                         self._resolve_base_name(in_name))
 
-            Log().get().info('[' + self._section + '] ' + 'rename ' + in_name +
+            Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
                              ' ' + out_name)
-            shutil.move(in_name, out_name)
+            shutil.copy(in_name, out_name)
 
         except:
-            Log().get().error('failed to rename')
+            Log().get().error('[' + self._section + '] failed to copy ' +
+                              in_name)
             exit(-1)
 
         return out_name
@@ -144,7 +150,6 @@ class DeployJob(Job):
     def run(self, in_name):
         # analyze section
         if self._analyze(in_name) < 0:
-            Log().get().debug("[" + self._section + "] skip section")
             return in_name
 
         # start section

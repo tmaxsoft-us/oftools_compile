@@ -34,8 +34,9 @@ class CompileJob(Job):
 
         # evaluate filter to decide whether this section should run or not
         if self._evaluate_filter(self._section, in_name) is False:
-            Log().get().debug('filter is False. skipping [' + self._section +
-                              '] section.')
+            Log().get().debug('[' + self._section + '] ' +
+                              self._resolve_section_filter(self._section) +
+                              ' is False. skipping section.')
             return -1
 
         return 0
@@ -53,8 +54,6 @@ class CompileJob(Job):
         shell_cmd = self._resolve_section_base(self._section) + " "
         shell_cmd += option
         shell_cmd = os.path.expandvars(shell_cmd)
-
-        Log().get().debug(shell_cmd)
 
         # run command
         #Log().get().info("shell_cmd: " + shell_cmd)
@@ -78,7 +77,6 @@ class CompileJob(Job):
     def run(self, in_name):
         # analyze section
         if self._analyze(in_name) < 0:
-            Log().get().debug("[" + self._section + "] skip section")
             return in_name
 
         # start section

@@ -105,7 +105,6 @@ class Context(metaclass=SingletonMeta):
 
     def add_filter_result(self, key, value):
         self._filter_dict[key] = value
-        Log().get().debug('add_filter_result: ' + key + '/' + str(value))
 
     def get_filter_result(self, key):
         result = False
@@ -115,9 +114,6 @@ class Context(metaclass=SingletonMeta):
 
         if key in self._filter_dict:
             result = self._filter_dict[key]
-
-        Log().get().debug(
-            ('get_filter_result: ' + key + '/' + str(self._filter_dict[key])))
 
         return result
 
