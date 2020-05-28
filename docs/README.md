@@ -1,4 +1,4 @@
-# OpenFrame Tools Compile User Guide <!-- omit in toc -->
+# oftools_compile User Guide <!-- omit in toc -->
 
 ## Table of Contents <!-- omit in toc -->
 
