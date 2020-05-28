@@ -136,9 +136,10 @@ class DeployJob(Job):
             out_name = out_name.replace("$OF_COMPILE_BASE",
                                         self._resolve_base_name(in_name))
 
-            Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
-                             ' ' + out_name)
-            shutil.copy(in_name, out_name)
+            if in_name != out_name:
+                Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
+                                 ' ' + out_name)
+                shutil.copy(in_name, out_name)
 
         except:
             Log().get().error('[' + self._section + '] failed to copy ' +
