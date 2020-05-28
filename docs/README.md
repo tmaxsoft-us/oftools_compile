@@ -19,7 +19,7 @@
 
 ## 1. Overview
 
-OpenFrame Tools Compile or oftools_compile is a general purpose build tool that is flexible to support multiple compilers used in OpenFrame environment.  
+OpenFrame Tools Compile or oftools_compile is a general purpose build tool that is designed to be flexible to support compilers and tools available in OpenFrame environment.  
 The diagram below shows an overview of the oftools_compile.  
 
 ![alt-text](./reference_images/overview.png)
@@ -36,7 +36,7 @@ optional arguments:
   -p PROFILE, --profile PROFILE     profile which contains description of the compilation target.
   -s SOURCE,  --source SOURCE       name of the source which must be a file. (Or a directory if using the -r option)
   -r,         --recursive           activate recursive compilation (used when passing a directory)
-  -e,         --export              export the csv formatted report file.
+  -e,         --export              generate the csv formatted report file.
   -l LOG,     --log LOG             set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL)
                                         DEBUG    - Show developer debug messages and higher
                                         INFO     - Show only information and higher
@@ -47,8 +47,7 @@ optional arguments:
 
 ## 3. Profile
 
-The profile is a manifest on how the build process should be executed.  
-It consists of three different type of section area which are setup section area, execute section area, and deploy section area.  
+The profile is a manifest on how the build process should be executed. It consists of three different type of section area which are setup section area, execute section area, and deploy section area.  
 Each section area consists of one or more sections and each section requires dedicated options to be defined.  Note that a section can be defined by a string surrounded by \[ \] and does not allow duplicated names.  
 The environment variables and the filter variables are allowed to be defined in any of sections in the profile.
 
@@ -56,55 +55,77 @@ The environment variables and the filter variables are allowed to be defined in 
 
 ### 3.1 Setup section area
 
-The setup section area only allows to define a 'setup' section.  A mandatory option that you need to define is the 'workdir' option.  
-The 'workdir' option is a full path to the working directory which oftools_compile uses during the build process.  
-For example, the source code gets copied over to 'workdir' and intermideate files gets created in the same directory. Also, the log files and report files also gets placed into the working directory.  
+The setup section area only allows to define one ```[setup]``` section.  In the ```[setup]``` section, the 'workdir' option must be defined.  
+The 'workdir' option is a full path to the working directory which oftools_compile uses during the entire build process.  
 
 ### 3.2 Execute section area
 
-The execute section area is for the sections that executes external compilers and tools to build a program.  
-The name of a section is mapped to the linux command to be executed appended by the 'option' defined.  
-For instance, if you define a section named \[ofcbpp\], and define 'option' as "-i $OF_COMPILE_IN -o $OF_COMPILE_OUT", then the command "ofcbpp -i $OF_COMPILE_IN $OF_COMPILE_OUT" will be executed.  Sections in the execute section area must define a 'option'.
-
-Also, This section allows to use filter variable appended to the section name. The filter variables let's you conditionally execute the section when the condition is met.  
-Each compile section must define a 'option' which is used as a compile options 
-
-Each section have it's own mandatory options to declare and for 
+The execute section area is for the sections that executes compilers and tools to build a program.  
+Unlike setup section area, this section area allows you to define multiple sections.  
+For each section, the name of the section is directly mapped to a Linux command and the value of the 'option' appended to the command while the execution of the Linux command.  
+For instance, if you define a section as ```[ofcbpp]```, with 'option' defined as "-i $OF_COMPILE_IN -o $OF_COMPILE_OUT", then the Linux command "ofcbpp -i $OF_COMPILE_IN $OF_COMPILE_OUT" will be executed.
+Also, This section allows to use filter variable appended to the section name to allow execute the section conditionally.  
 
 ### 3.3 Deploy section area
 
+The deploy section area is for defining how the compiled program gets deployed into different type of destination.  
+This section area only allows you to define ```[deploy]``` section only, but still you can append filter variables to the section name if needed.  
+In deploy section, there are four different type of options that you can define.
+
+1. file
+    - Specify the file name that needs to be deployed.
+    - Internally, the $OF_COMPILE_IN will be copied into the file name specified.
+2. dataset
+    - Name of the target dataset that the file needs to be deployed to.
+    - Internally, it will trigger 'dlupdate' command to deploy the file to the dataset.
+3. tdl
+    - Name of the tdl library path which the file needs to be deployed to.
+    - Internally, it will trigger 'tdlupdate' command to deploy the file to the tdl library.
+4. region
+    - Name of the osc region name which the file needs to be deployed to.
+    - Internally, it will trigger 'osctdlupdate' command to deploy the file to the osc tdl library.
+  
 ### 3.4 Environment variable
 
-The environment variable can be defined by adding '$' in the front of the name of the option.
-This environment variable is equivalent to the one that is being used in the Linux system.  
-Also, there are pre-defined environment variables which are $OF_COMPILE_IN, $OF_COMPILE_OUT, and $OF_COMPILE_BASE.
+The environment variable can be defined by adding '$' as a prefix to the name of a option.
+This environment variable is equivalent to the environment variable that is being used in the Linux system.  
+There are pre-defined environment variables that oftools_compile uses which are ```$OF_COMPILE_IN```, ```$OF_COMPILE_OUT```, and ```$OF_COMPILE_BASE```.
 
 1. $OF_COMPILE_IN
     - Holds the input file name on given section.
-    - This value gets automatically updated by previous section's $OF_COMPILE_OUT value at the time when given section gets initialized.
-    - This can be override by defining $OF_COMPILE_IN in the given section.
+    - This value gets automatically updated by previous section's ```$OF_COMPILE_OUT``` value at the time when given section gets initialized.
+    - This can be override by defining ```$OF_COMPILE_IN``` in the given section.
 2. $OF_COMPILE_OUT
     - Holds the output file name on given section.
-    - This value gets automatically updated by replacing extension of $OF_COMPILE_IN to current sections name at the time when given section gets initialized.
-    - This can be override by defining $OF_COMPILE_IN in the given section.
+    - This value gets automatically updated by replacing extension of ```$OF_COMPILE_IN``` to current sections name at the time when given section gets initialized.
+    - This can be override by defining ```$OF_COMPILE_IN``` in the given section.
 3. $OF_COMPILE_BASE
     - Holds the $OF_COMPILE_IN value without extension.
-    - This value gets automatically updated by removing extension of $OF_COMPILE_IN at the time when given section gets initialized.
-    - This can be override by defining $OF_COMPILE_BASE in the given section.
+    - This value gets automatically updated by removing extension of ```$OF_COMPILE_IN``` at the time when given section gets initialized.
+    - This can be override by defining ```$OF_COMPILE_BASE``` in the given section.
 
 ### 3.5 Filter variable
 
-The filter variable can be defined by adding '?' in the front of the name of the option.
-It is used to execute sections conditionally by adding the filter variable next to the section name.  
-Base on the result of the filter variable, sections can be executed conditionally.  Note that only one section will be executed no matter how many sections are 
-
-  gets resolved on the time when it is defined.  
+The filter variable can be defined by adding '?' as a prefix to the name of a option.
+The main purpose of this variable is to execute sections conditionally based on the result of the filter variable.
+For example, when you append a filter variable to a section name, the given section will be executed only if the filter variable is true or have return code as zero.
+Note that when you define multiple sections with the same name but have different filter variable appended, only one of them will be executed during the build process.  
+For instance, if there are sections defined ```[ofcob?sql]```, ```[ofcob?rw]```, ```[ofcob]``` and only ?rw filter variable is true, then the section ```[ofcob?rw]``` will be executed while [ofcob?sql] and [ofcob] gets ignored.  
 
 ## 4. Outputs
 
 ### 4.1 Work Directory
 
-As mentioned in the [Example Profile Breakdown Section](#122-example-profile-breakdown), the workdir variable is set to /opt/tmaxapp/compile which is where the log files, report csv file, and temporary files will be stored. If we go into this directory, you can see the program names which have been compiled, the date, and time of which they have been compiled in the following format: ```PROGRAM_YYYYMMDD_HHMMSS```
+The workdir option is set to a working directory where the log, report, and intermediate files gets stored.  
+There is two different types of directory inside the workdir.
+
+1. report
+    - The report file formatted as csv is located in this folder.
+    - Each report file have a time stamp in the file name to tell us when the file got created. 
+2. file name with the time stamp
+    - For each compiling source, a dedicated folder is created as ```PROGRAMNAME_YYYYMMDD_HHMMSS```.
+    - In this folder, you can see the oftools_compile.log file that describes what sections and commands were been executed.
+    - Also, you may see intermediate files here if they got generated during the execution of sections.
 
 Here is an example of the working directory created for the compilation of the TMAXKRC3 program would look like.
 
@@ -116,29 +137,17 @@ The log file stores information about what commands were executed. Here's a snip
 
 ![alt-text](./reference_images/oftools_compile_log.png)
 
-In the log file, you will see that I searched for tbpcb, and you can see all of the commands that were run relating to tbpcb. First, we get some information from the profile which is displayed in the DEBUG log mode. Next, we see that the command is run:
+In the log file, you will see a string with a section appeded to the actual command that has been executed.
+For instance, in tbpcb section, and you can see the actual command that has been executed for tbpcb.
 
 ```
 [tbpcb] tbpcb INAME=TMAXKRC3.ofcbpp ONAME=TMAXKRC3.cob
 ```
 
-Lastly, we apply a new filter variable for the next step
-
-```
-add_filter: [$?sqlca,grep -av '^......\*' TMAXKRC3.cob | grep -a '01.* SQLCA ']
-```
-
-This filter returns a return code of 1 which we see from the line that states:
-
-```
-filter rc = 1
-```
-
-Then, the filter result is flagged as false, and the step ends.
-
 ### 4.3 Report File
 
-The Report file is formatted as csv or a comma delimitted file that displays: The name of the source code (fully qualified path), The directory for the listing files, the last section executed, whether the last section executed was successful or not, and the amount of time it took to complete compilation.
+The Report file is formatted as csv or a comma separated file that displays: The name of the source code (fully qualified path), The directory for the listing files, the last section executed, whether the last section executed was successful or not, and the amount of time it took to complete compilation.
+By utilizing this file, you will be able to understand what program has failed and in which step it failed.
 
 Here's an example:
 
@@ -192,26 +201,11 @@ file    = $OF_COMPILE_BASE.so
 dataset = SYS1.USERLIB
 ```
 
-The first section we have listed is the _setup_ section. In the _setup_ section, we set some variables for the script. The first variable we declare is the workdir which is the root directory for the log files and temporary files will be housed. 
+The first section we have listed is the ```[setup]``` section. In the ```[setup]``` section we first define the 'workdir' option which is the path to the working directory.  
+Next, environment variables for the script are declared and denoted with a ```$```. This way, ```$SYSVOL``` can be referenced again in the ```$DB2INCLUDE``` variable as well as the ```$OFCOBCPY``` variable.  
+In addition, we apply some filter variables. These are grep commands that will be executed before a section is executed.
+If the grep command receives a match, the return code will be set to 0 which will trigger the section.
+In other words, for the ```[ofcbpp]``` section, if a match is found with 'REPORT' and 'SECTION', then we need to enable the report writer option ```(--enable-rw)``` which is why the ```[ofcbpp?rw]``` has the ```--enable-rw``` option while the normal _ofcbpp_ section does not.
+If there is no match, the default section will be executed without the filter variable. 
 
-Next, environment variables for the script are declared and denoted with a ```$```. This way, $SYSVOL can be referenced again in the ```$DB2INCLUDE``` variable as well as the ```$OFCOBCPY``` variable. 
-
-In addition, we apply some filter variables. These are grep commands that will be executed before a section is executed. If the grep command receives a match, the return code will be set to 0 which will trigger the section. In other words, for the _ofcbpp_ section, if a match is found with 'REPORT' and 'SECTION', then we need to enable the report writer option ```(--enable-rw)``` which is why the _ofcbpp?rw_ has the ```--enable-rw``` option, and the normal _ofcbpp_ section does not. If there is no match, the default section will be executed without the filter variable. 
-
-To understand the explicit naming of the files using the variables _$OF\_COMPILE\_IN_ and _$OF\_COMPILE\_BASE_, know that the precompiler tools will append extensions onto the files so that they are ready for the next step.
-
-The output of the _ofcbpp_ command is a .ofcbpp file.
-The output of the _tbpcb_ command is a .cob file.
-The output of the _ofcob_ command is a .so file.
-
-If we want to rename our files, we can modify them using the following variables:
-
-```
-[tbpcb]
-
-|TYPE|VARIABLE|EXAMPLE|
-|BASE|$OF_COMPILE_BASE|PROGRAM1|
-|INPUT|$OF_COMPILE_IN|PROGRAM1.ofcbpp|
-|OUTPUT|$OF_COMPILE_OUT|PROGRAM1.cob|
-```
-
+To set the explicit name of the files, the variables ```$OF_COMPILE_IN``` and ```$OF_COMPILE_BASE``` is defined in the sections. If you do not define those environment variables, those will be implicitly defined as described in 3.4 Environment variable.
