@@ -18,5 +18,10 @@ remove:
 yapf:
 	yapf3 --style='{ based_on_style: google }' *.py -ir
 
+html:
+	mkdir -p build
+	cp docs/README.md build/README.md
+	grip build/README.md --title=oftools_compile --export
+
 test:
 	pytest -s -v
