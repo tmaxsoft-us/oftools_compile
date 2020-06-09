@@ -35,7 +35,7 @@ class CompileJob(Job):
         # evaluate filter to decide whether this section should run or not
         if self._evaluate_filter(self._section, in_name) is False:
             Log().get().debug('[' + self._section + '] ' +
-                              self._resolve_section_filter(self._section) +
+                              self._resolve_filter_name(self._section) +
                               ' is False. skipping section.')
             return -1
 
@@ -51,7 +51,7 @@ class CompileJob(Job):
                                 ' section.')
 
         # build command
-        shell_cmd = self._resolve_section_base(self._section) + " "
+        shell_cmd = self._remove_filter_name(self._section) + " "
         shell_cmd += option
         shell_cmd = os.path.expandvars(shell_cmd)
 
@@ -83,8 +83,8 @@ class CompileJob(Job):
         Log().get().debug("[" + self._section + "] start section")
 
         # update predefined environment variable
-        base_name = self._resolve_base_name(in_name)
-        out_name = base_name + '.' + self._section
+        base_name = self._remove_extension_name(in_name)
+        out_name = base_name + '.' + self._remove_filter_name(self._section)
         Context().add_env('$OF_COMPILE_IN', in_name)
         Context().add_env('$OF_COMPILE_OUT', out_name)
         Context().add_env('$OF_COMPILE_BASE', base_name)
@@ -106,7 +106,7 @@ class CompileJob(Job):
                     out_name = in_name
 
         # set section as completed
-        Context().set_section_complete(self._section)
+        Context().set_section_complete(self._remove_filter_name(self._section))
 
         # end section
         Log().get().debug("[" + self._section + "] end section")

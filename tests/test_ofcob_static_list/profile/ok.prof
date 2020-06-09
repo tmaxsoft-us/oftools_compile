@@ -1,8 +1,12 @@
 [setup]
 workdir   = /opt/tmaxapp/compile
+
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybookjwhan
+$SOURCE1  = add01.cob add02.cob
+
 ?sql      = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'SQL'
 ?online   = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'CICS'
+?source1  = echo $SOURCE1 | grep $OF_COMPILE_BASE
 
 [ofcob?sql]
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook2
@@ -10,6 +14,9 @@ option    = -x -o $OF_COMPILE_OUT $OF_COMPILE_IN
 
 [ofcob?online]
 option    = -g -x -o $OF_COMPILE_OUT $OF_COMPILE_IN
+
+[ofcob?source1]
+option    = -x -g -o $OF_COMPILE_OUT $OF_COMPILE_IN
 
 [ofcob]
 option    = -x -o $OF_COMPILE_OUT $OF_COMPILE_IN
@@ -22,6 +29,4 @@ dataset   = SYS1.USERLIB:SYS1.TEMPLIB
 
 [deploy]
 file      = $OF_COMPILE_BASE.so
-dataset  = SYS1.USERLIB
-#region    = OSCOIVP1
-#tdl      = $TMAXDIR
+dataset   = SYS1.USERLIB

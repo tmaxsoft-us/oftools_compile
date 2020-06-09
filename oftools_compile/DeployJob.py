@@ -37,7 +37,7 @@ class DeployJob(Job):
         # evaluate filter to decide whether this section should run or not
         if self._evaluate_filter(self._section, in_name) is False:
             Log().get().debug('[' + self._section + '] ' +
-                              self._resolve_section_filter(self._section) +
+                              self._resolve_filter_name(self._section) +
                               ' is False. skipping section.')
             return -1
 
@@ -56,7 +56,7 @@ class DeployJob(Job):
             shell_cmd += '; '
             shell_cmd += 'osctdlupdate'
             shell_cmd += ' ' + region
-            shell_cmd += ' ' + self._resolve_base_name(out_name)
+            shell_cmd += ' ' + self._remove_extension_name(out_name)
 
             Log().get().info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
@@ -83,7 +83,7 @@ class DeployJob(Job):
                 os.path.expandvars(tdl) + '/tdl/mod')
             shell_cmd += '; '
             shell_cmd += 'tdlupdate'
-            shell_cmd += ' -m ' + self._resolve_base_name(out_name)
+            shell_cmd += ' -m ' + self._remove_extension_name(out_name)
             shell_cmd += ' -r ' + os.path.join(
                 os.path.expandvars(tdl) + '/tdl/mod')
 
@@ -134,7 +134,7 @@ class DeployJob(Job):
         try:
             out_name = self._profile.get(self._section, 'file')
             out_name = out_name.replace("$OF_COMPILE_BASE",
-                                        self._resolve_base_name(in_name))
+                                        self._remove_extension_name(in_name))
 
             if in_name != out_name:
                 Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
@@ -157,8 +157,8 @@ class DeployJob(Job):
         Log().get().debug("[" + self._section + "] start section")
 
         # update predefined environment variable
-        base_name = self._resolve_base_name(in_name)
-        out_name = base_name + '.' + self._section
+        base_name = self._remove_extension_name(in_name)
+        out_name = base_name + '.' + self._remove_filter_name(self._section)
         Context().add_env('$OF_COMPILE_IN', in_name)
         Context().add_env('$OF_COMPILE_OUT', out_name)
         Context().add_env('$OF_COMPILE_BASE', base_name)
@@ -177,7 +177,7 @@ class DeployJob(Job):
         self._process_region(out_name)
 
         # set section as completed
-        Context().set_section_complete(self._section)
+        Context().set_section_complete(self._remove_filter_name(self._section))
 
         # end section
         Log().get().debug("[" + self._section + "] end section")

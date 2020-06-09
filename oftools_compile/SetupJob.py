@@ -99,7 +99,7 @@ class SetupJob(Job):
             out_name = in_name.rsplit('/', 1)[1]
         except:
             out_name = in_name
-        base_name = self._resolve_base_name(out_name)
+        base_name = self._remove_extension_name(out_name)
         Context().add_env('$OF_COMPILE_IN', out_name)
         Context().add_env('$OF_COMPILE_OUT', out_name)
         Context().add_env('$OF_COMPILE_BASE', base_name)
@@ -129,6 +129,6 @@ class SetupJob(Job):
                     break
 
         # set section as completed
-        Context().set_section_complete(self._section)
+        Context().set_section_complete(self._remove_filter_name(self._section))
 
         return out_name

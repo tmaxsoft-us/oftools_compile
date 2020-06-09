@@ -11,11 +11,10 @@ from oftools_compile.Main import Main
 def test_ofcob_recursive():
     pwd = os.getcwd() + '/tests/test_ofcob_recursive'
     sys.argv = [sys.argv[0]]
-    sys.argv.append('-l')
-    sys.argv.append('DEBUG')
     sys.argv.append('-p')
     sys.argv.append(pwd + '/profile/ok.prof')
     sys.argv.append('-s')
     sys.argv.append(pwd + '/source')
+    sys.argv.append('-r')
 
     return Main().run()

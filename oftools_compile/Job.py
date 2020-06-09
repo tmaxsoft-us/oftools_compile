@@ -56,10 +56,10 @@ class Job(object):
         result = Context().get_filter_result(section)
         return result
 
-    def _resolve_base_name(self, in_name):
+    def _remove_extension_name(self, in_name):
         return in_name.rsplit('.', 1)[0]
 
-    def _resolve_section_base(self, section):
+    def _remove_filter_name(self, section):
 
         index = section.find('?')
         if index > 0:
@@ -67,7 +67,7 @@ class Job(object):
 
         return section
 
-    def _resolve_section_filter(self, section):
+    def _resolve_filter_name(self, section):
 
         index = section.find('?')
         if index > 0:

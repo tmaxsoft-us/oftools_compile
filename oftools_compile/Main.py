@@ -25,6 +25,10 @@ from .Context import Context
 from .ReportGenerator import ReportGenerator
 
 
+def main():
+    return Main().run()
+
+
 class Main:
 
     def __init__(self):
@@ -182,8 +186,7 @@ class Main:
             if rc < 0:
                 success = 'N'
 
-            last_section = last_job._resolve_section_base(
-                last_job.get_section())
+            last_section = last_job._remove_filter_name(last_job.get_section())
             if last_section.startswith('deploy'):
                 if Context().is_mandatory_complete() is not True:
                     last_section = Context().get_mandatory_section()
@@ -193,5 +196,9 @@ class Main:
                                  success, unit_time)
 
         report_generator.generate(args.export)
+
+        # need to clear context to run pytest
+        Log().clear()
+        Context().clear()
 
         return rc

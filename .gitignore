@@ -5,3 +5,11 @@ __pycache__/
 *.egg-info/
 .vscode/
 .pytest_cache/
+
+*.coverage
+*.swp
+*.html
+*.pdf
+*.pyc
+AUTHORS
+ChangeLog

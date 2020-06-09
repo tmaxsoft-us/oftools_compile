@@ -1,11 +1,3 @@
 # Openframe Tools - Compiler
 
-Compiler frontend module for Openframe
-
-I. Notes for developers
-
-* export below and run oftools-compile in root of the git project to pickup local libs  
-
-```bash
-export PYTHONPATH=./:$PYTHONPATH  
-```
+A general purpose build tool that is designed to be flexible to support compilers and tools available in the OpenFrame environment.
