@@ -7,6 +7,7 @@ Description more in details.
 # Generic/Built-in modules
 import os
 import shutil
+import time
 from datetime import datetime
 
 # Third-party modules
@@ -58,8 +59,18 @@ class SetupJob(Job):
                                    file_name + Context().get_time_stamp())
 
         # create_workdir
-        if not os.path.isdir(cur_workdir):
-            os.mkdir(cur_workdir)
+        while True:
+            if not os.path.isdir(cur_workdir):
+                os.mkdir(cur_workdir)
+                break
+
+            Log().get().warning(
+                cur_workdir +
+                ' already exists. sleep 1 second to assign a new time stamp')
+            time.sleep(1)
+            Context().set_time_stamp()
+            cur_workdir = os.path.join(workdir,
+                                       file_name + Context().get_time_stamp())
 
         # create_reportdir
         report_workdir = os.path.join(workdir, 'report')

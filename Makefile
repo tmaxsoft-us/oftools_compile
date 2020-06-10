@@ -3,7 +3,7 @@ init:
 
 uninstall:
 	pip3 uninstall oftools-compile
-	rm dist build oftools_compile.egg-info .pytest_cache -r
+	rm dist build oftools_compile.egg-info -r
 
 install:
 	python3 setup.py sdist bdist_wheel

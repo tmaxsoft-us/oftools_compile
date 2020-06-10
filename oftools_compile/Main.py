@@ -14,6 +14,8 @@ from configparser import ConfigParser
 from collections import OrderedDict
 
 # Third-party modules
+from pbr.version import VersionInfo
+from pbr.git import get_git_short_sha
 
 # Owned modules
 from .JobFactory import JobFactory
@@ -60,24 +62,33 @@ class Main:
         arg_parser.add_argument(
             '-p',
             '--profile',
+            action='append',
             help='profile which contains description of the compilation target.',
-            required=True)
+            required=False)
 
         arg_parser.add_argument('-s',
                                 '--source',
+                                action='append',
                                 help='name of the source which must be a file.',
-                                required=True)
-
-        arg_parser.add_argument('-r',
-                                '--recursive',
-                                action='store_true',
-                                help='activate recursive compilation.',
                                 required=False)
+
+        arg_parser.add_argument(
+            '-r',
+            '--recursive',
+            action='store_true',
+            help='[DEPRECATED][IGNORED] activate recursive compilation.',
+            required=False)
 
         arg_parser.add_argument('-e',
                                 '--export',
                                 action='store_true',
                                 help='export the csv formatted report file.',
+                                required=False)
+
+        arg_parser.add_argument('-v',
+                                '--version',
+                                action='store_true',
+                                help='print version information.',
                                 required=False)
 
         arg_parser.add_argument(
@@ -90,49 +101,49 @@ class Main:
         args = arg_parser.parse_args()
 
         # analyze parsing result
-        if os.path.isfile(os.path.expandvars(args.profile)) is False:
-            Log().get().critical('cannot access profile: ' + args.profile)
+        if args.version is True:
+            return args
+
+        if args.profile is None:
+            Log().get().critical('-p or --profile option is not specified')
             exit(-1)
 
-        if os.path.exists(os.path.expandvars(args.source)) is False:
-            Log().get().critical('cannot access source: ' + args.source)
+        if args.source is None:
+            Log().get().critical('-s or --source option is not specified')
             exit(-1)
 
-        if args.recursive:
-            if os.path.isfile(os.path.expandvars(args.source)) is True:
-                Log().get().critical(
-                    'only directory is allowed when -r or --recursive is used')
+        if len(args.profile) != len(args.source):
+            Log().get().critical(
+                'the number of profile and source pairs does not match. profile='
+                + str(len(args.profile)) + ',source=' + str(len(args.source)))
+            exit(-1)
+
+        for profile in args.profile:
+            if os.path.isfile(os.path.expandvars(profile)) is False:
+                Log().get().critical('cannot access profile: ' + profile)
                 exit(-1)
-        else:
-            if os.path.isfile(os.path.expandvars(args.source)) is False:
-                Log().get().critical(
-                    'source is a directory. please use -r or --recursive if the source is a directory'
-                )
+
+        for source in args.source:
+            if os.path.exists(os.path.expandvars(source)) is False:
+                Log().get().critical('cannot access source: ' + source)
                 exit(-1)
 
         return args
 
-    def run(self):
-        # initialize
-        rc = 0
+    def _run_internal(self, profile, source, report_generator):
+
         source_list = []
 
-        # parse inline command
-        args = self._parse_arg()
-
-        # set log level
-        Log().set_level(args.log)
-
         # read profile
-        profile = ConfigParser(dict_type=OrderedDict)
-        profile.optionxform = str
-        profile.read(os.path.expandvars(args.profile))
+        profile_parser = ConfigParser(dict_type=OrderedDict)
+        profile_parser.optionxform = str
+        profile_parser.read(os.path.expandvars(profile))
 
-        Log().get().debug('sections: ' + str(profile.sections()))
+        Log().get().debug('profile path = ' + os.path.expandvars(profile))
 
         # build source list
-        if args.recursive:
-            directory = os.path.expandvars(args.source)
+        if os.path.isdir(source):
+            directory = os.path.expandvars(source)
 
             for dirpath, _, filenames in os.walk(directory):
                 if dirpath.startswith('.'):
@@ -143,12 +154,9 @@ class Main:
                     source_list.append(os.path.abspath(os.path.join(dirpath,
                                                                     f)))
         else:
-            source_list = [args.source]
+            source_list = [source]
 
         source_list.sort()
-
-        # run jobs through sources
-        report_generator = ReportGenerator()
 
         last_job = None
         for source in source_list:
@@ -158,7 +166,7 @@ class Main:
 
             in_name = ""
             out_name = source
-            jobs = self._create_jobs(profile)
+            jobs = self._create_jobs(profile_parser)
 
             for job in jobs:
                 last_job = job
@@ -194,6 +202,36 @@ class Main:
             report_generator.add(source,
                                  Context().get_cur_workdir(), last_section,
                                  success, unit_time)
+
+        return rc
+
+    def run(self):
+        # initialize
+        rc = 0
+
+        # parse inline command
+        args = self._parse_arg()
+
+        if args.version is True:
+            version = 'oftools-compile '
+            version += VersionInfo('oftools-compile').version_string()
+            version += ' (ID:' + get_git_short_sha() + ')'
+            print(version)
+            return 0
+
+        # set log level
+        Log().set_level(args.log)
+
+        # run jobs through sources
+        report_generator = ReportGenerator()
+
+        for i in range(len(args.source)):
+            Log().clear()
+            Context().clear()
+            rc = self._run_internal(args.profile[i], args.source[i],
+                                    report_generator)
+            if rc is not 0:
+                break
 
         report_generator.generate(args.export)
 
