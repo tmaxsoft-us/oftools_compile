@@ -65,7 +65,7 @@ class ReportGenerator(object):
 
         return
 
-    def generate(self, export):
+    def generate(self):
 
         results = []
         results.append("source,list_dir,section,success,time")
@@ -82,17 +82,17 @@ class ReportGenerator(object):
         for record in self._records:
             results.append(record.to_csv())
 
-        if export is True:
-            file_name = 'report/oftools_compile' + Context().get_const_tag(
-            ) + Context().get_time_stamp() + '.csv'
-            file_name = os.path.expandvars(
-                os.path.join(Context().get_root_workdir(), file_name))
+        # export the report file
+        file_name = 'report/oftools_compile' + Context().get_const_tag(
+        ) + Context().get_time_stamp() + '.csv'
+        file_name = os.path.expandvars(
+            os.path.join(Context().get_root_workdir(), file_name))
 
-            with open(file_name, 'w') as f:
-                for result in results:
-                    f.write("%s\n" % result)
-            f.close()
+        with open(file_name, 'w') as f:
+            for result in results:
+                f.write("%s\n" % result)
+        f.close()
 
-            Log().get().info('report has been exported: ' + file_name)
+        Log().get().info('csv report has been generated: ' + file_name)
 
         return

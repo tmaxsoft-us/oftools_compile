@@ -14,10 +14,9 @@ from configparser import ConfigParser
 from collections import OrderedDict
 
 # Third-party modules
-from pbr.version import VersionInfo
-from pbr.git import get_git_short_sha
 
 # Owned modules
+from . import __version__
 from .JobFactory import JobFactory
 from .CompileJob import CompileJob
 from .SetupJob import SetupJob
@@ -72,19 +71,6 @@ class Main:
                                 help='name of the source which must be a file.',
                                 required=False)
 
-        arg_parser.add_argument(
-            '-r',
-            '--recursive',
-            action='store_true',
-            help='[DEPRECATED][IGNORED] activate recursive compilation.',
-            required=False)
-
-        arg_parser.add_argument('-e',
-                                '--export',
-                                action='store_true',
-                                help='export the csv formatted report file.',
-                                required=False)
-
         arg_parser.add_argument('-v',
                                 '--version',
                                 action='store_true',
@@ -94,8 +80,7 @@ class Main:
         arg_parser.add_argument(
             '-t',
             '--tag',
-            help=
-            'tag the string to the name of the report file and the listing directory.',
+            help='add tag to the name of report file and the listing directory.',
             required=False)
 
         arg_parser.add_argument(
@@ -103,6 +88,16 @@ class Main:
             '--log',
             help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
             required=False)
+
+        # deprecated args
+        arg_parser.add_argument('-r',
+                                '--recursive',
+                                action='store_true',
+                                help=argparse.SUPPRESS)
+        arg_parser.add_argument('-e',
+                                '--export',
+                                action='store_true',
+                                help=argparse.SUPPRESS)
 
         # do the parsing
         args = arg_parser.parse_args()
@@ -220,9 +215,7 @@ class Main:
         args = self._parse_arg()
 
         if args.version is True:
-            version = 'oftools-compile '
-            version += VersionInfo('oftools-compile').version_string()
-            version += ' (ID:' + get_git_short_sha() + ')'
+            version = 'oftools-compile ' + __version__
             print(version)
             return 0
 
@@ -241,7 +234,7 @@ class Main:
             if rc is not 0:
                 break
 
-        report_generator.generate(args.export)
+        report_generator.generate()
 
         # need to clear context to run pytest
         Log().clear()
