@@ -92,6 +92,13 @@ class Main:
                                 required=False)
 
         arg_parser.add_argument(
+            '-t',
+            '--tag',
+            help=
+            'tag the string to the name of the report file and the listing directory.',
+            required=False)
+
+        arg_parser.add_argument(
             '-l',
             '--log',
             help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
@@ -223,6 +230,7 @@ class Main:
         Log().set_level(args.log)
 
         # run jobs through sources
+        Context().set_const_tag(args.tag)
         report_generator = ReportGenerator()
 
         for i in range(len(args.source)):

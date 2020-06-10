@@ -83,8 +83,8 @@ class ReportGenerator(object):
             results.append(record.to_csv())
 
         if export is True:
-            file_name = 'report/oftools_compile' + Context().get_time_stamp(
-            ) + '.csv'
+            file_name = 'report/oftools_compile' + Context().get_const_tag(
+            ) + Context().get_time_stamp() + '.csv'
             file_name = os.path.expandvars(
                 os.path.join(Context().get_root_workdir(), file_name))
 

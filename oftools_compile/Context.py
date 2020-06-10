@@ -40,6 +40,7 @@ class Context(metaclass=SingletonMeta):
     _cur_workdir = ""
     _root_workdir = ""
     _filter_dict = {}
+    _const_tag = ""
 
     _section_complete_dict = {}
 
@@ -116,6 +117,14 @@ class Context(metaclass=SingletonMeta):
             result = self._filter_dict[key]
 
         return result
+
+    def set_const_tag(self, tag):
+        """tag information should be erased"""
+        if tag is not None:
+            self._const_tag = "_" + tag
+
+    def get_const_tag(self):
+        return self._const_tag
 
     def clear(self):
         self._env = self._init_env

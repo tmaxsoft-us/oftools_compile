@@ -55,8 +55,9 @@ class SetupJob(Job):
         except:
             file_name = in_name
 
-        cur_workdir = os.path.join(workdir,
-                                   file_name + Context().get_time_stamp())
+        cur_workdir = os.path.join(
+            workdir,
+            file_name + Context().get_const_tag() + Context().get_time_stamp())
 
         # create_workdir
         while True:
@@ -69,8 +70,9 @@ class SetupJob(Job):
                 ' already exists. sleep 1 second to assign a new time stamp')
             time.sleep(1)
             Context().set_time_stamp()
-            cur_workdir = os.path.join(workdir,
-                                       file_name + Context().get_time_stamp())
+            cur_workdir = os.path.join(
+                workdir, file_name + Context().get_const_tag() +
+                Context().get_time_stamp())
 
         # create_reportdir
         report_workdir = os.path.join(workdir, 'report')
