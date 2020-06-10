@@ -6,7 +6,7 @@ $SOURCE1  = add01.cob add02.cob
 
 ?sql      = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'SQL'
 ?online   = grep -av '^......\*' $OF_COMPILE_IN | grep -a 'EXEC' | grep -a 'CICS'
-?source1  = echo $SOURCE1 | grep $OF_COMPILE_BASE
+?source1  = echo $SOURCE1 | grep -w $OF_COMPILE_BASE
 
 [ofcob?sql]
 $OFCOBCPY = $OFCOBCPY:/opt/tmaxapp/copybook2
