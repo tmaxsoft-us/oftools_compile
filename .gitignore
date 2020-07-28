@@ -6,7 +6,6 @@ __pycache__/
 .vscode/
 .pytest_cache/
 .eggs/
-
 *.coverage
 *.swp
 *.html

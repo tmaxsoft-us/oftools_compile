@@ -10,7 +10,10 @@ install:
 	pip3 install dist/*.tar.gz --user
 
 upload:
-	python3 setup.py sdist upload -r master
+	python3 setup.py sdist upload -r pypi
+
+test_upload:
+	python3 setup.py sdist upload -r testpypi
 
 remove:
 	echo "curl --form ":action=remove_pkg" --form "name=oftools_compile" --form "version=0.0.1" URL -u id:pass"
