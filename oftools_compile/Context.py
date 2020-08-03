@@ -133,7 +133,7 @@ class Context(metaclass=SingletonMeta):
         self._cur_workdir = ""
         self._mandatory = ""
 
-        self.set_time_stamp()
+        #self.set_time_stamp()
 
         self._section_complete_dict.clear()
         self._filter_dict.clear()
