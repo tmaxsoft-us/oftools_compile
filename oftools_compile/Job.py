@@ -39,9 +39,9 @@ class Job(object):
         out, err = proc.communicate()
 
         if b'' != out:
-            Log().get().debug(err.decode('utf-8'))
+            Log().get().debug(err.decode(errors='ignore'))
         if b'' != err:
-            Log().get().debug(out.decode('utf-8'))
+            Log().get().debug(out.decode(errors='ignore'))
 
         # grep returns 0 if line matches
         if proc.returncode == 0:
