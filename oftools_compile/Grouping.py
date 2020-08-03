@@ -17,8 +17,8 @@ class Grouping:
 
     def __init__(self):
         self._root_workdir = Context().get_root_workdir()
-        self._group_dir = os.path.join(self._root_workdir, 'mass_comp' + Context().get_const_tag() + Context().get_time_stamp())
-        self._concatenation_log = os.path.join(self._group_dir, 'master_oftools_compile.log')
+        self._group_dir = os.path.join(self._root_workdir, 'group' + Context().get_const_tag() + Context().get_time_stamp())
+        self._concatenation_log = os.path.join(self._group_dir, 'group.log')
 
     def _grouping_folders(self):
         
@@ -28,7 +28,7 @@ class Grouping:
 
         # Move all compilation folders one by one
         for folder in next(os.walk(self._root_workdir))[1]:
-            if ((Context().get_const_tag() and Context().get_time_stamp()) in folder) and ('mass_comp' not in folder):
+            if ((Context().get_const_tag() and Context().get_time_stamp()) in folder) and ('group' not in folder):
                 # Retrieve absolute path of the current compilation folder
                 path_to_folder = os.path.join(self._root_workdir, folder)
                 # Move this folder under the grouping directory
@@ -43,7 +43,7 @@ class Grouping:
             for root, _, files in os.walk(self._group_dir):
                 for log in files:
                     # Search all files names oftools_compile.log
-                    if ('oftools_compile.log' in log) and ('master' not in log):
+                    if ('oftools_compile.log' in log):
                         # Retrieve absolute path of the current log file
                         path_to_file = os.path.join(root, log)
                         with open(path_to_file, 'r') as single_log:
