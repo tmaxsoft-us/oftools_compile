@@ -67,8 +67,8 @@ class DeployJob(Job):
 
             # handle resultget
             if proc.returncode != 0:
-                Log().get().error(err.decode('utf-8'))
-                Log().get().error(out.decode('utf-8'))
+                Log().get().error(err.decode(errors='ignore'))
+                Log().get().error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
@@ -96,8 +96,8 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(err.decode('utf-8'))
-                Log().get().error(out.decode('utf-8'))
+                Log().get().error(err.decode(errors='ignore'))
+                Log().get().error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
@@ -122,8 +122,8 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(err.decode('utf-8'))
-                Log().get().error(out.decode('utf-8'))
+                Log().get().error(err.decode(errors='ignore'))
+                Log().get().error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
