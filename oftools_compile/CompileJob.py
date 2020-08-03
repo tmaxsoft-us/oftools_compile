@@ -97,7 +97,7 @@ class CompileJob(Job):
                 Context().add_env(key, value)
 
             elif key.startswith('?'):
-                self._add_filter(key, value, in_name)
+                self._add_filter(key, value)
 
             elif key == "option":
                 self._process_option()

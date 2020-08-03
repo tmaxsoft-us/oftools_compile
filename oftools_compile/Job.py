@@ -23,7 +23,7 @@ class Job(object):
         self._section = section
         self._profile = profile
 
-    def _add_filter(self, key, value, in_name):
+    def _add_filter(self, key, value):
         #Log().get().debug('add_filter: [' + key + ',' +
         #                  os.path.expandvars(value) + ']')
 
@@ -77,3 +77,4 @@ class Job(object):
 
     def get_section(self):
         return self._section
+

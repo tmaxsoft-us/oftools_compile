@@ -13,6 +13,7 @@ can be found here.
 
 # Generic/Built-in modules
 import os
+import subprocess
 from datetime import datetime
 
 # Third-party modules
@@ -53,10 +54,21 @@ class Context(metaclass=SingletonMeta):
 
     def add_env(self, key, value):
         if key.startswith('$') is False:
-            #warning
             return
 
-        self._env[key[1:]] = os.path.expandvars(value)
+        if value.startswith('`') and value.endswith('`'):
+            value = value[value.find('`') + 1:value.rfind('`')]
+            proc = subprocess.Popen([value],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True,
+                                    env=self._env)
+            out, err = proc.communicate()
+            value = out.decode(errors="ignore").rstrip()
+            self._env[key[1:]] = value
+        else:
+            self._env[key[1:]] = os.path.expandvars(value)
+
         os.environ.update(self._env)
 
     def get_env(self):
