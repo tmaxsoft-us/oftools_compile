@@ -28,7 +28,7 @@ class Grouping:
 
         # Move all compilation folders one by one
         for folder in next(os.walk(self._root_workdir))[1]:
-            if ((Context().get_const_tag() and Context().get_time_stamp()) in folder) and ('group' not in folder):
+            if ((Context().get_const_tag() and Context().get_time_stamp()) in folder) and (self._group_dir not in folder):
                 # Retrieve absolute path of the current compilation folder
                 path_to_folder = os.path.join(self._root_workdir, folder)
                 # Move this folder under the grouping directory
