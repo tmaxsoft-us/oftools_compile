@@ -133,8 +133,7 @@ class DeployJob(Job):
 
         try:
             out_name = self._profile.get(self._section, 'file')
-            out_name = out_name.replace("$OF_COMPILE_BASE",
-                                        self._remove_extension_name(in_name))
+            out_name = os.path.expandvars(out_name)
 
             if in_name != out_name:
                 Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
