@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
-
-Description more in details.
+"""Main module of OpenFrame Tools Compile.
 """
 # Generic/Built-in modules
 import os
@@ -24,6 +22,7 @@ from .DeployJob import DeployJob
 from .Log import Log
 from .Context import Context
 from .ReportGenerator import ReportGenerator
+from .Grouping import Grouping
 
 
 def main():
@@ -71,12 +70,6 @@ class Main:
                                 help='name of the source which must be a file.',
                                 required=False)
 
-        arg_parser.add_argument('-v',
-                                '--version',
-                                action='store_true',
-                                help='print version information.',
-                                required=False)
-
         arg_parser.add_argument(
             '-t',
             '--tag',
@@ -88,6 +81,20 @@ class Main:
             '--log',
             help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
             required=False)
+
+        arg_parser.add_argument(
+            '-g',
+            '--grouping',
+            action='store_true',
+            help=
+            'put all the compilation folders in a single one for mass compilation and aggregate all the logs.',
+            required=False)
+
+        arg_parser.add_argument('-v',
+                                '--version',
+                                action='store_true',
+                                help='print version information.',
+                                required=False)
 
         # deprecated args
         arg_parser.add_argument('-r',
@@ -235,6 +242,10 @@ class Main:
                 break
 
         report_generator.generate()
+
+        if args.grouping is True:
+            grouping = Grouping()
+            grouping.run()
 
         # need to clear context to run pytest
         Log().clear()
