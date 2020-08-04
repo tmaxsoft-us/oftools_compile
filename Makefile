@@ -1,18 +1,21 @@
 init:
 	pip3 install -r requirements.txt
 
+build:
+    python3 setup.py sdist
+
+install:
+	python3 setup.py bdist_wheel
+	pip3 install dist/*.whl --user
+
 uninstall:
 	pip3 uninstall oftools-compile
 	rm dist build oftools_compile.egg-info -r
 
-install:
-	python3 setup.py sdist bdist_wheel
-	pip3 install dist/*.tar.gz --user
-
 upload:
 	python3 setup.py sdist upload -r pypi
 
-test_upload:
+upload_test:
 	python3 setup.py sdist upload -r testpypi
 
 remove:
@@ -20,11 +23,6 @@ remove:
 
 yapf:
 	yapf3 --style='{ based_on_style: google }' *.py -ir
-
-html:
-	cd docs
-	grip README.md --title=oftools_compile --export
-	cd -
 
 test:
 	coverage run --source oftools_compile -m py.test -v -s
