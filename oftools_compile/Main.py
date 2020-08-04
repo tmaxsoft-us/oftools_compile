@@ -212,6 +212,8 @@ class Main:
                                  Context().get_cur_workdir(), last_section,
                                  success, unit_time)
 
+            Context().add_workdir_to_list()
+
         return rc
 
     def run(self):

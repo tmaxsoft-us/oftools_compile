@@ -50,6 +50,7 @@ class Context(metaclass=SingletonMeta):
         self._env = self._init_env
         self._init_pwd = os.getcwd()
         self.set_time_stamp()
+        self._workdir_list = []
         return
 
     def add_env(self, key, value):
@@ -63,7 +64,7 @@ class Context(metaclass=SingletonMeta):
                                     stderr=subprocess.PIPE,
                                     shell=True,
                                     env=self._env)
-            out, err = proc.communicate()
+            out, _ = proc.communicate()
             value = out.decode(errors="ignore").rstrip()
             self._env[key[1:]] = value
         else:
@@ -105,6 +106,12 @@ class Context(metaclass=SingletonMeta):
 
     def get_cur_workdir(self):
         return self._cur_workdir
+
+    def add_workdir_to_list(self):
+        self._workdir_list.append(self._cur_workdir)
+
+    def get_workdir_list(self):
+        return self._workdir_list
 
     def set_mandatory_section(self, mandatory):
         index = mandatory.find('?')
