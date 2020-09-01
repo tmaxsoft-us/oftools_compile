@@ -56,7 +56,8 @@ class DeployJob(Job):
             shell_cmd += '; '
             shell_cmd += 'osctdlupdate'
             shell_cmd += ' ' + region
-            shell_cmd += ' ' + self._remove_extension_name(out_name)
+            #shell_cmd += ' ' + self._remove_extension_name(out_name)
+            shell_cmd += ' ' + out_name
 
             Log().get().info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
@@ -83,7 +84,8 @@ class DeployJob(Job):
                 os.path.expandvars(tdl) + '/tdl/mod')
             shell_cmd += '; '
             shell_cmd += 'tdlupdate'
-            shell_cmd += ' -m ' + self._remove_extension_name(out_name)
+            #shell_cmd += ' -m ' + self._remove_extension_name(out_name)
+            shell_cmd += ' -m ' + out_name
             shell_cmd += ' -r ' + os.path.join(
                 os.path.expandvars(tdl) + '/tdl/mod')
 
