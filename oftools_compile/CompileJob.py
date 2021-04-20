@@ -58,7 +58,7 @@ class CompileJob(Job):
         # run command
         #Log().get().info("shell_cmd: " + shell_cmd)
         Log().get().info('[' + self._section + '] ' + shell_cmd)
-        env = Context().get_env()
+        env = Context().env()
         proc = subprocess.Popen([shell_cmd],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -85,28 +85,28 @@ class CompileJob(Job):
         # update predefined environment variable
         base_name = self._remove_extension_name(in_name)
         out_name = base_name + '.' + self._remove_filter_name(self._section)
-        Context().add_env('$OF_COMPILE_IN', in_name)
-        Context().add_env('$OF_COMPILE_OUT', out_name)
-        Context().add_env('$OF_COMPILE_BASE', base_name)
+        Context().add_env_variable('$OF_COMPILE_IN', in_name)
+        Context().add_env_variable('$OF_COMPILE_OUT', out_name)
+        Context().add_env_variable('$OF_COMPILE_BASE', base_name)
 
         # add environment variables
         for key in self._profile.options(self._section):
             value = self._profile.get(self._section, key)
 
             if key.startswith('$'):
-                Context().add_env(key, value)
+                Context().add_env_variable(key, value)
 
             elif key.startswith('?'):
                 self._add_filter(key, value)
 
             elif key == "option":
                 self._process_option()
-                out_name = Context().get_env().get('OF_COMPILE_OUT')
+                out_name = Context().env().get('OF_COMPILE_OUT')
                 if os.path.isfile(out_name) is not True:
                     out_name = in_name
 
         # set section as completed
-        Context().set_section_complete(self._remove_filter_name(self._section))
+        Context().section_completed(self._remove_filter_name(self._section))
 
         # end section
         Log().get().debug("[" + self._section + "] end section")

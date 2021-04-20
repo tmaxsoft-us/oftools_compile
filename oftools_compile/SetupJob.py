@@ -48,31 +48,29 @@ class SetupJob(Job):
 
         # Create the name for the workdir by adding suffix to in_name
         workdir = os.path.expandvars(workdir)
-        Context().set_root_workdir(workdir)
+        Context().root_workdir(workdir)
 
         try:
             file_name = in_name.rsplit('/', 1)[1]
         except:
             file_name = in_name
 
-        cur_workdir = os.path.join(
-            workdir,
-            file_name + Context().get_const_tag() + Context().get_time_stamp())
+        current_workdir = os.path.join(
+            workdir, file_name + Context().tag() + Context().time_stamp())
 
         # create_workdir
         while True:
-            if not os.path.isdir(cur_workdir):
-                os.mkdir(cur_workdir)
+            if not os.path.isdir(current_workdir):
+                os.mkdir(current_workdir)
                 break
 
             Log().get().warning(
-                cur_workdir +
+                current_workdir +
                 ' already exists. sleep 1 second to assign a new time stamp')
             time.sleep(1)
-            Context().set_time_stamp()
-            cur_workdir = os.path.join(
-                workdir, file_name + Context().get_const_tag() +
-                Context().get_time_stamp())
+            Context().time_stamp(1)
+            workdir = os.path.join(
+                workdir, file_name + Context().tag() + Context().time_stamp())
 
         # create_reportdir
         report_workdir = os.path.join(workdir, 'report')
@@ -80,24 +78,25 @@ class SetupJob(Job):
             os.mkdir(report_workdir)
 
         # copy source to workdir
-        shutil.copy(in_name, cur_workdir)
+        shutil.copy(in_name, current_workdir)
 
         # change directory to workdir
-        os.chdir(cur_workdir)
-        Context().set_cur_workdir(cur_workdir)
+        os.chdir(current_workdir)
+        Context().current_workdir(current_workdir)
 
         # set log file handle
-        Log().set_file(cur_workdir)
+        Log().set_file(current_workdir)
 
         header = '============================================================'
         header = header[:1] + ' ' + file_name + ' ' + header[len(file_name) +
                                                              2:]
 
         Log().get().info(header)
-        Log().get().info('[' + self._section + '] ' + 'mkdir ' + cur_workdir)
+        Log().get().info('[' + self._section + '] ' + 'mkdir ' +
+                         current_workdir)
         Log().get().info('[' + self._section + '] ' + 'cp ' + in_name + ' ' +
-                         cur_workdir)
-        Log().get().info('[' + self._section + '] ' + 'cd ' + cur_workdir)
+                         current_workdir)
+        Log().get().info('[' + self._section + '] ' + 'cd ' + current_workdir)
 
         return file_name
 
@@ -113,9 +112,9 @@ class SetupJob(Job):
         except:
             out_name = in_name
         base_name = self._remove_extension_name(out_name)
-        Context().add_env('$OF_COMPILE_IN', out_name)
-        Context().add_env('$OF_COMPILE_OUT', out_name)
-        Context().add_env('$OF_COMPILE_BASE', base_name)
+        Context().add_env_variable('$OF_COMPILE_IN', out_name)
+        Context().add_env_variable('$OF_COMPILE_OUT', out_name)
+        Context().add_env_variable('$OF_COMPILE_BASE', base_name)
 
         # add environment variables and filters
         Log().get().debug("[" + self._section + "] process options")
@@ -123,7 +122,7 @@ class SetupJob(Job):
             value = self._profile.get(self._section, key)
 
             if key.startswith('$'):
-                Context().add_env(key, value)
+                Context().add_env_variable(key, value)
 
             elif key.startswith('?'):
                 self._add_filter(key, value)
@@ -138,10 +137,10 @@ class SetupJob(Job):
                 if section.startswith('deploy') is False:
                     Log().get().debug('[' + self._section +
                                       '] mandatory section: ' + section)
-                    Context().set_mandatory_section(section)
+                    Context().mandatory_section(section)
                     break
 
         # set section as completed
-        Context().set_section_complete(self._remove_filter_name(self._section))
+        Context().section_completed(self._remove_filter_name(self._section))
 
         return out_name

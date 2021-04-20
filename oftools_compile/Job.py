@@ -13,6 +13,7 @@ import subprocess
 # Owned modules
 from .Log import Log
 from .Context import Context
+from .Profile import Profile
 
 
 class Job(object):
@@ -30,7 +31,7 @@ class Job(object):
         result = False
         shell_cmd = os.path.expandvars(value)
 
-        env = Context().get_env()
+        env = Context().env()
         proc = subprocess.Popen([shell_cmd],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -50,10 +51,11 @@ class Job(object):
         Context().add_filter_result(key, result)
 
     def _evaluate_filter(self, section, in_name):
-        if "?" not in section:
+        if '?' not in section:
             return True
 
-        result = Context().get_filter_result(section)
+        profile = Profile()
+        result = profile.evaluate_filter(section)
         return result
 
     def _remove_extension_name(self, in_name):

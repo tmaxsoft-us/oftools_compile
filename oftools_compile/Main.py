@@ -30,11 +30,142 @@ def main():
 
 
 class Main:
+    """Main class containing the methods for parsing the command arguments and running OpenFrame Tools Compile.
 
-    def __init__(self):
-        return
+    Methods:
+        _parse_arg(): Parsing command-line options.
+        _create_jobs(): Job creation depending on the section of the profile.
+        _run_internal(profile, source, report_generator): More details about which jobs are 
+            actually running during compilation.
+        run(): Perform all the steps to run compilation for all sources using the appropriate 
+            profile.
+    """
+
+    def _parse_arg(self):
+        """Parsing command-line options.
+
+        The program defines what arguments it requires, and argparse will figure out how to parse 
+        those out of sys.argv. The argparse module also automatically generates help and usage 
+        messages and issues errors when users give the program invalid arguments.
+
+        Returns:
+            args, an ArgumentParser object.
+        """
+        arg_parser = argparse.ArgumentParser()
+
+        # Mandatory arguments
+        arg_parser.add_argument(
+            '-p',
+            '--profile',
+            action='append',
+            dest='profile_list',
+            help='Profile which contains description of the compilation target',
+            metavar='PROFILE',
+            required=True)
+
+        arg_parser.add_argument('-s',
+                                '--source',
+                                action='append',
+                                dest='source_list',
+                                help='Name of the source which must be a file',
+                                metavar='SOURCE',
+                                required=True)
+
+        # Optional arguments
+        arg_parser.add_argument(
+            '-g',
+            '--grouping',
+            action='store_true',
+            dest='grouping',
+            help=
+            'Put all the compilation folders in a single one for mass compilation and aggregate all the logs',
+            required=False)
+
+        arg_parser.add_argument(
+            '-l',
+            '--log-level',
+            action='store',
+            default='INFO',
+            dest='log_level',
+            help=
+            'Set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL). Default is INFO',
+            metavar='LEVEL',
+            required=False)
+
+        arg_parser.add_argument(
+            '-t',
+            '--tag',
+            action='store',
+            dest='tag',
+            help='Add tag to the name of report file and the listing directory',
+            metavar='TAG',
+            required=False)
+
+        arg_parser.add_argument('-v',
+                                '--version',
+                                action='store_true',
+                                help='Print version information',
+                                required=False)
+
+        # Deprecated arguments
+        arg_parser.add_argument('-r',
+                                '--recursive',
+                                action='store_false',
+                                help=argparse.SUPPRESS)
+
+        arg_parser.add_argument('-e',
+                                '--export',
+                                action='store_false',
+                                help=argparse.SUPPRESS)
+
+        # Do the parsing
+        args = arg_parser.parse_args()
+
+        # Handle version option
+        if args.version is True:
+            version = 'oftools-compile ' + __version__
+            print(version)
+            return args
+
+        # Analyze parsing result and handle errors
+        if args.profile_list is None:
+            Log().get().critical('-p or --profile option is not specified')
+            exit(-1)
+
+        if args.source_list is None:
+            Log().get().critical('-s or --source option is not specified')
+            exit(-1)
+
+        if len(args.profile_list) != len(args.source_list):
+            Log().get().critical(
+                'The number of profile and source pairs does not match. profile='
+                + str(len(args.profile_list)) + ',source=' +
+                str(len(args.source_list)))
+            exit(-1)
+
+        for profile in args.profile_list:
+            if os.path.isfile(os.path.expandvars(profile)) is False:
+                Log().get().critical('Cannot access profile: ' + profile)
+                exit(-1)
+
+        for source in args.source_list:
+            if os.path.exists(os.path.expandvars(source)) is False:
+                Log().get().critical('Cannot access source: ' + source)
+                exit(-1)
+
+        return args
 
     def _create_jobs(self, profile):
+        """Job creation depending on the section of the profile.
+
+        Running the method 'sections' on the profile which is a ConfigParser object allow us to create a list of strings, the name of each section of the profile.
+
+        Args:
+            profile: A ConfigParser object, the compilation profile specified for the current source.
+
+        Returns:
+            A list of Job objects.
+        """
         jobs = []
         job_factory = JobFactory(profile)
         for section in profile.sections():
@@ -46,142 +177,74 @@ class Main:
                 print('Unexpected error detected during the job creation')
                 exit(-1)
 
-        # analyze created jobs
-        if job_factory.is_fine() is not True:
+        # Analyze created jobs
+        if job_factory.is_fine() is False:
             print('Missing jobs found. abort!')
             exit(-1)
 
         return jobs
 
-    def _parse_arg(self):
-        # add parse arguments
-        arg_parser = argparse.ArgumentParser()
+    def _run_internal(self, profile_name, source, report_generator):
+        """More details about which jobs are actually running during compilation.
 
-        arg_parser.add_argument(
-            '-p',
-            '--profile',
-            action='append',
-            help='profile which contains description of the compilation target.',
-            required=False)
+        From the source argument, the method checks whether this is a single file or a directory 
+        and then create the source list. This method run a job (whether SetupJob, CompileJob or 
+        DeployJob) for each section of the profile and for each source. 
 
-        arg_parser.add_argument('-s',
-                                '--source',
-                                action='append',
-                                help='name of the source which must be a file.',
-                                required=False)
+        Args:
+            profile_name: A string, the compilation profile specified for the current source.
+            source: A string, the source for the current compilation, could be a file or a 
+                directory.
+            report_generator: A ReportGenerator, used to retrieve data about compilation status, 
+                success or failed, errors, etc.
 
-        arg_parser.add_argument(
-            '-t',
-            '--tag',
-            help='add tag to the name of report file and the listing directory.',
-            required=False)
+        Returns:
+            An integer, the return code of the compilation process.
+        """
+        rc = 0
 
-        arg_parser.add_argument(
-            '-l',
-            '--log',
-            help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
-            required=False)
+        # Read profile and create ConfigParser object
+        profile = ConfigParser(dict_type=OrderedDict)
+        profile.optionxform = str
+        profile.read(os.path.expandvars(profile_name))
+        Log().get().debug('profile path = ' + os.path.expandvars(profile_name))
 
-        arg_parser.add_argument(
-            '-g',
-            '--grouping',
-            action='store_true',
-            help=
-            'put all the compilation folders in a single one for mass compilation and aggregate all the logs.',
-            required=False)
-
-        arg_parser.add_argument('-v',
-                                '--version',
-                                action='store_true',
-                                help='print version information.',
-                                required=False)
-
-        # deprecated args
-        arg_parser.add_argument('-r',
-                                '--recursive',
-                                action='store_true',
-                                help=argparse.SUPPRESS)
-        arg_parser.add_argument('-e',
-                                '--export',
-                                action='store_true',
-                                help=argparse.SUPPRESS)
-
-        # do the parsing
-        args = arg_parser.parse_args()
-
-        # analyze parsing result
-        if args.version is True:
-            return args
-
-        if args.profile is None:
-            Log().get().critical('-p or --profile option is not specified')
-            exit(-1)
-
-        if args.source is None:
-            Log().get().critical('-s or --source option is not specified')
-            exit(-1)
-
-        if len(args.profile) != len(args.source):
-            Log().get().critical(
-                'the number of profile and source pairs does not match. profile='
-                + str(len(args.profile)) + ',source=' + str(len(args.source)))
-            exit(-1)
-
-        for profile in args.profile:
-            if os.path.isfile(os.path.expandvars(profile)) is False:
-                Log().get().critical('cannot access profile: ' + profile)
-                exit(-1)
-
-        for source in args.source:
-            if os.path.exists(os.path.expandvars(source)) is False:
-                Log().get().critical('cannot access source: ' + source)
-                exit(-1)
-
-        return args
-
-    def _run_internal(self, profile, source, report_generator):
-
-        source_list = []
-
-        # read profile
-        profile_parser = ConfigParser(dict_type=OrderedDict)
-        profile_parser.optionxform = str
-        profile_parser.read(os.path.expandvars(profile))
-
-        Log().get().debug('profile path = ' + os.path.expandvars(profile))
-
-        # build source list
+        # Check whether source is a file or a folder and then create the source list
         if os.path.isdir(source):
             directory = os.path.expandvars(source)
-
-            for dirpath, _, filenames in os.walk(directory):
-                if dirpath.startswith('.'):
+            source_list = []
+            for root, _, files in os.walk(directory):
+                if root.startswith('.'):
                     continue
-                for f in filenames:
-                    if f.startswith('.'):
+                for name in files:
+                    if name.startswith('.'):
                         continue
-                    source_list.append(os.path.abspath(os.path.join(dirpath,
-                                                                    f)))
+                    source_list.append(os.path.abspath(os.path.join(root,
+                                                                    name)))
         else:
             source_list = [source]
 
+        # Sort the list alphabetically
         source_list.sort()
 
+        # Execute compilation process for each source of the list
         last_job = None
         for source in source_list:
             start_time = time.time()
             Context().clear()
             Log().clear()
 
-            in_name = ""
+            input_file_name = ''
             out_name = source
-            jobs = self._create_jobs(profile_parser)
+            jobs = self._create_jobs(profile)
 
+            # For each source there are multiple sections that need to be processed
+            # Each section of the compilation profile correspond to a job
             for job in jobs:
                 last_job = job
                 try:
-                    in_name = out_name
-                    out_name = job.run(in_name)
+                    input_file_name = out_name
+                    out_name = job.run(input_file_name)
                     rc = 0
                 except KeyboardInterrupt:
                     rc = -255
@@ -193,63 +256,72 @@ class Main:
                     rc = -3
                     break
 
-            # stop looping when ctrl+c
+            # Stop above for loop when Ctrl + C
             if rc == -255:
                 break
 
-            unit_time = time.time() - start_time
+            # Elapsed time calculation
+            elapsed_time = time.time() - start_time
 
-            success = 'Y'
-            if rc < 0:
-                success = 'N'
+            # Is the compilation a success or a failure?
+            if rc >= 0:
+                compilation_status = 'Y'
+            else:
+                compilation_status = 'N'
 
+            # Check that last job executed for the current source corresponds to a deploy section
             last_section = last_job._remove_filter_name(last_job.get_section())
             if last_section.startswith('deploy'):
-                if Context().is_mandatory_complete() is not True:
-                    last_section = Context().get_mandatory_section()
+                if Context().is_mandatory_section_complete() is False:
+                    last_section = Context().mandatory_section()
 
             report_generator.add(source,
-                                 Context().get_cur_workdir(), last_section,
-                                 success, unit_time)
+                                 Context().current_workdir(), last_section,
+                                 compilation_status, elapsed_time)
 
-            Context().add_workdir_to_list()
+            Context().add_workdir()
 
         return rc
 
     def run(self):
-        # initialize
+        """Perform all the steps to run compilation for all sources using the appropriate 
+        profile.
+
+        Returns:
+            An integer, the return code of the program.
+        """
         rc = 0
 
-        # parse inline command
+        # Parse command-line options
         args = self._parse_arg()
 
+        # Handle version option
         if args.version is True:
-            version = 'oftools-compile ' + __version__
-            print(version)
             return 0
 
-        # set log level
-        Log().set_level(args.log)
+        # Set log level
+        Log().set_level(args.log_level)
 
-        # run jobs through sources
-        Context().set_const_tag(args.tag)
+        Context().tag(args.tag)
         report_generator = ReportGenerator()
 
-        for i in range(len(args.source)):
+        # Run compilation through sources
+        for i in range(len(args.source_list)):
             Log().clear()
             Context().clear()
-            rc = self._run_internal(args.profile[i], args.source[i],
+            rc = self._run_internal(args.profile_list[i], args.source_list[i],
                                     report_generator)
-            if rc is not 0:
+            if rc != 0:
                 break
 
         report_generator.generate()
 
+        # Handle grouping option
         if args.grouping is True:
             grouping = Grouping()
             grouping.run()
 
-        # need to clear context to run pytest
+        # Need to clear context to run pytest
         Log().clear()
         Context().clear()
 

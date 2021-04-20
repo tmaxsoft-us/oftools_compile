@@ -17,10 +17,10 @@ from .Context import Context
 class Grouping:
 
     def __init__(self):
-        self._workdir_list = Context().get_workdir_list()
+        self._workdir_list = Context().work_directories()
         self._group_dir = os.path.join(
-            Context().get_root_workdir(),
-            'group' + Context().get_const_tag() + Context().get_time_stamp())
+            Context().root_workdir(),
+            'group' + Context().tag() + Context().time_stamp())
         self._concatenation_log = os.path.join(self._group_dir, 'group.log')
 
     def _merge_logs(self):

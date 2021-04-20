@@ -22,9 +22,9 @@ class DeployJob(Job):
     def _analyze(self, in_name):
 
         # check if any compile job was a success
-        if Context().is_mandatory_complete() is False:
+        if Context().is_mandatory_section_complete() is False:
             Log().get().error(
-                'mandatory section [' + Context().get_mandatory_section() +
+                'mandatory section [' + Context().mandatory_section() +
                 '] did not ran successfully. aborting the deploy job')
             exit(-1)
 
@@ -160,16 +160,16 @@ class DeployJob(Job):
         # update predefined environment variable
         base_name = self._remove_extension_name(in_name)
         out_name = base_name + '.' + self._remove_filter_name(self._section)
-        Context().add_env('$OF_COMPILE_IN', in_name)
-        Context().add_env('$OF_COMPILE_OUT', out_name)
-        Context().add_env('$OF_COMPILE_BASE', base_name)
+        Context().add_env_variable('$OF_COMPILE_IN', in_name)
+        Context().add_env_variable('$OF_COMPILE_OUT', out_name)
+        Context().add_env_variable('$OF_COMPILE_BASE', base_name)
 
         # add environment variables
         for key in self._profile.options(self._section):
             value = self._profile.get(self._section, key)
 
             if key.startswith('$'):
-                Context().add_env(key, value)
+                Context().add_env_variable(key, value)
 
         # process others
         out_name = self._process_file(in_name)
@@ -178,7 +178,7 @@ class DeployJob(Job):
         self._process_region(out_name)
 
         # set section as completed
-        Context().set_section_complete(self._remove_filter_name(self._section))
+        Context().section_completed(self._remove_filter_name(self._section))
 
         # end section
         Log().get().debug("[" + self._section + "] end section")
