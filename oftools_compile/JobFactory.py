@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
+"""This module retrieves the parameters entered by the user and launches the corresponding job.
 
-Description more in details.
+  Typical usage example:
+
+  job_factory = JobFactory(profile)
 """
 # Generic/Built-in modules
 
@@ -15,31 +17,33 @@ from .SetupJob import SetupJob
 
 
 class JobFactory:
-    _is_setup = False
-    _is_compile = False
-    _is_deploy = False
+    """A class used to ...
+
+    Attributes:
+        _profile: ...
+
+    Methods:
+        __init__(): Initializes the _profile attribute.
+        create(): Create the job according to the section parameter.
+    """
 
     def __init__(self, profile):
+        """Initializes the _profile attribute.
+        """
         self._profile = profile
-        return
 
     def create(self, section):
-        if section is None:
-            return None
-        elif section == "setup":
-            self._is_setup = True
+        """Create the job according to the section parameter.
+
+        Args:
+            section: A string, the name of the section in the profile.
+
+        Returns:
+            Return the appropriate job.
+        """
+        if section.startswith('setup'):
             return SetupJob(section, self._profile)
-        elif section.startswith("deploy"):
-            self._is_deploy = True
+        elif section.startswith('deploy'):
             return DeployJob(section, self._profile)
         else:
-            self._is_compile = True
             return CompileJob(section, self._profile)
-
-    def is_fine(self):
-        if self._is_setup is False:
-            print('setup section missing in profile')
-        if self._is_compile is False:
-            print('compile section missing in profile')
-
-        return self._is_setup and self._is_compile

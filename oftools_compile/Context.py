@@ -79,7 +79,6 @@ class Context(metaclass=SingletonMeta):
         self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
 
         # Other
-        #? Is it the folder where the command is executed?
         self._init_pwd = os.getcwd()
 
     @property
@@ -130,7 +129,7 @@ class Context(metaclass=SingletonMeta):
         """
         return self._work_directories
 
-    #? What mandatory is used for?
+    #? What mandatory is used for? Figured it out by yourself!
     @property
     def mandatory_section(self):
         """

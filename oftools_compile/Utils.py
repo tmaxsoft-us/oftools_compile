@@ -12,12 +12,14 @@ can be found here.
 """
 
 # Generic/Built-in modules
+import configparser
+import collections
+import sys
+import os
 
 # Third-party modules
 
 # Owned modules
-from .Context import Context
-
 
 class SingletonMeta(type):
     _instances = {}
@@ -36,3 +38,45 @@ class Utils(metaclass=SingletonMeta):
 
     Methods:
     """
+
+
+    def read_file(self, path_to_file):
+        """Open and read the input file.
+
+        Supports following extensions:
+            - configuration: conf, cfg, prof
+            - text: log, tip, txt
+
+        Args:
+            path_to_file: A string, absolute path to the file.
+
+        Returns: A parsed file, the type depends on the extension of the processed file.
+
+        Raises:
+            FileTypeError: An error occurs if the file extension is not supported.
+            FileNotFoundError: An error occurs if the file does not exist or is not found.
+            PermissionError: An error occurs if the user running the program does not have the 
+                required permissions to access the input file.
+        """
+        try:
+            path_to_file = os.path.expandvars(path_to_file)
+            with open(path_to_file, mode='r') as fd:
+                extension = path_to_file.split('.')[-1]
+                if extension in ('conf', 'cfg', 'prof'):
+                    file = configparser.ConfigParser(dict_type=collections.OrderedDict)
+                    file.optionxform = str
+                    file.read(path_to_file)
+                elif extension in ('log', 'tip', 'txt'):
+                    file = fd.read()
+                else:
+                    print('FileTypeError: ' + path_to_file +
+                          ': unsupported file extension.')
+        except FileNotFoundError:
+            print('FileNotFoundError: ' + path_to_file +
+                  ': No such file or directory.')
+            sys.exit(2)
+        except PermissionError:
+            print('PermissionError: ' + path_to_file + ': Permission denied.')
+            sys.exit(3)
+        else:
+            return file

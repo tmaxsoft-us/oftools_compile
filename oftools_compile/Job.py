@@ -24,6 +24,8 @@ class Job(object):
         self._section = section
         self._profile = profile
 
+        self._section_data = self._profile.data[section]
+
     def _add_filter(self, key, value):
         #Log().get().debug('add_filter: [' + key + ',' +
         #                  os.path.expandvars(value) + ']')
@@ -50,14 +52,6 @@ class Job(object):
 
         Context().add_filter_result(key, result)
 
-    def _evaluate_filter(self, section, in_name):
-        if '?' not in section:
-            return True
-
-        profile = Profile()
-        result = profile.evaluate_filter(section)
-        return result
-
     def _remove_extension_name(self, in_name):
         return in_name.rsplit('.', 1)[0]
 
@@ -77,6 +71,6 @@ class Job(object):
 
         return section
 
-    def get_section(self):
+    @property
+    def section(self):
         return self._section
-

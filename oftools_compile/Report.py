@@ -6,14 +6,12 @@ Description more in details.
 """
 # Generic/Built-in modules
 import os
-import subprocess
-import logging
 
 # Third-party modules
 
 # Owned modules
-from .Log import Log
 from .Context import Context
+from .Log import Log
 
 
 class Record(object):
@@ -35,7 +33,7 @@ class Record(object):
                    ',' + self._success + ',' + str(round(self._unit_time, 4)))
 
 
-class ReportGenerator(object):
+class Report(object):
 
     _total_time = 0
     _success_count = 0
@@ -45,22 +43,35 @@ class ReportGenerator(object):
     def __init__(self):
         return
 
-    def add(self, source, list_dir, section, success, time):
+    def add_entry(self, source, last_job, return_code, elapsed_time):
 
-        record = Record(source, list_dir, section, success, time)
-        self._records.append(record)
-
-        if success == 'Y':
+        # Is the compilation a success or a failure?
+        if return_code >= 0:
+            compilation_status = 'S'
             self._success_count += 1
         else:
+            compilation_status = 'F'
             self._fail_count += 1
 
-        self._total_time += time
+        # Retrieve section corresponding to the latest job for the report
+        last_section = last_job._remove_filter_name(last_job.section)
+        #? Still mandatory section?????????
+        if last_section.startswith('deploy'):
+            if Context().is_mandatory_section_complete() is False:
+                last_section = Context().mandatory_section
 
-        if success == 'Y':
-            Log().get().info('BUILD SUCCESS (' + str(round(time, 4)) + ' sec)')
+        record = Record(source, Context().current_workdir, last_section, compilation_status,
+                        elapsed_time)
+        self._records.append(record)
+
+        self._total_time += elapsed_time
+
+        if return_code >= 0:
+            Log().get().info('BUILD SUCCESS (' + str(round(elapsed_time, 4)) +
+                             ' sec)')
         else:
-            Log().get().info('BUILD FAILED (' + str(round(time, 4)) + ' sec)')
+            Log().get().info('BUILD FAILED (' + str(round(elapsed_time, 4)) +
+                             ' sec)')
         Log().get().info('')
 
         return

@@ -6,23 +6,19 @@
 import os
 import argparse
 import traceback
-import sys
 import time
-from configparser import ConfigParser
-from collections import OrderedDict
 
 # Third-party modules
 
 # Owned modules
 from . import __version__
-from .JobFactory import JobFactory
-from .CompileJob import CompileJob
-from .SetupJob import SetupJob
-from .DeployJob import DeployJob
-from .Log import Log
 from .Context import Context
-from .ReportGenerator import ReportGenerator
 from .Grouping import Grouping
+from .JobFactory import JobFactory
+from .Log import Log
+from .Profile import Profile
+from .Report import Report
+from .Source import Source
 
 
 def main():
@@ -168,120 +164,17 @@ class Main:
         """
         jobs = []
         job_factory = JobFactory(profile)
-        for section in profile.sections():
+
+        for section in profile.sections:
             try:
                 job = job_factory.create(section)
                 jobs.append(job)
             except:
                 traceback.print_exc()
-                print('Unexpected error detected during the job creation')
+                print('Unexpected error detected during the job creation.')
                 exit(-1)
 
-        # Analyze created jobs
-        if job_factory.is_fine() is False:
-            print('Missing jobs found. abort!')
-            exit(-1)
-
         return jobs
-
-    def _run_internal(self, profile_name, source, report_generator):
-        """More details about which jobs are actually running during compilation.
-
-        From the source argument, the method checks whether this is a single file or a directory 
-        and then create the source list. This method run a job (whether SetupJob, CompileJob or 
-        DeployJob) for each section of the profile and for each source. 
-
-        Args:
-            profile_name: A string, the compilation profile specified for the current source.
-            source: A string, the source for the current compilation, could be a file or a 
-                directory.
-            report_generator: A ReportGenerator, used to retrieve data about compilation status, 
-                success or failed, errors, etc.
-
-        Returns:
-            An integer, the return code of the compilation process.
-        """
-        rc = 0
-
-        # Read profile and create ConfigParser object
-        profile = ConfigParser(dict_type=OrderedDict)
-        profile.optionxform = str
-        profile.read(os.path.expandvars(profile_name))
-        Log().get().debug('profile path = ' + os.path.expandvars(profile_name))
-
-        # Check whether source is a file or a folder and then create the source list
-        if os.path.isdir(source):
-            directory = os.path.expandvars(source)
-            source_list = []
-            for root, _, files in os.walk(directory):
-                if root.startswith('.'):
-                    continue
-                for name in files:
-                    if name.startswith('.'):
-                        continue
-                    source_list.append(os.path.abspath(os.path.join(root,
-                                                                    name)))
-        else:
-            source_list = [source]
-
-        # Sort the list alphabetically
-        source_list.sort()
-
-        # Execute compilation process for each source of the list
-        last_job = None
-        for source in source_list:
-            start_time = time.time()
-            Context().clear()
-            Log().clear()
-
-            input_file_name = ''
-            out_name = source
-            jobs = self._create_jobs(profile)
-
-            # For each source there are multiple sections that need to be processed
-            # Each section of the compilation profile correspond to a job
-            for job in jobs:
-                last_job = job
-                try:
-                    input_file_name = out_name
-                    out_name = job.run(input_file_name)
-                    rc = 0
-                except KeyboardInterrupt:
-                    rc = -255
-                    break
-                except:
-                    trace_list = traceback.format_exc().splitlines()
-                    for trace in trace_list:
-                        Log().get().error(trace)
-                    rc = -3
-                    break
-
-            # Stop above for loop when Ctrl + C
-            if rc == -255:
-                break
-
-            # Elapsed time calculation
-            elapsed_time = time.time() - start_time
-
-            # Is the compilation a success or a failure?
-            if rc >= 0:
-                compilation_status = 'Y'
-            else:
-                compilation_status = 'N'
-
-            # Check that last job executed for the current source corresponds to a deploy section
-            last_section = last_job._remove_filter_name(last_job.get_section())
-            if last_section.startswith('deploy'):
-                if Context().is_mandatory_section_complete() is False:
-                    last_section = Context().mandatory_section()
-
-            report_generator.add(source,
-                                 Context().current_workdir(), last_section,
-                                 compilation_status, elapsed_time)
-
-            Context().add_workdir()
-
-        return rc
 
     def run(self):
         """Perform all the steps to run compilation for all sources using the appropriate 
@@ -303,26 +196,72 @@ class Main:
         Log().set_level(args.log_level)
 
         Context().tag(args.tag)
-        report_generator = ReportGenerator()
+
+        report = Report()
 
         # Run compilation through sources
         for i in range(len(args.source_list)):
-            Log().clear()
-            Context().clear()
-            rc = self._run_internal(args.profile_list[i], args.source_list[i],
-                                    report_generator)
-            if rc != 0:
-                break
+            # Profile processing
+            profile = Profile(args.profile_list[i])
+            Log().get().debug('Profile path: ' +
+                              os.path.expandvars(args.profile_list[i]))
 
-        report_generator.generate()
+            # Create jobs
+            jobs = self._create_jobs(profile)
+
+            # Source processing
+            source = Source(args.source_list[i])
+            Log().get().debug('Source path: ' +
+                              os.path.expandvars(args.source_list[i]))
+
+            for source_file in source.files:
+                input_name = ''
+                output_name = source_file
+                rc = 0
+                start_time = time.time()
+
+                for job in jobs:
+                    last_job = job
+                    try:
+                        input_name = output_name
+                        output_name = job.run(input_name)
+                        rc = 0
+                    except KeyboardInterrupt:
+                        rc = -255
+                        break
+                    except:
+                        trace_list = traceback.format_exc().splitlines()
+                        for trace in trace_list:
+                            Log().get().error(trace)
+                        rc = -3
+                        break
+
+                # Stop above for loop when Ctrl + C
+                if rc == -255:
+                    break
+
+                # Elapsed time calculation
+                elapsed_time = time.time() - start_time
+
+                report.add_entry(source_file, last_job, rc, elapsed_time)
+
+                #TODO Move add_workdir in the report module, add_entry method
+                Context().add_workdir()
+                Context().clear()
+                Log().clear()
+
+                if rc != 0:
+                    break
+
+        report.generate()
 
         # Handle grouping option
         if args.grouping is True:
             grouping = Grouping()
             grouping.run()
 
-        # Need to clear context to run pytest
-        Log().clear()
+        # Need to clear context and log to run pytest
         Context().clear()
+        Log().clear()
 
         return rc
