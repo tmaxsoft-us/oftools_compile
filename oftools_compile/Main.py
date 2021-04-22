@@ -199,12 +199,19 @@ class Main:
 
         report = Report()
 
+        profile_dict = {}
+
         # Run compilation through sources
         for i in range(len(args.source_list)):
             # Profile processing
-            profile = Profile(args.profile_list[i])
-            Log().get().debug('Profile path: ' +
-                              os.path.expandvars(args.profile_list[i]))
+            profile_path = os.path.expandvars(args.profile_list[i])
+            
+            if profile_path not in profile_dict.keys():
+                profile = Profile(profile_path)
+                profile_dict[profile_path] = profile
+            else:
+                profile = profile_dict[profile_path]
+            Log().get().debug('Profile path: ' + profile_path)
 
             # Create jobs
             jobs = self._create_jobs(profile)
