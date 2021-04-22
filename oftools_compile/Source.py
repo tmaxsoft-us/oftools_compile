@@ -51,3 +51,8 @@ class Source():
         files.sort()
 
         return files
+
+    def _remove_file_extension(self, file_name):
+        """
+        """
+        return file_name.rsplit('.', 1)[0]

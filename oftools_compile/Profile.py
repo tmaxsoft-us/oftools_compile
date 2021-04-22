@@ -9,7 +9,9 @@
 
 # Owned modules
 from .Context import Context
+from .Log import Log
 from .Utils import Utils
+
 
 class Profile():
     """
@@ -17,8 +19,13 @@ class Profile():
     Attributes:
 
     Methods:
-        evaluate_filter(key):
+        __init__():
+        _analyze():
+        is_filter(section):
+        evaluate_filter(section):
+        remove_filter(section):
     """
+
     def __init__(self, path_to_profile):
         """
         """
@@ -31,6 +38,7 @@ class Profile():
         self._env_variables = {}
 
         self._analyze()
+        self._add_env_variables_to_context()
 
     @property
     def data(self):
@@ -60,25 +68,55 @@ class Profile():
                 if option.startswith('$'):
                     self._env_variables[option] = self._data[section][option]
                 elif option.startswith('?'):
-                    filter_variable = option.replace('?','')
-                    self._filter_variables[filter_variable] = self._data[section][option]
+                    filter_name = option.replace('?', '')
+                    self._filter_variables[filter_name] = self._data[section][
+                        option]
 
         if self._is_setup == False:
-            print('Missign setup section in the profile.')
+            print('Missing setup section in the profile.')
             exit(-1)
         if self._is_compile == False:
             print('Missing compile section in the profile.')
             exit(-1)
 
-    def evaluate_filter(self, key):
+    def _add_env_variables_to_context(self):
         """
         """
-        result = False
-        index = key.find('?')
-        if index > 0:
-            key = key[index:]
+        for key, value in self._env_variables.items():
+            Context().add_env_variable(key, value)
 
-        if key in Context().filters:
-            result = Context().filters[key]
+    def is_filter(self, section):
+        """
+        """
+        if '?' in section and 'setup' not in section:
+            return True
+        else:
+            return False
+
+    def evaluate_filter(self, section):
+        """
+        """
+        filter_name = section.split('?')[1]
+        filter_value = self._filter_variables[filter_name]
+
+        env = Context().env()
+        out, err, rc = Utils().execute_shell_command(filter_value, env)
+
+        #? What is it for?
+        if out != b'':
+            Log().get().debug(err.decode(errors='ignore'))
+        if err != b'':
+            Log().get().debug(out.decode(errors='ignore'))
+
+        # grep command returns 0 if line matches
+        if rc == 0:
+            result = True
+        else:
+            result = False
 
         return result
+
+    def remove_filter(self, section):
+        """
+        """
+        return section.split('?')[0]

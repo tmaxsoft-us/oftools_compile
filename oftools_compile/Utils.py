@@ -14,12 +14,14 @@ can be found here.
 # Generic/Built-in modules
 import configparser
 import collections
-import sys
 import os
+import subprocess
+import sys
 
 # Third-party modules
 
 # Owned modules
+
 
 class SingletonMeta(type):
     _instances = {}
@@ -38,7 +40,6 @@ class Utils(metaclass=SingletonMeta):
 
     Methods:
     """
-
 
     def read_file(self, path_to_file):
         """Open and read the input file.
@@ -63,7 +64,8 @@ class Utils(metaclass=SingletonMeta):
             with open(path_to_file, mode='r') as fd:
                 extension = path_to_file.split('.')[-1]
                 if extension in ('conf', 'cfg', 'prof'):
-                    file = configparser.ConfigParser(dict_type=collections.OrderedDict)
+                    file = configparser.ConfigParser(
+                        dict_type=collections.OrderedDict)
                     file.optionxform = str
                     file.read(path_to_file)
                 elif extension in ('log', 'tip', 'txt'):
@@ -80,3 +82,47 @@ class Utils(metaclass=SingletonMeta):
             sys.exit(3)
         else:
             return file
+
+    def execute_shell_command(self, shell_command, env):
+        """Separate method to execute shell command.
+        
+        This method is dedicated to execute a shell command and it handles exception in case of failure.
+
+        Args:
+            shell_command: A string, the actual shell command that needs to be executed.
+            env: A dictionary, all the environment variables currently in the shell environment.
+
+        Returns:
+            A tuple, which is the stdout, stderr, and return code of the shell command.
+
+        Raises:
+            UnicodeDecodeError: An error occurred if decoding the shell command result failed 
+                with utf-8. Use latin-1 instead.
+        """
+        error_list = ('failed', 'error', 'command not found',
+                      'Connection refused', 'No such file or directory')
+        try:
+            shell_command = os.path.expandvars(shell_command)
+            proc = subprocess.run(shell_command,
+                                  shell=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  env=env)
+            shell_out = proc.stdout.decode('utf_8')
+            shell_err = proc.stderr.decode('utf_8')
+            return_code = proc.returncode
+        except UnicodeDecodeError:
+            shell_out = proc.stdout.decode('latin_1')
+            shell_err = proc.stderr.decode('latin_1')
+            return_code = proc.returncode
+        except:
+            shell_out = None
+            shell_err = None
+            return_code = None
+            return shell_out, shell_err, return_code
+
+        for string in error_list:
+            if string in shell_err:
+                shell_out = None
+
+        return shell_out, shell_err, return_code
