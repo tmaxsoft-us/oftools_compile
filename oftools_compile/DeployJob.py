@@ -12,39 +12,52 @@ import subprocess
 # Third-party modules
 
 # Owned modules
+from .Context import Context
 from .Job import Job
 from .Log import Log
-from .Context import Context
+from .Utils import Utils
 
 
 class DeployJob(Job):
+    """
+
+    Methods:
+        _analyze(in_name):
+        _process_region(out_name):
+        _process_tdl(out_name):
+        _process_dataset(out_name):
+        _process_file(out_name):
+        run():
+    """
 
     def _analyze(self, in_name):
-
+        """
+        """
         # check if any compile job was a success
         if Context().is_mandatory_section_complete() is False:
-            Log().get().error(
+            Log().logger.error(
                 'mandatory section [' + Context().mandatory_section() +
                 '] did not ran successfully. aborting the deploy job')
             exit(-1)
 
         # check if given section is already completed
         if Context().is_section_complete(self._section):
-            Log().get().debug('section has already been processed. skipping [' +
+            Log().logger.debug('section has already been processed. skipping [' +
                               self._section + '] section.')
             return -1
 
         # evaluate filter to decide whether this section should run or not
-        if self._evaluate_filter(self._section, in_name) is False:
-            Log().get().debug('[' + self._section + '] ' +
-                              self._resolve_filter_name(self._section) +
+        if self._profile.evaluate_filter(self._section, in_name) is False:
+            Log().logger.debug('[' + self._section + '] ' +
+                              self._profile.resolve_filter(self._section) +
                               ' is False. skipping section.')
             return -1
 
         return 0
 
     def _process_region(self, out_name):
-
+        """
+        """
         if self._profile.has_option(self._section, 'region') is False:
             return
 
@@ -59,7 +72,7 @@ class DeployJob(Job):
             #shell_cmd += ' ' + self._remove_extension_name(out_name)
             shell_cmd += ' ' + out_name
 
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
+            Log().logger.info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -68,13 +81,15 @@ class DeployJob(Job):
 
             # handle resultget
             if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
+                Log().logger.error(err.decode(errors='ignore'))
+                Log().logger.error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
 
     def _process_tdl(self, out_name):
+        """
+        """
         if self._profile.has_option(self._section, 'tdl') is False:
             return
 
@@ -89,7 +104,7 @@ class DeployJob(Job):
             shell_cmd += ' -r ' + os.path.join(
                 os.path.expandvars(tdl) + '/tdl/mod')
 
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
+            Log().logger.info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -98,15 +113,17 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
+                Log().logger.error(err.decode(errors='ignore'))
+                Log().logger.error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
 
     def _process_dataset(self, out_name):
-        out = ""
-        err = ""
+        """
+        """
+        out = ''
+        err = ''
 
         if self._profile.has_option(self._section, 'dataset') is False:
             return
@@ -115,7 +132,7 @@ class DeployJob(Job):
         for dataset in datasets:
             shell_cmd = 'dlupdate ' + os.path.join(os.getcwd(),
                                                    out_name) + ' ' + dataset
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
+            Log().logger.info('[' + self._section + '] ' + shell_cmd)
             proc = subprocess.Popen([shell_cmd],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -124,13 +141,15 @@ class DeployJob(Job):
 
             # handle result
             if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
+                Log().logger.error(err.decode(errors='ignore'))
+                Log().logger.error(out.decode(errors='ignore'))
                 exit(proc.returncode)
 
         return
 
     def _process_file(self, in_name):
+        """
+        """
         out_name = in_name
 
         try:
@@ -138,12 +157,12 @@ class DeployJob(Job):
             out_name = os.path.expandvars(out_name)
 
             if in_name != out_name:
-                Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
+                Log().logger.info('[' + self._section + '] ' + 'cp ' + in_name +
                                  ' ' + out_name)
                 shutil.copy(in_name, out_name)
 
         except:
-            Log().get().error('[' + self._section + '] failed to copy ' +
+            Log().logger.error('[' + self._section + '] failed to copy ' +
                               in_name)
             exit(-1)
 
@@ -155,11 +174,11 @@ class DeployJob(Job):
             return in_name
 
         # start section
-        Log().get().debug("[" + self._section + "] start section")
+        Log().logger.debug('[' + self._section + '] start section')
 
         # update predefined environment variable
-        base_name = self._remove_extension_name(in_name)
-        out_name = base_name + '.' + self._remove_filter_name(self._section)
+        base_name = Utils().remove_file_extension(in_name)
+        out_name = base_name + '.' + self._profile.remove_filter(self._section)
         Context().add_env_variable('$OF_COMPILE_IN', in_name)
         Context().add_env_variable('$OF_COMPILE_OUT', out_name)
         Context().add_env_variable('$OF_COMPILE_BASE', base_name)
@@ -178,9 +197,9 @@ class DeployJob(Job):
         self._process_region(out_name)
 
         # set section as completed
-        Context().section_completed(self._remove_filter_name(self._section))
+        Context().section_completed(self._profile._remove_filter(self._section))
 
         # end section
-        Log().get().debug("[" + self._section + "] end section")
+        Log().logger.debug('[' + self._section + '] end section')
 
         return out_name

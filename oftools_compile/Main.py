@@ -117,37 +117,55 @@ class Main:
         # Do the parsing
         args = arg_parser.parse_args()
 
-        # Handle version option
-        if args.version is True:
+        # With the argument version specified the method execution stops
+        if args.version == True:
             version = 'oftools-compile ' + __version__
             print(version)
             return args
 
-        # Analyze parsing result and handle errors
-        if args.profile_list is None:
-            Log().get().critical('-p or --profile option is not specified')
+        # Analyze missing arguments
+        if args.profile_list == None:
+            Log().logger.critical('-p or --profile option is not specified')
+            exit(-1)
+        if args.source_list == None:
+            Log().logger.critical('-s or --source option is not specified')
             exit(-1)
 
-        if args.source_list is None:
-            Log().get().critical('-s or --source option is not specified')
-            exit(-1)
-
+        # Analyze number of profiles and sources provided
         if len(args.profile_list) != len(args.source_list):
-            Log().get().critical(
+            Log().logger.critical(
                 'The number of profile and source pairs does not match. profile='
                 + str(len(args.profile_list)) + ',source=' +
                 str(len(args.source_list)))
             exit(-1)
 
+        # Analyze profiles, making sure a file with .prof extension is specified
         for profile in args.profile_list:
-            if os.path.isfile(os.path.expandvars(profile)) is False:
-                Log().get().critical('Cannot access profile: ' + profile)
+            profile_path = os.path.expandvars(profile)
+
+            if os.path.isfile(profile_path):
+                extension = profile_path.split('.')[1]
+                if extension != 'prof':
+                    Log().logger.critical(
+                        'Invalid profile. Please specify a file with a .prof extension'
+                    )
+                    exit(-1)
+            else:
+                Log().logger.critical('Cannot access profile: ' + profile)
                 exit(-1)
 
+        # Analyze sources
         for source in args.source_list:
             if os.path.exists(os.path.expandvars(source)) is False:
-                Log().get().critical('Cannot access source: ' + source)
+                Log().logger.critical('Cannot access source: ' + source)
                 exit(-1)
+
+        # Analyze log level
+        if args.log_level:
+            if args.log_level not in ('DEBUG', 'INFO', 'WARNING', 'ERROR',
+                                      'CRITICAL'):
+                Log().logger.warning(
+                    'Invalid log level. Using default log level: INFO')
 
         return args
 
@@ -189,11 +207,12 @@ class Main:
         args = self._parse_arg()
 
         # Handle version option
-        if args.version is True:
+        if args.version == True:
             return 0
 
         # Set log level
         Log().set_level(args.log_level)
+        Log().open_stream()
 
         Context().tag(args.tag)
 
@@ -205,21 +224,21 @@ class Main:
         for i in range(len(args.source_list)):
             # Profile processing
             profile_path = os.path.expandvars(args.profile_list[i])
-            
+
             if profile_path not in profile_dict.keys():
                 profile = Profile(profile_path)
                 profile_dict[profile_path] = profile
             else:
                 profile = profile_dict[profile_path]
-            Log().get().debug('Profile path: ' + profile_path)
+            Log().logger.debug('Profile path: ' + profile_path)
 
             # Create jobs
             jobs = self._create_jobs(profile)
 
             # Source processing
             source = Source(args.source_list[i])
-            Log().get().debug('Source path: ' +
-                              os.path.expandvars(args.source_list[i]))
+            Log().logger.debug('Source path: ' +
+                               os.path.expandvars(args.source_list[i]))
 
             for source_file in source.files:
                 input_name = ''
@@ -234,12 +253,18 @@ class Main:
                         output_name = job.run(input_name)
                         rc = 0
                     except KeyboardInterrupt:
+                        Log().logger.error(
+                            'Keyboard Interrupt: Execution ended by user')
                         rc = -255
+                        #? Why break here and also the one below? Why not just exit?
                         break
+                        # exit(1)
                     except:
-                        trace_list = traceback.format_exc().splitlines()
-                        for trace in trace_list:
-                            Log().get().error(trace)
+                        #! Talk about that change
+                        Log().logger.exception('')
+                        # trace_list = traceback.format_exc().splitlines()
+                        # for trace in trace_list:
+                        #     Log().logger.error(trace)
                         rc = -3
                         break
 
@@ -255,7 +280,7 @@ class Main:
                 #TODO Move add_workdir in the report module, add_entry method
                 Context().add_workdir()
                 Context().clear()
-                Log().clear()
+                Log().close_file()
 
                 if rc != 0:
                     break
@@ -263,12 +288,12 @@ class Main:
         report.generate()
 
         # Handle grouping option
-        if args.grouping is True:
+        if args.grouping == True:
             grouping = Grouping()
             grouping.run()
 
         # Need to clear context and log to run pytest
         Context().clear()
-        Log().clear()
+        Log().close_stream()
 
         return rc

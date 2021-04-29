@@ -17,10 +17,17 @@ class Profile():
     """
 
     Attributes:
+        _data:
+        _sections:
+        _is_setup:
+        _is_compile:
+        _filter_variables:
+        _env_variables:
 
     Methods:
         __init__():
         _analyze():
+        _add_env_variables_to_context():
         is_filter(section):
         evaluate_filter(section):
         remove_filter(section):
@@ -56,7 +63,7 @@ class Profile():
         """
         """
         for section in self._sections:
-            if section is None:
+            if section == None:
                 #TODO Find proper implementation
                 pass
             if section.startswith('setup'):
@@ -73,10 +80,10 @@ class Profile():
                         option]
 
         if self._is_setup == False:
-            print('Missing setup section in the profile.')
+            Log().logger.critical('Missing setup section in the profile.')
             exit(-1)
         if self._is_compile == False:
-            print('Missing compile section in the profile.')
+            Log().logger.critical('Missing compile section in the profile.')
             exit(-1)
 
     def _add_env_variables_to_context(self):
@@ -104,9 +111,9 @@ class Profile():
 
         #? What is it for?
         if out != b'':
-            Log().get().debug(err.decode(errors='ignore'))
+            Log().logger.debug(err.decode(errors='ignore'))
         if err != b'':
-            Log().get().debug(out.decode(errors='ignore'))
+            Log().logger.debug(out.decode(errors='ignore'))
 
         # grep command returns 0 if line matches
         if rc == 0:
@@ -120,3 +127,8 @@ class Profile():
         """
         """
         return section.split('?')[0]
+    
+    def resolve_filter(self, section):
+        """
+        """
+        return section.split('?')[1]

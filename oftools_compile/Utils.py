@@ -83,6 +83,11 @@ class Utils(metaclass=SingletonMeta):
         else:
             return file
 
+    def remove_file_extension(self, file_name):
+        """
+        """
+        return file_name.rsplit('.', 1)[0]
+
     def execute_shell_command(self, shell_command, env):
         """Separate method to execute shell command.
         
