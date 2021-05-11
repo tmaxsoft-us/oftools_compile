@@ -89,12 +89,18 @@ class Job(object):
         except IndexError:
             Log().logger.debug('A file has been specified, not a directory.')
 
-        self._file_name_out = self._file_name_in
+        if 'setup' in self._section_name or 'deploy' in self._section_name:
+            self._file_name_out = self._file_name_in
+        else:
+            filename = self._file_name_in.rsplit('.', 1)[0]
+            extension = self._section_name_no_filter
+            self._file_name_out = filename + '.' + extension
+
 
     def _update_context(self):
         """
         """
-        base_file_name = self._file_name_out.rsplit('.', 1)[1]
+        base_file_name = self._file_name_out.rsplit('.', 1)[0]
 
         Context().add_env_variable('$OF_COMPILE_IN', self._file_name_in)
         Context().add_env_variable('$OF_COMPILE_OUT', self._file_name_out)

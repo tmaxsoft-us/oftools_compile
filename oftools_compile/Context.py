@@ -214,10 +214,10 @@ class Context(metaclass=SingletonMeta):
         """
         """
         filter_result = False
-        value = self._filters[key]
+        shell_command = self._filters[key]
 
         # Filter evaluation
-        out, err, rc = Utils().execute_shell_command(value, self._env)
+        out, err, rc = Utils().execute_shell_command(shell_command, self._env)
 
         #? What is it for?
         if out != b'':

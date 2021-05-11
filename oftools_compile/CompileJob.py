@@ -25,44 +25,41 @@ class CompileJob(Job):
     
     Methods:
         _process_section():
-        _process_option():
+        _process_option(option):
         run(file_path_in):
     """
 
-    def _process_option(self):
+    def _process_section(self):
         """
         """
         Log().logger.debug('[' + self._section_name +
                            '] start section. Processing options')
-        option = ""
 
-        try:
-            option = self._profile.get(self._section_name, 'option')
-        except:
-            Log().logger.warning('option not specified in the ' +
-                                 self._section_name + ' section.')
+        for key, value in self._profile[self._section_name].items():
+            if key == 'option':
+                self._process_option(value)
+                #? Potential issue with file name here?
+                file_name_out = Context().env['OF_COMPILE_OUT']
+                if os.path.isfile(file_name_out) == False:
+                    self._file_name_out = self._file_name_in
+            else:
+                self._analyze_common_options(key, value)
 
-        # build command
-        shell_cmd = self._profile.remove_filter(self._section_name) + " "
-        shell_cmd += option
-        shell_cmd = os.path.expandvars(shell_cmd)
+    def _process_option(self, option):
+        """
+        """
+        # Build command
+        shell_command = self._section_name_no_filter + ' ' + option
 
-        # run command
-        #Log().logger.info("shell_cmd: " + shell_cmd)
-        Log().logger.info('[' + self._section_name + '] ' + shell_cmd)
-        env = Context().env()
-        proc = subprocess.Popen([shell_cmd],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                shell=True,
-                                env=env)
-        out, err = proc.communicate()
+        # Run command
+        Log().logger.info('[' + self._section_name + '] ' + shell_command)
+        out, err, rc = Utils().execute_shell_command(shell_command, Context().env)
 
-        # handle error
-        if proc.returncode != 0:
+        # Handle error
+        if rc != 0:
             Log().logger.error(err.decode(errors='ignore'))
             Log().logger.error(out.decode(errors='ignore'))
-            exit(proc.returncode)
+            exit(rc)
 
         return
 
@@ -81,34 +78,15 @@ class CompileJob(Job):
         ) == False:
             return file_path_in
 
-        # update predefined environment variable
-        base_name = Utils().remove_file_extension(file_path_in)
-        out_name = base_name + '.' + self._profile.remove_filter(
-            self._section_name)
-        Context().add_env_variable('$OF_COMPILE_IN', file_path_in)
-        Context().add_env_variable('$OF_COMPILE_OUT', out_name)
-        Context().add_env_variable('$OF_COMPILE_BASE', base_name)
+        # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
+        self._initialize_file_variables(file_path_in)
+        # Update Context with name of files being manipulated in this job execution
+        self._update_context()
+        # Analysis of the compile section
+        self._process_section()
 
-        # add environment variables
-        for key in self._profile.options(self._section_name):
-            value = self._profile.get(self._section_name, key)
+        # TODO Put a condition to make sure that the section has been properly completed
+        # Clear file variables, set compile section as completed and write end section to log file
+        self._clear()
 
-            if key.startswith('$'):
-                Context().add_env_variable(key, value)
-
-            # elif key.startswith('?'):
-            #     self._add_filter(key, value)
-
-            elif key == 'option':
-                self._process_option()
-                out_name = Context().env().get('OF_COMPILE_OUT')
-                if os.path.isfile(out_name) is not True:
-                    out_name = file_path_in
-
-        # set section as completed
-        Context().section_completed(self._section_name_no_filter)
-
-        # end section
-        Log().logger.debug("[" + self._section_name + "] end section")
-
-        return out_name
+        return self._file_name_out
