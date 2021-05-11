@@ -1,14 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
-
-Description more in details.
 """
+"""
+
 # Generic/Built-in modules
 import os
 import shutil
 import time
-import datetime
 
 # Third-party modules
 
@@ -16,58 +14,49 @@ import datetime
 from .Context import Context
 from .Job import Job
 from .Log import Log
-from .Utils import Utils
 
 
 class SetupJob(Job):
     """
 
+    Attributes:
+        Inherited from Job module.
+
     Methods:
-        _analyze:
-        _process_worldir(workdir, in_name):
-        _run():
+        _analyze():
+        _init_current_workdir():
+        _init_log_file(current_workdir):
+        run(file_path_in):
     """
 
     def _analyze(self):
-
-        # check if workdir is defined in the profile
-        if self._profile.has_option(self._section, 'workdir') is False:
-            Log().logger.critical(
-                '[' + self._section +
-                '] cannot find workdir section in the profile')
-            exit(-1)
-
-        # check if workdir is accessable
-        workdir = self._profile.get(self._section, 'workdir')
-        workdir = os.path.expandvars(workdir)
-        if os.path.isdir(workdir) is False:
-            if os.access(workdir, os.W_OK) is False:
-                Log().logger.critical('[' + self._section +
-                                      '] no write access on workdir = ' +
-                                      workdir)
-                exit(-1)
-
-        # check if given section is already completed
-        if Context().is_section_complete(self._section):
+        """
+        """
+        # Check if given section is already completed
+        if Context().is_section_complete(self._section_name):
             return -1
 
         return 0
 
-    def _process_workdir(self, workdir, in_name):
+    def _process_section(self):
+        """
+        """
+        Log().logger.debug('[' + self._section_name + '] process options')
 
-        # Create the name for the workdir by adding suffix to in_name
-        workdir = os.path.expandvars(workdir)
-        Context().root_workdir(workdir)
+        for key, value in self._profile[self._section_name].items():
+            if key == 'workdir':
+                current_workdir = self._init_current_workdir()
+                self._init_log_file(current_workdir)
+            else:
+                self._analyze_common_options(key, value)
 
-        try:
-            file_name = in_name.rsplit('/', 1)[1]
-        except:
-            file_name = in_name
-
+    def _init_current_workdir(self):
+        """
+        """
         current_workdir = os.path.join(
-            workdir, file_name + Context().tag() + Context().time_stamp())
+            Context().root_workdir,
+            self._file_name_in + Context().tag + Context().time_stamp)
 
-        # create_workdir
         while True:
             if not os.path.isdir(current_workdir):
                 os.mkdir(current_workdir)
@@ -75,83 +64,77 @@ class SetupJob(Job):
 
             Log().logger.warning(
                 current_workdir +
-                ' already exists. sleep 1 second to assign a new time stamp')
+                ' already exists. Sleeping 1 second to assign a new time stamp.'
+            )
             time.sleep(1)
-            Context().time_stamp(1)
-            workdir = os.path.join(
-                workdir, file_name + Context().tag() + Context().time_stamp())
+            current_workdir = os.path.join(
+                Context().root_workdir,
+                self._file_name_in + Context().tag + Context().time_stamp)
 
-        # create_reportdir
-        report_workdir = os.path.join(workdir, 'report')
-        if not os.path.isdir(report_workdir):
-            os.mkdir(report_workdir)
-
-        # copy source to workdir
-        shutil.copy(in_name, current_workdir)
-
-        # change directory to workdir
+        # Copy source file to the current work directory
+        shutil.copy(self._file_path_in, current_workdir)
+        # Change directory to work directory
         os.chdir(current_workdir)
+        # Update Context with the current work directory
         Context().current_workdir(current_workdir)
 
-        # set log file
-        Log().open_file(
-            os.path.join(Context().current_workdir, 'oftools_compile.log'))
+        return current_workdir
+
+    def _init_log_file(self, current_workdir):
+        """
+        """
+        Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
 
         header = '============================================================'
-        header = header[:1] + ' ' + file_name + ' ' + header[len(file_name) +
-                                                             2:]
+        header = header[:1] + ' ' + self._file_name_in + ' ' + header[
+            len(self._file_name_in) + 2:]
 
         Log().logger.info(header)
-        Log().logger.info('[' + self._section + '] ' + 'mkdir ' +
+        Log().logger.info('[' + self._section_name + '] ' + 'mkdir ' +
                           current_workdir)
-        Log().logger.info('[' + self._section + '] ' + 'cp ' + in_name + ' ' +
+        Log().logger.info('[' + self._section_name + '] ' + 'cp ' +
+                          self._file_path_in + ' ' + current_workdir)
+        Log().logger.info('[' + self._section_name + '] ' + 'cd ' +
                           current_workdir)
-        Log().logger.info('[' + self._section + '] ' + 'cd ' + current_workdir)
 
-        return file_name
-
-    def run(self, in_name):
-        # analyze section
+    def run(self, file_path_in):
+        """
+        """
+        #? Is it still useful?
+        # Analyze prerequisites before running the job for the section
         if self._analyze() < 0:
-            Log().logger.debug('[' + self._section + '] skip section')
-            return in_name
+            Log().logger.debug('[' + self._section_name + '] skip section')
+            return file_path_in
 
-        # update predefined environment variable
-        try:
-            out_name = in_name.rsplit('/', 1)[1]
-        except:
-            out_name = in_name
-        base_name = Utils().remove_extension_name(out_name)
-        Context().add_env_variable('$OF_COMPILE_IN', out_name)
-        Context().add_env_variable('$OF_COMPILE_OUT', out_name)
-        Context().add_env_variable('$OF_COMPILE_BASE', base_name)
+        if self._filter_name != '':
+            Context().evaluate_filter(self._filter_name)
+            if Context().filter_results(self._filter_name) == False:
+                Log().logger.debug(
+                    '[' + self._section_name +
+                    '] Result of filter variable evaluation: False. Skipping section.')
+                return file_path_in
 
-        # add environment variables and filters
-        Log().logger.debug('[' + self._section + '] process options')
-        for key in self._profile.options(self._section):
-            value = self._profile.get(self._section, key)
+        # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
+        self._initialize_file_variables(file_path_in)
+        # Update Context with name of files being manipulated in this job execution
+        self._update_context()
+        # Analysis of the setup section
+        self._process_section()
 
-            if key.startswith('$'):
-                Context().add_env_variable(key, value)
-
-            elif key.startswith('?'):
-                self._profile.evaluate_filter(self._section)
-
-            elif key == 'workdir':
-                out_name = self._process_workdir(value, in_name)
-
-        # set the mandatory section
+        #? Same question as always, what is it for?
+        # Set the mandatory section
         sections = self._profile.sections()
         if 'deploy' in sections:
             for section in reversed(sections):
                 if section.startswith('deploy') is False:
-                    Log().logger.debug('[' + self._section +
+                    Log().logger.debug('[' + self._section_name +
                                        '] mandatory section: ' + section)
                     Context().mandatory_section(section)
                     break
 
         # set section as completed
-        Context().section_completed(
-            self._profile.remove_filter_name(self._section))
+        Context().section_completed(self._section_no_filter)
 
-        return out_name
+        self._clear()
+
+        return self._file_name_out

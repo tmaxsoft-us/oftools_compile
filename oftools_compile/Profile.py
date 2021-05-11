@@ -4,6 +4,7 @@
 """
 
 # Generic/Built-in modules
+import os
 
 # Third-party modules
 
@@ -27,7 +28,9 @@ class Profile():
     Methods:
         __init__():
         _analyze():
-        _add_env_variables_to_context():
+        _analyze_setup():
+        _analyze_compile(section):
+        _analyze_deploy():
         is_filter(section):
         evaluate_filter(section):
         remove_filter(section):
@@ -41,11 +44,9 @@ class Profile():
 
         self._is_setup = False
         self._is_compile = False
-        self._filter_variables = {}
-        self._env_variables = {}
+        self._is_deploy = False
 
         self._analyze()
-        self._add_env_variables_to_context()
 
     @property
     def data(self):
@@ -68,16 +69,13 @@ class Profile():
                 pass
             if section.startswith('setup'):
                 self._is_setup = True
+                self._analyze_setup()
             elif section.startswith('deploy'):
+                self._is_deploy = True
+                self._analyze_deploy()
+            else:
                 self._is_compile = True
-
-            for option in self.data[section]:
-                if option.startswith('$'):
-                    self._env_variables[option] = self._data[section][option]
-                elif option.startswith('?'):
-                    filter_name = option.replace('?', '')
-                    self._filter_variables[filter_name] = self._data[section][
-                        option]
+                self._analyze_compile(section)
 
         if self._is_setup == False:
             Log().logger.critical('Missing setup section in the profile.')
@@ -86,28 +84,55 @@ class Profile():
             Log().logger.critical('Missing compile section in the profile.')
             exit(-1)
 
-    def _add_env_variables_to_context(self):
+    def _analyze_setup(self):
         """
         """
-        for key, value in self._env_variables.items():
-            Context().add_env_variable(key, value)
+        if self._data.has_option('setup', 'workdir') == True:
+            root_workdir = self._data.get('setup', 'workdir')
+            root_workdir = os.path.expandvars(root_workdir)
+            if os.path.isdir(root_workdir) == True and os.access(root_workdir,
+                                                            os.W_OK) == True:
+                Context().root_workdir(root_workdir)
+                # Create report directory if it does not already exist
+                reportdir = os.path.join(root_workdir, 'report')
+                if not os.path.isdir(reportdir):
+                    os.mkdir(reportdir)
+            else:
+                Log().logger.critical('[setup] No write access on workdir = ' +
+                                      root_workdir)
+                exit(-1)
+        else:
+            Log().logger.critical(
+                '[setup] Cannot find workdir parameter in the section.')
+            exit(-1)
 
-    def is_filter(self, section):
+    def _analyze_compile(self, section):
         """
         """
-        if '?' in section and 'setup' not in section:
+        if self._data.has_option(section, 'option') == True:
+            pass
+        else:
+            Log().logger.critical('[' + section + '] Missing "option" parameter.')
+            exit(-1)        
+
+    def _analyze_deploy(self):
+        """
+        """
+        pass
+
+    def has_filter(self, section):
+        """
+        """
+        if 'setup' not in section and '?' in section:
             return True
         else:
             return False
 
-    def evaluate_filter(self, section):
+    def evaluate_filter(self, value):
         """
         """
-        filter_name = section.split('?')[1]
-        filter_value = self._filter_variables[filter_name]
-
         env = Context().env()
-        out, err, rc = Utils().execute_shell_command(filter_value, env)
+        out, err, rc = Utils().execute_shell_command(value, env)
 
         #? What is it for?
         if out != b'':
@@ -122,13 +147,3 @@ class Profile():
             result = False
 
         return result
-
-    def remove_filter(self, section):
-        """
-        """
-        return section.split('?')[0]
-    
-    def resolve_filter(self, section):
-        """
-        """
-        return section.split('?')[1]

@@ -15,14 +15,21 @@ class Source():
     """
 
     Attributes:
+        _source_path:
+        _files:
 
     Methods:
+        __init__(source):
+        _analyze(): Check whether source is a file or a folder and then create the source list.
     """
 
-    def __init__(self, source):
+    def __init__(self, source_path):
         """
         """
-        self._files = self._source_analysis(source)
+        self._source_path = source_path
+        self._files = []
+
+        self._analyze()
 
     @property
     def files(self):
@@ -30,29 +37,24 @@ class Source():
         """
         return self._files
 
-    def _source_analysis(self, source):
+    def _analyze(self):
         """Check whether source is a file or a folder and then create the source list.
         """
-        files = []
-        directory = os.path.expandvars(source)
+        source = os.path.expandvars(self._source_path)
 
-        if os.path.isdir(directory):
-            for root, _, files in os.walk(directory):
+        if os.path.isfile(source):
+            self._files = [source]
+
+        elif os.path.isdir(source):
+            for root, _, files in os.walk(source):
                 if root.startswith('.'):
                     continue
                 for name in files:
                     if name.startswith('.'):
                         continue
-                    files.append(os.path.abspath(os.path.join(root, name)))
-        else:
-            files = [source]
+                    self._files.append(os.path.abspath(os.path.join(root, name)))
 
-        # Sort the list alphabetically
-        files.sort()
+            # Sort the list alphabetically
+            self._files.sort()
 
-        return files
-
-    def _remove_file_extension(self, file_name):
-        """
-        """
-        return file_name.rsplit('.', 1)[0]
+        return self._files

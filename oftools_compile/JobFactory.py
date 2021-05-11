@@ -6,6 +6,7 @@
 
   job_factory = JobFactory(profile)
 """
+
 # Generic/Built-in modules
 
 # Third-party modules
@@ -32,7 +33,7 @@ class JobFactory:
         """
         self._profile = profile
 
-    def create(self, section):
+    def create(self, section_name):
         """Create the job according to the section parameter.
 
         Args:
@@ -41,9 +42,9 @@ class JobFactory:
         Returns:
             Return the appropriate job.
         """
-        if section.startswith('setup'):
-            return SetupJob(section, self._profile)
-        elif section.startswith('deploy'):
-            return DeployJob(section, self._profile)
+        if section_name.startswith('setup'):
+            return SetupJob(section_name, self._profile)
+        elif section_name.startswith('deploy'):
+            return DeployJob(section_name, self._profile)
         else:
-            return CompileJob(section, self._profile)
+            return CompileJob(section_name, self._profile)

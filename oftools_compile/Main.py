@@ -183,9 +183,9 @@ class Main:
         jobs = []
         job_factory = JobFactory(profile)
 
-        for section in profile.sections:
+        for section_name in profile.sections:
             try:
-                job = job_factory.create(section)
+                job = job_factory.create(section_name)
                 jobs.append(job)
             except:
                 traceback.print_exc()
@@ -241,16 +241,18 @@ class Main:
                                os.path.expandvars(args.source_list[i]))
 
             for source_file in source.files:
-                input_name = ''
-                output_name = source_file
+                # Initialization of variables before running the jobs
                 rc = 0
+                file_name_in = ''
+                file_name_out = source_file
                 start_time = time.time()
 
                 for job in jobs:
                     last_job = job
                     try:
-                        input_name = output_name
-                        output_name = job.run(input_name)
+                        # For the SetupJob, file_name_in is an absolute path, but for all other jobs this is just the name of the file
+                        file_name_in = file_name_out
+                        file_name_out = job.run(file_name_in)
                         rc = 0
                     except KeyboardInterrupt:
                         Log().logger.error(
