@@ -15,6 +15,8 @@ import subprocess
 # Third-party modules
 
 # Owned modules
+from .Log import Log
+from .Utils import Utils
 
 
 class SingletonMeta(type):
@@ -152,7 +154,7 @@ class Context(metaclass=SingletonMeta):
         return self._complete_sections
 
     @complete_sections.setter
-    def complete_sections(self, value):
+    def add_complete_sections(self, value):
         self._complete_sections = value
 
     @property
@@ -208,10 +210,30 @@ class Context(metaclass=SingletonMeta):
         self._filters[key] = value
         self._filter_results[key] = False
 
-    def add_filter_result(self, key, value):
+    def evaluate_filter(self, key):
         """
         """
-        self._filter_results[key] = value
+        filter_result = False
+        value = self._filters[key]
+
+        # Filter evaluation
+        out, err, rc = Utils().execute_shell_command(value, self._env)
+
+        #? What is it for?
+        if out != b'':
+            Log().logger.debug(err.decode(errors='ignore'))
+        if err != b'':
+            Log().logger.debug(out.decode(errors='ignore'))
+
+        # grep command returns 0 if line matches
+        if rc == 0:
+            filter_result = True
+        else:
+            filter_result = False
+
+        self._filter_results[key] = filter_result
+
+        return filter_result
 
     def add_workdir(self):
         """

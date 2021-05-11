@@ -23,25 +23,17 @@ class SetupJob(Job):
         Inherited from Job module.
 
     Methods:
-        _analyze():
+        _process_section():
         _init_current_workdir():
         _init_log_file(current_workdir):
         run(file_path_in):
     """
 
-    def _analyze(self):
-        """
-        """
-        # Check if given section is already completed
-        if Context().is_section_complete(self._section_name):
-            return -1
-
-        return 0
-
     def _process_section(self):
         """
         """
-        Log().logger.debug('[' + self._section_name + '] process options')
+        Log().logger.debug('[' + self._section_name +
+                           '] start section. Processing options')
 
         for key, value in self._profile[self._section_name].items():
             if key == 'workdir':
@@ -100,19 +92,12 @@ class SetupJob(Job):
     def run(self, file_path_in):
         """
         """
-        #? Is it still useful?
+        #? Is section completed still useful?
         # Analyze prerequisites before running the job for the section
-        if self._analyze() < 0:
-            Log().logger.debug('[' + self._section_name + '] skip section')
+        # Include completion of section and filter evaluation if there is one
+        if self._is_section_complete() < 0 or self._filter_evaluation(
+        ) == False:
             return file_path_in
-
-        if self._filter_name != '':
-            Context().evaluate_filter(self._filter_name)
-            if Context().filter_results(self._filter_name) == False:
-                Log().logger.debug(
-                    '[' + self._section_name +
-                    '] Result of filter variable evaluation: False. Skipping section.')
-                return file_path_in
 
         # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
         self._initialize_file_variables(file_path_in)
@@ -121,7 +106,7 @@ class SetupJob(Job):
         # Analysis of the setup section
         self._process_section()
 
-        #? Same question as always, what is it for?
+        #? Same question as always, what is mandatory section for?
         # Set the mandatory section
         sections = self._profile.sections()
         if 'deploy' in sections:
@@ -132,9 +117,8 @@ class SetupJob(Job):
                     Context().mandatory_section(section)
                     break
 
-        # set section as completed
-        Context().section_completed(self._section_no_filter)
-
+        # TODO Put a condition to make sure that the section has been properly completed
+        # Clear file variables, set setup section as completed and write end section to log file
         self._clear()
 
         return self._file_name_out

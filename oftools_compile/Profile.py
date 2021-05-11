@@ -90,8 +90,8 @@ class Profile():
         if self._data.has_option('setup', 'workdir') == True:
             root_workdir = self._data.get('setup', 'workdir')
             root_workdir = os.path.expandvars(root_workdir)
-            if os.path.isdir(root_workdir) == True and os.access(root_workdir,
-                                                            os.W_OK) == True:
+            if os.path.isdir(root_workdir) == True and os.access(
+                    root_workdir, os.W_OK) == True:
                 Context().root_workdir(root_workdir)
                 # Create report directory if it does not already exist
                 reportdir = os.path.join(root_workdir, 'report')
@@ -112,8 +112,9 @@ class Profile():
         if self._data.has_option(section, 'option') == True:
             pass
         else:
-            Log().logger.critical('[' + section + '] Missing "option" parameter.')
-            exit(-1)        
+            Log().logger.critical('[' + section +
+                                  '] Missing "option" parameter.')
+            exit(-1)
 
     def _analyze_deploy(self):
         """
@@ -127,23 +128,3 @@ class Profile():
             return True
         else:
             return False
-
-    def evaluate_filter(self, value):
-        """
-        """
-        env = Context().env()
-        out, err, rc = Utils().execute_shell_command(value, env)
-
-        #? What is it for?
-        if out != b'':
-            Log().logger.debug(err.decode(errors='ignore'))
-        if err != b'':
-            Log().logger.debug(out.decode(errors='ignore'))
-
-        # grep command returns 0 if line matches
-        if rc == 0:
-            result = True
-        else:
-            result = False
-
-        return result

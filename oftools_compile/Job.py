@@ -23,6 +23,7 @@ class Job(object):
 
     Methods:
         __init__(section_name, profile):
+        _is_section_completed():
         _initialize_file_variables(file_path_in):
         _update_context():
         _analyze_common_options(key, value):
@@ -36,15 +37,45 @@ class Job(object):
         self._profile = profile
 
         if '?' in self._section_name:
-            self._section_no_filter = section_name.split('?')[0]
+            self._section_name_no_filter = section_name.split('?')[0]
             self._filter_name = section_name.split('?')[1]
         else:
             self._filter_name = ''
-            self._section_no_filter = self._section_name
+            self._section_name_no_filter = self._section_name
 
         self._file_path_in = ''
         self._file_name_in = ''
         self._file_name_out = ''
+
+    def _is_section_complete(self):
+        """Check if given section is already completed.
+        """
+        rc = 0
+        if Context().is_section_complete(self._section_name_no_filter):
+            Log().logger.debug(
+                '[' + self._section_name_no_filter +
+                '] section has already been processed. Skipping section')
+            rc = -1
+        else:
+            rc = 0
+
+        return rc
+
+    def _filter_evaluation(self):
+        """
+        """
+        if self._filter_name != '':
+            filter_result = Context().evaluate_filter(self._filter_name)
+
+            if filter_result == False:
+                Log().logger.debug(
+                    '[' + self._section_name + '] filter variable ' +
+                    self._filter_name +
+                    ' evaluation result: False. Skipping section')
+        else:
+            filter_result = None
+
+        return filter_result
 
     def _initialize_file_variables(self, file_path_in):
         """Detect if the source provided is a file or a directory, and properly retrieve the name of the file.
@@ -77,7 +108,7 @@ class Job(object):
         elif key.startswith('?'):
             Context().add_filter(key, value)
         else:
-            Log().logger.warning('Option not supported')
+            Log().logger.warning(key + ': option not supported')
 
     def _clear(self):
         """
@@ -86,3 +117,6 @@ class Job(object):
         self._file_name_in = ''
         self._file_name_out = ''
 
+        #? If there are two ofcbpp section and we want to know which one has been completed, should we store the section name with the filter instead?
+        Context().section_completed(self._section_name_no_filter)
+        Log().logger.debug('[' + self._section_name + '] end section')

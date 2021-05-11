@@ -5,8 +5,8 @@
 Description more in details.
 """
 # Generic/Built-in modules
-import subprocess
 import os
+import subprocess
 
 # Third-party modules
 
@@ -19,51 +19,37 @@ from .Utils import Utils
 
 class CompileJob(Job):
     """
+
+    Attributes:
+        Inherited from Job module.
     
     Methods:
-        _analyze(in_name):
+        _process_section():
         _process_option():
+        run(file_path_in):
     """
 
-    def _analyze(self, in_name):
-        # Check if given section is already completed
-        if Context().is_section_complete('setup') is False:
-            Log().logger.error(
-                'cannot proceed due to setup not being completed.')
-            exit(-1)
-
-        # check if given section is already completed
-        if Context().is_section_complete(self._section):
-            Log().logger.debug('section has already been processed. skipping [' +
-                              self._section + '] section.')
-            return -1
-
-        # evaluate filter to decide whether this section should run or not
-        if self._profile.evaluate_filter(self._section, in_name) is False:
-            Log().logger.debug('[' + self._section + '] ' +
-                              self._profile.resolve_filter(self._section) +
-                              ' is False. skipping section.')
-            return -1
-
-        return 0
-
     def _process_option(self):
+        """
+        """
+        Log().logger.debug('[' + self._section_name +
+                           '] start section. Processing options')
         option = ""
 
         try:
-            option = self._profile.get(self._section, 'option')
+            option = self._profile.get(self._section_name, 'option')
         except:
-            Log().logger.warning('option not specified in the ' + self._section +
-                                ' section.')
+            Log().logger.warning('option not specified in the ' +
+                                 self._section_name + ' section.')
 
         # build command
-        shell_cmd = self._profile.remove_filter(self._section) + " "
+        shell_cmd = self._profile.remove_filter(self._section_name) + " "
         shell_cmd += option
         shell_cmd = os.path.expandvars(shell_cmd)
 
         # run command
         #Log().logger.info("shell_cmd: " + shell_cmd)
-        Log().logger.info('[' + self._section + '] ' + shell_cmd)
+        Log().logger.info('[' + self._section_name + '] ' + shell_cmd)
         env = Context().env()
         proc = subprocess.Popen([shell_cmd],
                                 stdout=subprocess.PIPE,
@@ -80,24 +66,32 @@ class CompileJob(Job):
 
         return
 
-    def run(self, in_name):
-        # analyze section
-        if self._analyze(in_name) < 0:
-            return in_name
-
-        # start section
-        Log().logger.debug("[" + self._section + "] start section")
+    def run(self, file_path_in):
+        """
+        """
+        # Check if setup section was successful
+        if Context().is_section_complete('setup') == False:
+            Log().logger.error(
+                'cannot proceed due to setup not being completed.')
+            #? We really need to exit here?
+            exit(-1)
+        # Analyze prerequisites before running the job for the section
+        # Include completion of section and filter evaluation if there is one
+        if self._is_section_complete() < 0 or self._filter_evaluation(
+        ) == False:
+            return file_path_in
 
         # update predefined environment variable
-        base_name = Utils().remove_file_extension(in_name)
-        out_name = base_name + '.' + self._profile.remove_filter(self._section)
-        Context().add_env_variable('$OF_COMPILE_IN', in_name)
+        base_name = Utils().remove_file_extension(file_path_in)
+        out_name = base_name + '.' + self._profile.remove_filter(
+            self._section_name)
+        Context().add_env_variable('$OF_COMPILE_IN', file_path_in)
         Context().add_env_variable('$OF_COMPILE_OUT', out_name)
         Context().add_env_variable('$OF_COMPILE_BASE', base_name)
 
         # add environment variables
-        for key in self._profile.options(self._section):
-            value = self._profile.get(self._section, key)
+        for key in self._profile.options(self._section_name):
+            value = self._profile.get(self._section_name, key)
 
             if key.startswith('$'):
                 Context().add_env_variable(key, value)
@@ -109,12 +103,12 @@ class CompileJob(Job):
                 self._process_option()
                 out_name = Context().env().get('OF_COMPILE_OUT')
                 if os.path.isfile(out_name) is not True:
-                    out_name = in_name
+                    out_name = file_path_in
 
         # set section as completed
-        Context().section_completed(self._profile.remove_filter(self._section))
+        Context().section_completed(self._section_name_no_filter)
 
         # end section
-        Log().logger.debug("[" + self._section + "] end section")
+        Log().logger.debug("[" + self._section_name + "] end section")
 
         return out_name
