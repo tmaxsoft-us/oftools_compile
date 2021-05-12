@@ -6,7 +6,6 @@ Description more in details.
 """
 # Generic/Built-in modules
 import os
-import subprocess
 
 # Third-party modules
 
@@ -24,10 +23,31 @@ class CompileJob(Job):
         Inherited from Job module.
     
     Methods:
+        _analyze():
         _process_section():
         _process_option(option):
         run(file_path_in):
     """
+
+    def _analyze(self):
+        """
+        """
+        # Check if setup section was successful
+        if Context().is_section_complete('setup') == False:
+            Log().logger.error(
+                'cannot proceed due to setup not being completed.')
+            #? We really need to exit here?
+            exit(-1)
+
+        # Analyze prerequisites before running the job for the section
+        # Include completion of section and filter evaluation if there is one
+        if self._is_section_complete() < 0 or self._filter_evaluation(
+        ) == False:
+            rc = -1
+        else:
+            rc = 0
+
+        return rc
 
     def _process_section(self):
         """
@@ -43,7 +63,7 @@ class CompileJob(Job):
                 if os.path.isfile(file_name_out) == False:
                     self._file_name_out = self._file_name_in
             else:
-                self._analyze_common_options(key, value)
+                self._process_option(key, value)
 
     def _process_option(self, option):
         """
@@ -66,16 +86,7 @@ class CompileJob(Job):
     def run(self, file_path_in):
         """
         """
-        # Check if setup section was successful
-        if Context().is_section_complete('setup') == False:
-            Log().logger.error(
-                'cannot proceed due to setup not being completed.')
-            #? We really need to exit here?
-            exit(-1)
-        # Analyze prerequisites before running the job for the section
-        # Include completion of section and filter evaluation if there is one
-        if self._is_section_complete() < 0 or self._filter_evaluation(
-        ) == False:
+        if self._analyze() < 0:
             return file_path_in
 
         # Detect if the source provided is a file or a directory, and properly retrieve the name of the file

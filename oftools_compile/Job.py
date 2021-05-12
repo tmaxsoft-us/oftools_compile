@@ -106,7 +106,7 @@ class Job(object):
         Context().add_env_variable('$OF_COMPILE_OUT', self._file_name_out)
         Context().add_env_variable('$OF_COMPILE_BASE', base_file_name)
 
-    def _analyze_common_options(self, key, value):
+    def _process_option(self, key, value):
         """
         """
         if key.startswith('$'):

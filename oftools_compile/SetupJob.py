@@ -23,11 +23,26 @@ class SetupJob(Job):
         Inherited from Job module.
 
     Methods:
+        _analyze():
         _process_section():
         _init_current_workdir():
         _init_log_file(current_workdir):
         run(file_path_in):
     """
+
+    def _analyze(self):
+        """
+        """
+        #? Is section completed still useful?
+        # Analyze prerequisites before running the job for the section
+        # Include completion of section and filter evaluation if there is one
+        if self._is_section_complete() < 0 or self._filter_evaluation(
+        ) == False:
+            rc = -1
+        else:
+            rc = 0
+
+        return rc
 
     def _process_section(self):
         """
@@ -40,7 +55,7 @@ class SetupJob(Job):
                 current_workdir = self._init_current_workdir()
                 self._init_log_file(current_workdir)
             else:
-                self._analyze_common_options(key, value)
+                self._process_option(key, value)
 
     def _init_current_workdir(self):
         """
@@ -92,11 +107,7 @@ class SetupJob(Job):
     def run(self, file_path_in):
         """
         """
-        #? Is section completed still useful?
-        # Analyze prerequisites before running the job for the section
-        # Include completion of section and filter evaluation if there is one
-        if self._is_section_complete() < 0 or self._filter_evaluation(
-        ) == False:
+        if self._analyze() < 0:
             return file_path_in
 
         # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
