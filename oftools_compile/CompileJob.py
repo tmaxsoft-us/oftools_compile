@@ -57,7 +57,7 @@ class CompileJob(Job):
 
         for key, value in self._profile[self._section_name].items():
             if key == 'option':
-                self._process_option(value)
+                self._compilation(value)
                 #? Potential issue with file name here?
                 file_name_out = Context().env['OF_COMPILE_OUT']
                 if os.path.isfile(file_name_out) == False:
@@ -65,7 +65,7 @@ class CompileJob(Job):
             else:
                 self._process_option(key, value)
 
-    def _process_option(self, option):
+    def _compilation(self, option):
         """
         """
         # Build command
@@ -73,7 +73,8 @@ class CompileJob(Job):
 
         # Run command
         Log().logger.info('[' + self._section_name + '] ' + shell_command)
-        out, err, rc = Utils().execute_shell_command(shell_command, Context().env)
+        out, err, rc = Utils().execute_shell_command(shell_command,
+                                                     Context().env)
 
         # Handle error
         if rc != 0:
