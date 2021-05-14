@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the module in one sentence.
-
-Description more in details.
+"""
 """
 # Generic/Built-in modules
 import os
@@ -15,44 +13,62 @@ from .Context import Context
 
 
 class Grouping:
+    """
+
+    Attributes:
+        _workdir_list:
+        _group_dir:
+        _group_log:
+
+    Methods:
+        __init():
+        _create_group_dir():
+        _group_logs_and_folders():
+    """
 
     def __init__(self):
+        """
+        """
         self._workdir_list = Context().work_directories()
         self._group_dir = os.path.join(
             Context().root_workdir(),
             'group' + Context().tag() + Context().time_stamp())
-        self._concatenation_log = os.path.join(self._group_dir, 'group.log')
+        self._group_log = os.path.join(self._group_dir, 'group.log')
 
-    def _merge_logs(self):
-
-        # Check if the grouping folder already exist
+    def _create_group_dir(self):
+        """
+        """
+        # Check if the group folder already exist
         if not os.path.isdir(self._group_dir):
             os.mkdir(self._group_dir)
-
-        with open(self._concatenation_log, 'w') as master_log:
-            for path_to_folder in self._workdir_list:
-                file_list = os.listdir(path_to_folder)
-                for file in file_list:
-                    if 'oftools_compile.log' in file:
-                        # Retrieve absolute path of the current log file
-                        path_to_file = os.path.join(path_to_folder, file)
-                        with open(path_to_file, 'r') as single_log:
-                            # Read the log file and write to master log file
-                            master_log.write(single_log.read())
-
+        
         return 0
 
-    def _grouping_folders(self):
+    def _group_logs_and_folders(self):
+        """
+        """
+        with open(self._group_log, 'w') as group_log:
 
-        # Move all compilation folders one by one
-        for path_to_folder in self._workdir_list:
-            shutil.move(path_to_folder, self._group_dir)
+            for folder_path in self._workdir_list:
+                file_list = os.listdir(folder_path)
+
+                for file in file_list:
+                    if file == 'oftools_compile.log':
+                        # Retrieve absolute path of the current log file
+                        file_path = os.path.join(folder_path, file)
+                        with open(file_path, 'r') as oftools_compile_log:
+                            # Read the log file and write to group log file
+                            group_log.write(oftools_compile_log.read())
+                
+                # Move all compilation folders one by one
+                shutil.move(folder_path, self._group_dir)
 
         return 0
 
     def run(self):
-
-        self._merge_logs()
-        self._grouping_folders()
+        """
+        """
+        self._create_group_dir()
+        self._group_logs_and_folders()
 
         return 0
