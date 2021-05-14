@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
-
-Description more in details.
+"""
 """
 # Generic/Built-in modules
 import os
@@ -20,96 +18,103 @@ class Record(object):
     _section = ""
     _unit_time = 0
 
-    def __init__(self, source, list_dir, section, success, unit_time):
-        self._source = source
-        self._section = section
-        self._success = success
+    def __init__(self, source_file, list_dir, last_section, compilation_status,
+                 elapsed_time):
+        self._source_file = source_file
         self._list_dir = list_dir
-        self._unit_time = unit_time
-        pass
+        self._last_section = last_section
+        self._compilation_status = compilation_status
+        self._elapsed_time = elapsed_time
 
     def to_csv(self):
-        return str(self._source + ',' + self._list_dir + ',' + self._section +
-                   ',' + self._success + ',' + str(round(self._unit_time, 4)))
+        return str(self._source_file + ',' + self._list_dir + ',' +
+                   self._last_section + ',' + self._compilation_status + ',' +
+                   str(round(self._elapsed_time, 4)))
 
 
 class Report(object):
     """
-    """
 
-    _total_time = 0
-    _success_count = 0
-    _fail_count = 0
-    _records = []
+    Attributes:
+        _success_count:
+        _fail_count:
+        _total_time:
+
+    Methods:
+        __init__():
+        add_entry():
+        generate():
+    """
 
     def __init__(self):
         """
         """
-        return
+        self._success_count = 0
+        self._fail_count = 0
+        self._total_time = 0
 
-    def add_entry(self, source, last_job, return_code, elapsed_time):
+        self._records = []
+
+    def add_entry(self, source_file, last_job, return_code, elapsed_time):
         """
         """
         # Is the compilation a success or a failure?
         if return_code >= 0:
             compilation_status = 'S'
             self._success_count += 1
+            Log().logger.info('BUILD SUCCESS (' + str(round(elapsed_time, 4)) +
+                              ' sec)')
         else:
             compilation_status = 'F'
             self._fail_count += 1
+            Log().logger.info('BUILD FAILED (' + str(round(elapsed_time, 4)) +
+                              ' sec)')
+        Log().logger.info('')
+
+        # Cumulate compilation times
+        self._total_time += elapsed_time
 
         # Retrieve section corresponding to the latest job for the report
+        #? Do we really want to remove the filter here? The user doesn't want to know exactly the section executed?
         last_section = last_job._remove_filter_name(last_job.section)
+
         #? Still mandatory section?????????
         if last_section.startswith('deploy'):
             if Context().is_mandatory_section_complete() is False:
                 last_section = Context().mandatory_section
 
-        record = Record(source, Context().current_workdir, last_section, compilation_status,
-                        elapsed_time)
+        #? Record class useless for me, only elapsed time need to be cast to string
+        record = Record(source_file,
+                        Context().current_workdir, last_section,
+                        compilation_status, elapsed_time)
         self._records.append(record)
-
-        self._total_time += elapsed_time
-
-        if return_code >= 0:
-            Log().logger.info('BUILD SUCCESS (' + str(round(elapsed_time, 4)) +
-                             ' sec)')
-        else:
-            Log().logger.info('BUILD FAILED (' + str(round(elapsed_time, 4)) +
-                             ' sec)')
-        Log().logger.info('')
-
-        return
 
     def generate(self):
         """
         """
-        results = []
-        results.append('source,list_dir,section,success,time')
-
+        # Write summary to log
         Log().logger.info(
             '= SUMMARY ==================================================')
-        Log().logger.info('TOTAL TIME: ' + str(round(self._total_time, 4)) +
-                         ' sec')
         Log().logger.info('TOTAL     : ' +
-                         str(self._success_count + self._fail_count))
+                          str(self._success_count + self._fail_count))
         Log().logger.info('SUCCESS   : ' + str(self._success_count))
         Log().logger.info('FAILED    : ' + str(self._fail_count))
+        Log().logger.info('TOTAL TIME: ' + str(round(self._total_time, 4)) +
+                          ' sec')
 
-        for record in self._records:
-            results.append(record.to_csv())
-
-        # export the report file
-        file_name = 'report/oftools_compile' + Context().tag + Context(
+        # Create report file
+        report_name = 'report/oftools_compile' + Context().tag + Context(
         ).time_stamp() + '.csv'
-        file_name = os.path.expandvars(
-            os.path.join(Context().root_workdir(), file_name))
+        report_name = os.path.expandvars(
+            os.path.join(Context().root_workdir(), report_name))
 
-        with open(file_name, 'w') as f:
-            for result in results:
-                f.write("%s\n" % result)
-        f.close()
+        # Write results to the file
+        with open(report_name, 'w') as fd:
+            fd.write('source,list_dir,section,success,time')
 
-        Log().logger.info('csv report has been generated: ' + file_name)
+            for record in self._records:
+                result = record.to_csv()
+                fd.write("%s\n" % result)
 
-        return
+        # Inform the user that the report has been successfully generated
+        Log().logger.info('CSV report successfully generated: ' + report_name)
