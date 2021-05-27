@@ -30,9 +30,7 @@ class Main:
 
     Methods:
         _parse_arg(): Parsing command-line options.
-        _create_jobs(): Job creation depending on the section of the profile.
-        _run_internal(profile, source, report_generator): More details about which jobs are 
-            actually running during compilation.
+        _create_jobs(profile): Job creation depending on the section of the profile.
         run(): Perform all the steps to run compilation for all sources using the appropriate 
             profile.
     """
@@ -47,89 +45,91 @@ class Main:
         Returns:
             args, an ArgumentParser object.
         """
-        arg_parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            description='OpenFrame Tools Compile')
+        parser._action_groups.pop()
+        required = parser.add_argument_group('Required arguments')
+        optional = parser.add_argument_group('Optional arguments')
 
-        # Mandatory arguments
-        arg_parser.add_argument(
+        # Required arguments
+        required.add_argument(
             '-p',
             '--profile',
             action='append',
             dest='profile_list',
-            help='Profile which contains description of the compilation target',
+            help='name of the profile, contains the description of the compilation target',
             metavar='PROFILE',
-            required=True)
+            required=True,
+            type=str)
 
-        arg_parser.add_argument('-s',
-                                '--source',
-                                action='append',
-                                dest='source_list',
-                                help='Name of the source which must be a file',
-                                metavar='SOURCE',
-                                required=True)
+        required.add_argument(
+            '-s',
+            '--source',
+            action='append',
+            dest='source_list',
+            help='name of the source, either a file or a directory',
+            metavar='SOURCE',
+            required=True,
+            type=str)
 
         # Optional arguments
-        arg_parser.add_argument(
+        optional.add_argument(
             '-g',
             '--grouping',
             action='store_true',
             dest='grouping',
             help=
-            'Put all the compilation folders in a single one for mass compilation and aggregate all the logs',
+            'put all the compilation folders in a single one for mass compilation and aggregate all the logs',
             required=False)
 
-        arg_parser.add_argument(
+        optional.add_argument(
             '-l',
             '--log-level',
             action='store',
+            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
             default='INFO',
             dest='log_level',
-            help=
-            'Set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL). Default is INFO',
+            help='set log level, potential values: DEBUG, INFO, WARNING, ERROR, CRITICAL. (default: INFO)',
             metavar='LEVEL',
-            required=False)
+            required=False,
+            type=str)
 
-        arg_parser.add_argument(
+        optional.add_argument(
             '-t',
             '--tag',
             action='store',
             dest='tag',
-            help='Add tag to the name of report file and the listing directory',
+            help='add a tag to the name of the report file and the listing directory',
             metavar='TAG',
-            required=False)
+            required=False,
+            type=str)
 
-        arg_parser.add_argument('-v',
-                                '--version',
-                                action='store_true',
-                                help='Print version information',
-                                required=False)
+        optional.add_argument('-h',
+                              '--help',
+                              action='help',
+                              help='show this help message and exit')
+
+        optional.add_argument(
+            '-v',
+            '--version',
+            action='version',
+            help='show this version message and exit',
+            version='%(prog)s {version}'.format(version=__version__))
 
         # Deprecated arguments
-        arg_parser.add_argument('-r',
-                                '--recursive',
-                                action='store_false',
-                                help=argparse.SUPPRESS)
+        optional.add_argument('-r',
+                              '--recursive',
+                              action='store_false',
+                              help=argparse.SUPPRESS)
 
-        arg_parser.add_argument('-e',
-                                '--export',
-                                action='store_false',
-                                help=argparse.SUPPRESS)
+        optional.add_argument('-e',
+                              '--export',
+                              action='store_false',
+                              help=argparse.SUPPRESS)
 
         # Do the parsing
-        args = arg_parser.parse_args()
-
-        # With the argument version specified the method execution stops
-        if args.version == True:
-            version = 'oftools-compile ' + __version__
-            print(version)
-            return args
-
-        # Analyze missing arguments
-        if args.profile_list == None:
-            Log().logger.critical('-p or --profile option is not specified')
-            exit(-1)
-        if args.source_list == None:
-            Log().logger.critical('-s or --source option is not specified')
-            exit(-1)
+        args = parser.parse_args()
 
         # Analyze number of profiles and sources provided
         if len(args.profile_list) != len(args.source_list):
@@ -147,7 +147,7 @@ class Main:
                 extension = profile_path.split('.')[1]
                 if extension != 'prof':
                     Log().logger.critical(
-                        'Invalid profile. Please specify a file with a .prof extension'
+                        'Invalid profile. Please specify a file with a .prof extension.'
                     )
                     exit(-1)
             else:
@@ -165,7 +165,7 @@ class Main:
             if args.log_level not in ('DEBUG', 'INFO', 'WARNING', 'ERROR',
                                       'CRITICAL'):
                 Log().logger.warning(
-                    'Invalid log level. Using default log level: INFO')
+                    'Invalid log level. Using default log level: INFO.')
 
         return args
 
@@ -179,6 +179,8 @@ class Main:
 
         Returns:
             A list of Job objects.
+
+        Raises:
         """
         jobs = []
         job_factory = JobFactory(profile)
@@ -200,6 +202,9 @@ class Main:
 
         Returns:
             An integer, the return code of the program.
+
+        Raises:
+            KeyboardInterrupt:
         """
         rc = 0
 
@@ -256,8 +261,8 @@ class Main:
                         rc = 0
                     except KeyboardInterrupt:
                         Log().logger.error(
-                            'Keyboard Interrupt: Execution ended by user')
-                        rc = -255
+                            'Keyboard Interrupt: Execution ended by user.')
+                        rc = 255
                         #? Why break here and also the one below? Why not just exit?
                         break
                         # exit(1)
@@ -279,7 +284,7 @@ class Main:
 
                 report.add_entry(source_file, last_job, rc, elapsed_time)
 
-                #TODO Move add_workdir in the report module, add_entry method
+                #? Why storing all the working directories in a list? For the grouping feature.
                 Context().add_workdir()
                 Context().clear()
                 Log().close_file()
