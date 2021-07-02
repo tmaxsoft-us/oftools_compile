@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Set of functions useful in any module.
+"""Set of methods useful in any module.
 
-This module gathers a set of functions that are useful in many other modules. When a 
-function is widely used in different modules, a general version of it is created and 
-can be found here.
+This module gathers a set of methods that are useful in many other modules. When a method is widely 
+used in different modules, a general version of it is created and can be found here.
 
-  Typical usage example:
-
-  utils = Utils()
+Typical usage example:
+  Utils().read_file(profile_path)
+  Utils().execute_shell_command(shell_command, env)
 """
 
 # Generic/Built-in modules
@@ -21,6 +20,7 @@ import sys
 # Third-party modules
 
 # Owned modules
+from .Log import Log
 
 
 class SingletonMeta(type):
@@ -33,12 +33,12 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class Utils(metaclass=SingletonMeta):
+class Utils(object, metaclass=SingletonMeta):
     """A class used to run several useful functions across all modules.
 
-    Attributes:
-
     Methods:
+        read_file(path_to_file):
+        execute_shell_command(shell_command, env)
     """
 
     def read_file(self, path_to_file):
@@ -51,47 +51,84 @@ class Utils(metaclass=SingletonMeta):
         Args:
             path_to_file: A string, absolute path to the file.
 
-        Returns: A parsed file, the type depends on the extension of the processed file.
+        Returns: 
+            A parsed file, the type depends on the extension of the processed file.
 
         Raises:
-            FileTypeError: An error occurs if the file extension is not supported.
             FileNotFoundError: An error occurs if the file does not exist or is not found.
-            PermissionError: An error occurs if the user running the program does not have the 
-                required permissions to access the input file.
+            IsADirectoryError: An error occurs if a directory is specified instead of a file.
+            PermissionError: An error occurs if the user running the program does not have the required 
+                permissions to access the input file.
+            SystemExit: An error occurs of the file is empty.
+            TypeError: An error occurs if the file extension is not supported.
+
+            MissingSectionHeaderError: An error occurs if the config file specified does not contain 
+                any section.
+            DuplicateSectionError: An error occurs if there are two sections with the same name in the 
+                config file specified.
+            DuplicateOptionError: An error occurs if there is a duplicate option in one of the sections 
+                of the config file specified.
         """
         try:
             path_to_file = os.path.expandvars(path_to_file)
-            with open(path_to_file, mode='r') as fd:
-                extension = path_to_file.split('.')[-1]
-                if extension in ('conf', 'cfg', 'prof'):
-                    file = configparser.ConfigParser(
-                        dict_type=collections.OrderedDict)
-                    file.optionxform = str
-                    file.read(path_to_file)
-                elif extension in ('log', 'tip', 'txt'):
-                    file = fd.read()
-                else:
-                    print('FileTypeError: ' + path_to_file +
-                          ': unsupported file extension.')
+            # Check on file size
+            if os.stat(path_to_file).st_size <= 0:
+                raise SystemExit()
+
+            if os.path.isfile(path_to_file):
+                with open(path_to_file, mode='r') as fd:
+                    extension = path_to_file.rsplit('.', 1)[1]
+
+                    if extension in ('conf', 'cfg', 'prof'):
+                        file = configparser.ConfigParser(
+                            dict_type=collections.OrderedDict)
+                        file.optionxform = str
+                        file.read(path_to_file)
+                    elif extension in ('log', 'tip', 'txt'):
+                        file = fd.read()
+                    else:
+                        raise TypeError()
+            elif os.path.isdir(path_to_file):
+                raise IsADirectoryError()
+            else:
+                raise FileNotFoundError()
+
         except FileNotFoundError:
-            print('FileNotFoundError: ' + path_to_file +
-                  ': No such file or directory.')
-            sys.exit(2)
+            Log().logger.critical(
+                'FileNotFoundError: No such file or directory: ' + path_to_file)
+            sys.exit(-1)
+        except IsADirectoryError:
+            Log().logger.critical('IsADirectoryError: Is a directory: ' +
+                                  path_to_file)
+            sys.exit(-1)
         except PermissionError:
-            print('PermissionError: ' + path_to_file + ': Permission denied.')
-            sys.exit(3)
+            Log().logger.critical('PermissionError: Permission denied: ' +
+                                  path_to_file)
+            sys.exit(-1)
+        except SystemExit:
+            Log().logger.critical('EmptyError: File empty: ' + path_to_file)
+            sys.exit(-1)
+        except TypeError:
+            Log().logger.critical('TypeError: Unsupported file extension: ' +
+                                  path_to_file)
+            sys.exit(-1)
+        except configparser.MissingSectionHeaderError as e:
+            Log().logger.critical('MissingSectionHeaderError: ' + str(e))
+            sys.exit(-1)
+        except configparser.DuplicateSectionError as e:
+            Log().logger.critical('DuplicateSectionError: ' + str(e))
+            sys.exit(-1)
+        except configparser.DuplicateOptionError as e:
+            Log().logger.critical('DuplicateOptionError: ' + str(e))
+            sys.exit(-1)
         else:
             return file
-
-    def remove_file_extension(self, file_name):
-        """
-        """
-        return file_name.rsplit('.', 1)[0]
 
     def execute_shell_command(self, shell_command, env):
         """Separate method to execute shell command.
         
-        This method is dedicated to execute a shell command and it handles exception in case of failure.
+        This method is dedicated to execute a shell command and it handles exceptions in case of 
+        failure.
 
         Args:
             shell_command: A string, the actual shell command that needs to be executed.
@@ -104,8 +141,6 @@ class Utils(metaclass=SingletonMeta):
             UnicodeDecodeError: An error occurred if decoding the shell command result failed 
                 with utf-8. Use latin-1 instead.
         """
-        error_list = ('failed', 'error', 'command not found',
-                      'Connection refused', 'No such file or directory')
         try:
             shell_command = os.path.expandvars(shell_command)
             proc = subprocess.run(shell_command,
@@ -113,21 +148,22 @@ class Utils(metaclass=SingletonMeta):
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   env=env)
-            shell_out = proc.stdout.decode('utf_8')
-            shell_err = proc.stderr.decode('utf_8')
+            stdout = proc.stdout.decode('utf_8')
+            stderr = proc.stderr.decode('utf_8')
             return_code = proc.returncode
         except UnicodeDecodeError:
-            shell_out = proc.stdout.decode('latin_1')
-            shell_err = proc.stderr.decode('latin_1')
+            stdout = proc.stdout.decode('latin_1')
+            stderr = proc.stderr.decode('latin_1')
             return_code = proc.returncode
         except:
-            shell_out = None
-            shell_err = None
-            return_code = None
-            return shell_out, shell_err, return_code
+            stdout = None
+            stderr = None
+            return_code = -1
+            return stdout, stderr, return_code
 
-        for string in error_list:
-            if string in shell_err:
-                shell_out = None
+        if return_code < 0 and Log().level == 'DEBUG':
+            print(stdout)
+            print('\n')
+            print(stderr)
 
-        return shell_out, shell_err, return_code
+        return stdout, stderr, return_code

@@ -1,6 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
+"""Module to generate the report of the compilation.
+
+Typical usage example:
+  report = Report()
+  report.add_entry(file_path, rc, elapsed_time)
+  report.generate()
 """
 # Generic/Built-in modules
 import os
@@ -13,88 +18,141 @@ from .Log import Log
 
 
 class Record(object):
-    _rc = 0
-    _source = ""
-    _section = ""
-    _unit_time = 0
+    """A class used to store the result data about each file processing.
 
-    def __init__(self, source_file, list_dir, last_section, compilation_status,
-                 elapsed_time):
-        self._source_file = source_file
-        self._list_dir = list_dir
+    Attributes:
+        _count: An integer, the number of programs being compiled so far.
+        _file_name: A string, the name of the file which has been processed.
+        _current_workdir: A string, the path of the working directory created for the processed file.
+        _processing_status: A string, whether the processing has been successful or failed.
+        _rc: An integer, the return code of the file processing.
+        _last_section: A string, the name of the last executed section.
+        _elapsed_time: An integer, for a given program this is the elapsed processing time.
+    
+    Methods:
+        __init__(count, file_name, current_workdir, processing_status, rc, last_section, elapsed_time): 
+            Initializes the record with all the attributes.
+        to_csv(): Convert the record data to a CSV record format, with a space as a delimiter.
+    """
+
+    def __init__(self, count, file_name, current_workdir, processing_status, rc,
+                 last_section, elapsed_time):
+        """Initializes the record with all the attributes.
+        """
+        self._count = count
+        self._file_name = file_name
+        self._current_workdir = current_workdir
+        self._processing_status = processing_status
+        self._rc = rc
         self._last_section = last_section
-        self._compilation_status = compilation_status
         self._elapsed_time = elapsed_time
 
     def to_csv(self):
-        return str(self._source_file + ',' + self._list_dir + ',' +
-                   self._last_section + ',' + self._compilation_status + ',' +
-                   str(round(self._elapsed_time, 4)))
+        """Convert the record data to a CSV record format, with a space as a delimiter.
+
+        Returns:
+            A string, the record with a CSV format.
+        """
+        return str(
+            self._count
+        ) + ',' + self._file_name + ',' + self._current_workdir + ',' + self._processing_status + ',' + str(
+            self._rc) + ',' + self._last_section + ',' + str(
+                round(self._elapsed_time, 4))
 
 
 class Report(object):
-    """
+    """A class used to create a report of the compilation.
 
     Attributes:
-        _success_count:
-        _fail_count:
-        _total_time:
+        _success_count: An integer, the number of successes.
+        _fail_count: An integer, the number of fails.
+        _total_time: An integer, the accumulated elapsed time.
+        _records: A list, all the record object created by the current execution.
 
     Methods:
-        __init__():
-        add_entry():
-        generate():
+        __init__(): Initializes the class with all the attributes.
+        add_entry(file_path, rc, elapsed_time): Adds a new record to the report of the compilation.
+        summary(clear): Generates a quick summary of the compilation.
     """
 
     def __init__(self):
+        """Initializes the class with all the attributes.
         """
-        """
+        self._report_file_path = ''
+
         self._success_count = 0
         self._fail_count = 0
         self._total_time = 0
 
-        self._records = []
+    def add_entry(self, source_file_path, rc, elapsed_time):
+        """Adds a new record to the report of the compilation.
 
-    def add_entry(self, source_file, last_job, return_code, elapsed_time):
+        It first creates the report file if it does not already exist, then analyzes one by one the 
+        input parameters, and retrieves some parameters from the Context to create the full report 
+        record. Finally, it writes the record to the report file.
+
+        Args:
+            file_path: A string, the absolute path of the source file.
+            rc: An integer, the return code of the file processing.
+            elapsed_time: An integer, the processing time.
+
+        Raises:
+            IndexError: An error occurs if there is no '/' symbol in the filename, which means the file 
+                name only has been provided and not the absolute file path.
         """
-        """
-        # Is the compilation a success or a failure?
-        if return_code >= 0:
-            compilation_status = 'S'
+        # Create report file
+        if self._report_file_path == '':
+            report_file_name = 'report/oftools_compile' + Context(
+            ).tag + Context().time_stamp + '.csv'
+            self._report_file_path = os.path.expandvars(
+                os.path.join(Context().root_workdir, report_file_name))
+            # Writing headers to the report file
+            with open(self._report_file_path, 'w') as fd:
+                fd.write('count,source,list_dir,result,rc,section,time(s)\n')
+                #fd.write('COUNT SOURCE LIST_DIR RESULT RC SECTION TIME(s)\n')
+                #fd.write('----- ---------- -------------------- -------- -- --------- -------\n')
+
+        # Analyze input parameter: file_path
+        try:
+            source_file_name = source_file_path.rsplit('/', 1)[1]
+        except IndexError:
+            source_file_name = source_file_path
+
+        # Analyze input parameter: rc
+        if rc >= 0:
             self._success_count += 1
-            Log().logger.info('BUILD SUCCESS (' + str(round(elapsed_time, 4)) +
-                              ' sec)')
+            processing_status = 'SUCCESS'
         else:
-            compilation_status = 'F'
             self._fail_count += 1
-            Log().logger.info('BUILD FAILED (' + str(round(elapsed_time, 4)) +
-                              ' sec)')
-        Log().logger.info('')
+            processing_status = 'FAILED'
+        Log().logger.info('BUILD ' + processing_status + ' (' +
+                          str(round(elapsed_time, 4)) + ' s)')
+        print('')
 
-        # Cumulate compilation times
+        # Analyze input parameter: elapsed_time, cumulate compilation times
         self._total_time += elapsed_time
 
-        # Retrieve section corresponding to the latest job for the report
-        #? Do we really want to remove the filter here? The user doesn't want to know exactly the section executed?
-        last_section = last_job._remove_filter_name(last_job.section)
+        count = self._success_count + self._fail_count
+        record = Record(count, source_file_name,
+                        Context().current_workdir, processing_status, rc,
+                        Context().last_section, elapsed_time)
 
-        #? Still mandatory section?????????
-        if last_section.startswith('deploy'):
-            if Context().is_mandatory_section_complete() is False:
-                last_section = Context().mandatory_section
+        with open(self._report_file_path, 'a') as fd:
+            line = record.to_csv()
+            fd.write('%s\n' % line)
 
-        #? Record class useless for me, only elapsed time need to be cast to string
-        record = Record(source_file,
-                        Context().current_workdir, last_section,
-                        compilation_status, elapsed_time)
-        self._records.append(record)
+    def summary(self, clear=False):
+        """Generates a quick summary of the compilation.
 
-    def generate(self):
+        If the user enables the clear option, the program deletes the report file and that's why the 
+        log message is being skipped.
+
+        Args:
+            clear: A boolean, the value of the argument clear from the CLI.
         """
-        """
-        # Write summary to log
         Log().logger.info(
-            '= SUMMARY ==================================================')
+            '===== SUMMARY =================================================================='
+        )
         Log().logger.info('TOTAL     : ' +
                           str(self._success_count + self._fail_count))
         Log().logger.info('SUCCESS   : ' + str(self._success_count))
@@ -102,19 +160,7 @@ class Report(object):
         Log().logger.info('TOTAL TIME: ' + str(round(self._total_time, 4)) +
                           ' sec')
 
-        # Create report file
-        report_name = 'report/oftools_compile' + Context().tag + Context(
-        ).time_stamp() + '.csv'
-        report_name = os.path.expandvars(
-            os.path.join(Context().root_workdir(), report_name))
-
-        # Write results to the file
-        with open(report_name, 'w') as fd:
-            fd.write('source,list_dir,section,success,time')
-
-            for record in self._records:
-                result = record.to_csv()
-                fd.write("%s\n" % result)
-
         # Inform the user that the report has been successfully generated
-        Log().logger.info('CSV report successfully generated: ' + report_name)
+        if clear is False:
+            Log().logger.info('CSV report successfully generated: ' +
+                              self._report_file_path)

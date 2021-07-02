@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
+"""Module to run the job for any compile section of the profile.
 
-Description more in details.
+Typical usage example:
+  job = CompileJob()
+  job.run(file_path_in)
 """
 # Generic/Built-in modules
 import os
@@ -17,88 +19,130 @@ from .Utils import Utils
 
 
 class CompileJob(Job):
-    """
+    """A class used to perform all the steps of a compile section.
 
     Attributes:
         Inherited from Job module.
     
     Methods:
-        _analyze():
-        _process_section():
-        _process_option(option):
-        run(file_path_in):
+        _analyze(): Analyzes prerequisites before running the job for the section.
+        _process_section(): Reads the section line by line to execute the corresponding methods.
+        _compilation(option): Runs the given shell command with all its options.
+        run(file_path_in): Performs all the steps for any compile section of the profile.
     """
 
     def _analyze(self):
-        """
-        """
-        # Check if setup section was successful
-        if Context().is_section_complete('setup') == False:
-            Log().logger.error(
-                'cannot proceed due to setup not being completed.')
-            #? We really need to exit here?
-            exit(-1)
+        """Analyzes prerequisites before running the job for the section.
 
-        # Analyze prerequisites before running the job for the section
-        # Include completion of section and filter evaluation if there is one
-        if self._is_section_complete() < 0 or self._filter_evaluation(
-        ) == False:
-            rc = -1
-        else:
+        It evaluates all the following elements:
+            - is the section already complete, based on the name without the filter variable
+            - is the section mandatory, list of sections in the setup section
+            - is the filter of section True or False, if there is one
+            - was the the setup section successful
+
+        Returns:
+            An integer, the return code of the analysis result.
+        """
+        if Context().is_section_complete(self._section_name_no_filter):
+            rc = 1
+        elif Context().is_section_mandatory(self._section_name_no_filter):
             rc = 0
+        elif Context().evaluate_filter(self._section_name,
+                                       self._filter_name) in (True, None):
+            rc = 0
+        else:
+            rc = 1
+
+        if Context().is_section_complete('setup', skip=False) == False:
+            rc = -1
+            Log().logger.error(
+                '[' + self._section_name +
+                '] Cannot proceed: setup section not complete. Aborting compilation job execution'
+            )
 
         return rc
 
     def _process_section(self):
+        """Reads the section line by line to execute the corresponding methods.
+
+        For any compile section, it mainly analyzes the args or 'option' option. And as any other 
+        section, it looks for environment and filter variables.
+
+        Returns:
+            An integer, the return code of the section execution.
         """
-        """
+        rc = 0
         Log().logger.debug('[' + self._section_name +
-                           '] start section. Processing options')
+                           '] Starting section, input filename: ' +
+                           self._file_path_in)
+        Context().last_section = self._section_name
+
+        compilation = False
+        status = 'incomplete'
 
         for key, value in self._profile[self._section_name].items():
-            if key == 'option':
-                self._compilation(value)
-                #? Potential issue with file name here?
-                file_name_out = Context().env['OF_COMPILE_OUT']
-                if os.path.isfile(file_name_out) == False:
-                    self._file_name_out = self._file_name_in
+            if key == 'args':
+                compilation = True
+            elif key == 'option' and 'args' not in self._profile[
+                    self._section_name].keys():
+                compilation = True
             else:
-                self._process_option(key, value)
+                rc = self._process_option(key, value)
+
+            if compilation and status == 'incomplete':
+                rc = self._compilation(value)
+                status = 'done'
+
+            if rc < 0:
+                Log().logger.error('[' + self._section_name +
+                                   '] Step failed: ' + key +
+                                   '. Aborting section execution')
+                break
+
+        if rc >= 0:
+            Log().logger.debug('[' + self._section_name +
+                               '] Ending section, output filename: ' +
+                               self._file_name_out)
+            Context().section_completed(self._section_name_no_filter)
+
+        return rc
 
     def _compilation(self, option):
+        """Runs the given shell command with all its options.
+
+        Returns:
+            An integer, the return code of the shell command executed.
         """
-        """
+        Log().logger.debug('[' + self._section_name +
+                           '] Processing compilation')
+
         # Build command
         shell_command = self._section_name_no_filter + ' ' + option
 
         # Run command
-        Log().logger.info('[' + self._section_name + '] ' + shell_command)
-        out, err, rc = Utils().execute_shell_command(shell_command,
-                                                     Context().env)
+        Log().logger.info('[' + self._section_name + '] ' +
+                          os.path.expandvars(shell_command))
+        _, _, rc = Utils().execute_shell_command(shell_command, Context().env)
 
-        # Handle error
-        if rc != 0:
-            Log().logger.error(err.decode(errors='ignore'))
-            Log().logger.error(out.decode(errors='ignore'))
-            exit(rc)
-
-        return
+        return rc
 
     def run(self, file_path_in):
-        """
-        """
-        if self._analyze() < 0:
-            return file_path_in
+        """Performs all the steps for any compile section of the profile.
 
-        # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
+        Returns:
+            An integer, the return code of the given compile section.
+        """
+        rc = self._analyze()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
+
         self._initialize_file_variables(file_path_in)
-        # Update Context with name of files being manipulated in this job execution
         self._update_context()
-        # Analysis of the compile section
-        self._process_section()
 
-        # TODO Put a condition to make sure that the section has been properly completed
-        # Clear file variables, set compile section as completed and write end section to log file
-        self._clear()
+        rc = self._process_section()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
 
-        return self._file_name_out
+        return rc

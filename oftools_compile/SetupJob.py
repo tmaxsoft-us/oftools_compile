@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
+"""Module to run the job for the setup section of the profile.
+
+Typical usage example:
+  job = SetupJob()
+  job.run(file_path_in)
 """
 
 # Generic/Built-in modules
 import os
 import shutil
-import time
 
 # Third-party modules
 
@@ -17,119 +20,172 @@ from .Log import Log
 
 
 class SetupJob(Job):
-    """
+    """A class used to perform all the steps of a setup section.
 
     Attributes:
         Inherited from Job module.
 
     Methods:
-        _analyze():
-        _process_section():
-        _init_current_workdir():
-        _init_log_file(current_workdir):
-        run(file_path_in):
+        _analyze(): Analyzes prerequisites before running the job for the section.
+        _process_section(): Reads the section line by line to execute the corresponding methods.
+        _init_current_workdir(): Initializes the working directory for the file being currently 
+            processed.
+        _init_file(): Copies the file to the working directory.
+        _init_log_file(): Initializes the log file for the file being currently processed.
+        run(file_path_in): Performs all the steps for the setup section of the profile.
     """
 
     def _analyze(self):
+        """Analyzes prerequisites before running the job for the section.
+
+        It evaluates the following statements:
+            - is the section already complete, based on the name without the filter variable
+            - is the section mandatory, list of sections in the setup section
+            - is the filter of section True or False, if there is one
+
+        Returns:
+            An integer, the return code of the analysis result.
         """
-        """
-        #? Is section completed still useful?
-        # Analyze prerequisites before running the job for the section
-        # Include completion of section and filter evaluation if there is one
-        if self._is_section_complete() < 0 or self._filter_evaluation(
-        ) == False:
-            rc = -1
-        else:
+        if Context().is_section_complete(self._section_name_no_filter):
+            rc = 1
+        elif Context().is_section_mandatory(self._section_name_no_filter):
             rc = 0
+        elif Context().evaluate_filter(self._section_name,
+                                       self._filter_name) in (True, None):
+            rc = 0
+        else:
+            rc = 1
 
         return rc
 
     def _process_section(self):
+        """Reads the section line by line to execute the corresponding methods.
+
+        For the setup section, it mainly analyzes the workdir and mandatory options. And as any other 
+        section, it looks for environment and filter variables.
+
+        Returns:
+            An integer, the return code of the section execution. 
         """
-        """
+        rc = 0
         Log().logger.debug('[' + self._section_name +
-                           '] start section. Processing options')
+                           '] Starting section, input filename: ' +
+                           self._file_path_in)
+        Context().last_section = self._section_name
 
         for key, value in self._profile[self._section_name].items():
             if key == 'workdir':
-                current_workdir = self._init_current_workdir()
-                self._init_log_file(current_workdir)
+                self._init_current_workdir()
+                rc = self._init_file()
+                self._init_log_file()
+            elif key == 'mandatory':
+                continue
+            elif key == 'housekeeping':
+                #TODO Code housekeeping feature
+                continue
             else:
-                self._process_option(key, value)
+                rc = self._process_option(key, value)
 
-    def _init_current_workdir(self):
-        """
-        """
-        current_workdir = os.path.join(
-            Context().root_workdir,
-            self._file_name_in + Context().tag + Context().time_stamp)
-
-        while True:
-            if not os.path.isdir(current_workdir):
-                os.mkdir(current_workdir)
+            if rc < 0:
+                Log().logger.error('[' + self._section_name +
+                                   '] Step failed: ' + key +
+                                   '. Aborting section execution')
                 break
 
-            Log().logger.warning(
-                current_workdir +
-                ' already exists. Sleeping 1 second to assign a new time stamp.'
-            )
-            time.sleep(1)
+        if rc >= 0:
+            Log().logger.debug('[' + self._section_name +
+                               '] Ending section, output filename: ' +
+                               self._file_name_out)
+            Context().section_completed(self._section_name_no_filter)
+
+        return rc
+
+    def _init_current_workdir(self):
+        """Initializes the working directory for the file being currently processed.
+        """
+        Log().logger.debug('[' + self._section_name +
+                           '] Creating working directory')
+
+        while True:
             current_workdir = os.path.join(
                 Context().root_workdir,
                 self._file_name_in + Context().tag + Context().time_stamp)
 
-        # Copy source file to the current work directory
-        shutil.copy(self._file_path_in, current_workdir)
-        # Change directory to work directory
+            # Check if the working directory already exists
+            if not os.path.isdir(current_workdir):
+                os.mkdir(current_workdir)
+                break
+            else:
+                Log().logger.warning(
+                    '[' + self._section_name +
+                    '] Working directory already exists: ' + current_workdir +
+                    '. Sleeping 1 second to assign a new time stamp')
+                Context().time_stamp(1)
+
+        # Change directory to current working directory and update Context
         os.chdir(current_workdir)
-        # Update Context with the current work directory
-        Context().current_workdir(current_workdir)
+        Context().current_workdir = current_workdir
 
-        return current_workdir
+    def _init_file(self):
+        """Copies the file to the current working directory.
 
-    def _init_log_file(self, current_workdir):
+        Returns:
+            An integer, the return code of the copy of the file.
         """
+        current_workdir = Context().current_workdir
+        Log().logger.debug('[' + self._section_name + '] Processing file copy')
+
+        try:
+            shutil.copy(self._file_path_in, current_workdir)
+            rc = 0
+        except shutil.SameFileError as e:
+            rc = -1
+            Log().logger.error('[' + self._section_name +
+                               '] Failed to copy: %s' % e)
+        except OSError as e:
+            rc = -1
+            Log().logger.error('[' + self._section_name +
+                               '] Failed to copy: %s' % e)
+        finally:
+            return rc
+
+    def _init_log_file(self):
+        """Initializes the log file for the file being currently processed.
+
+        It first opens the file, then write the header and the setup section steps to the file.
         """
+        current_workdir = Context().current_workdir
+        Log().logger.debug('[' + self._section_name + '] Creating log file')
         Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
 
-        header = '============================================================'
-        header = header[:1] + ' ' + self._file_name_in + ' ' + header[
-            len(self._file_name_in) + 2:]
+        header = '================================================================================'
+        header = header[0:4] + ' ' + self._file_name_in + ' ' + header[
+            len(self._file_name_in) + 4:]
 
         Log().logger.info(header)
-        Log().logger.info('[' + self._section_name + '] ' + 'mkdir ' +
+        Log().logger.info('[' + self._section_name + '] mkdir ' +
                           current_workdir)
-        Log().logger.info('[' + self._section_name + '] ' + 'cp ' +
+        Log().logger.info('[' + self._section_name + '] cd ' + current_workdir)
+        Log().logger.info('[' + self._section_name + '] cp ' +
                           self._file_path_in + ' ' + current_workdir)
-        Log().logger.info('[' + self._section_name + '] ' + 'cd ' +
-                          current_workdir)
 
     def run(self, file_path_in):
-        """
-        """
-        if self._analyze() < 0:
-            return file_path_in
+        """Performs all the steps for the setup section of the profile.
 
-        # Detect if the source provided is a file or a directory, and properly retrieve the name of the file
+        Returns:
+            An integer, the return code of the setup section.
+        """
+        rc = self._analyze()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
+
         self._initialize_file_variables(file_path_in)
-        # Update Context with name of files being manipulated in this job execution
         self._update_context()
-        # Analysis of the setup section
-        self._process_section()
 
-        #? Same question as always, what is mandatory section for?
-        # Set the mandatory section
-        sections = self._profile.sections()
-        if 'deploy' in sections:
-            for section in reversed(sections):
-                if section.startswith('deploy') is False:
-                    Log().logger.debug('[' + self._section_name +
-                                       '] mandatory section: ' + section)
-                    Context().mandatory_section(section)
-                    break
+        rc = self._process_section()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
 
-        # TODO Put a condition to make sure that the section has been properly completed
-        # Clear file variables, set setup section as completed and write end section to log file
-        self._clear()
-
-        return self._file_name_out
+        return rc

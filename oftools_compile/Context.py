@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Set of variables and parameters for compilation execution.
+"""Set of variables and parameters for program execution.
 
-  Typical usage example:
-
-  Context = Context()
+Typical usage example:
+  Context().tag = args.tag
+  Context().clear()
 """
 
 # Generic/Built-in modules
 import datetime
 import os
-import subprocess
+import sys
+import time
 
 # Third-party modules
 
@@ -29,30 +30,52 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class Context(metaclass=SingletonMeta):
+class Context(object, metaclass=SingletonMeta):
     """A class used to store a set of variables and parameters across all modules.
 
     Attributes:
-        _init_env: A dictionary,
-        _env: A dictionary,
+        _init_env: A dictionary, the output of the os.environ.copy method.
+        _env: A dictionary, all the environment variables for the current execution of the program.
 
-        _filters: A dictionary,
-        _filter_results: A dictionary,
+        _root_workdir: A string, the absolute path of the working directory for all compilations.
+        _current_workdir: A string, the absolute path of the directory created for the program being 
+            currently compiled.
+        _work_directories: A list of strings, the absolute paths of all the working directories. 
+        _group_directory: A string, the absolute path of the group directory if the grouping feature is 
+            being used.
 
-        _root_workdir: A string,
-        _current_workdir: A string,
-        _work_directories: A list,
+        _last_section: A string, the name of the last section being executed, whether it succeeds or 
+            fails.
+        _mandatory_section: A list, all the sections that are listed as mandatory.
+        _complete_sections: A dictionary, the section names and their status as complete or not.
 
-        _mandatory_section: A string,
-        _complete_sections: A dictionary,
+        _filters: A dictionary, filter names and their respective values.
 
-        _tag: A string,
-        _time_stamp: A string,
+        _report_file_path: A string, the absolute path of the report file of the compilation.
 
-        _init_pwd: A string,
+        _tag: A string, A keyword to identify working directories and report for a given compilation
+        _time_stamp: A string, a datetime respecting _%Y%m%d_%H%M%S format for working directories and 
+            report identification purposes.
+
+        _init_pwd: A string, the initial directory where the command has been executed. 
 
     Methods:
-        __init(): Initializes all attributes of the class.
+        __init__(): Initializes all attributes of the class.
+        add_env_variable(key, value): Adds a variable to the environment.
+        add_filter(key, value): Adds a filter variable to the list of filters.
+        add_mandatory_section(section): Adds the input section name to mandatory sections list.
+
+        evaluate_filter(section_name, filter_name): Evaluates the status of the filter variable passed 
+            as an argument.
+
+        is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
+        is_section_complete(section_name_no_filter, skip=True): Checks if given section is already 
+            complete.
+        are_mandatory_sections_complete(): Checks success status of all mandatory sections.
+        section_completed(section_name_no_filter): Changes the status of the given section to complete.
+
+        clear(): Clears context after each file processing.
+        clear_all(): Clears context completely at the end of the program execution.
     """
 
     def __init__(self):
@@ -62,18 +85,22 @@ class Context(metaclass=SingletonMeta):
         self._init_env = os.environ.copy()
         self._env = self._init_env
 
-        # Filter variables
-        self._filters = {}
-        self._filter_results = {}
-
         # Directories
         self._root_workdir = ''
         self._current_workdir = ''
         self._work_directories = []
+        self._group_directory = ''
 
         # Profile sections
-        self._mandatory_section = ''
+        self._last_section = ''
+        self._mandatory_sections = []
         self._complete_sections = {}
+
+        # Filter variables
+        self._filters = {}
+
+        # Report
+        self._report_file_path = ''
 
         # Tag
         self._tag = ''
@@ -85,186 +112,250 @@ class Context(metaclass=SingletonMeta):
 
     @property
     def env(self):
-        """Getter method for the dictionary env, containing environment variables.
+        """Getter method for the attribute _env.
         """
         return self._env
 
     @property
-    def filters(self):
-        """Getter method for the dictionary filters, containing filter variables.
-        """
-        return self._filters
-
-    @property
-    def filter_results(self):
-        """
-        """
-        return self._filter_results
-
-    @property
     def root_workdir(self):
-        """
+        """Getter method for the attribute _root_workdir.
         """
         return self._root_workdir
 
     @root_workdir.setter
     def root_workdir(self, workdir):
-        """
+        """Setter method for the attribute _root_workdir.
         """
         self._root_workdir = workdir
 
     @property
     def current_workdir(self):
-        """
+        """Getter method for the attribute _current_workdir.
         """
         return self._current_workdir
 
     @current_workdir.setter
     def current_workdir(self, workdir):
-        """
+        """Setter method for the attribute _current_workdir.
         """
         self._current_workdir = workdir
+        self._work_directories.append(workdir)
 
     @property
     def work_directories(self):
-        """
+        """Getter method for the attribute _work_directories.
         """
         return self._work_directories
 
-    #? What mandatory is used for? Figured it out by yourself!
     @property
-    def mandatory_section(self):
+    def group_directory(self):
+        """Getter method for the attribute _group_directory.
         """
-        """
-        return self._mandatory_section
+        return self._group_directory
 
-    @mandatory_section.setter
-    def mandatory_section(self, section):
+    @group_directory.setter
+    def group_directory(self, directory):
+        """Setter method for the attribute _group_directory.
         """
+        self._group_directory = directory
+
+    @property
+    def last_section(self):
+        """Getter method for the attribute _last_section.
         """
-        index = section.find('?')
-        if index > 0:
-            section = section[:index]
-        self._mandatory_section = section
+        return self._last_section
+
+    @last_section.setter
+    def last_section(self, section):
+        """Setter method for the attribute _last_section.
+        """
+        self._last_section = section
+
+    @property
+    def mandatory_sections(self):
+        """Getter method for the attribute _mandatory_sections.
+        """
+        return self._mandatory_sections
 
     @property
     def complete_sections(self):
-        """
+        """Getter method for the attribute _complete_sections.
         """
         return self._complete_sections
 
-    @complete_sections.setter
-    def add_complete_sections(self, value):
-        self._complete_sections = value
+    @property
+    def filters(self):
+        """Getter method for the attribute _filters.
+        """
+        return self._filters
+
+    @property
+    def report_file_path(self):
+        """Getter method for the attribute _report_file_path.
+        """
+        return self._report_file_path
+
+    @report_file_path.setter
+    def report_file_path(self, file_path):
+        """Setter method for the attribute _report_file_path.
+        """
+        self._report_file_path = file_path
 
     @property
     def tag(self):
-        """
+        """Getter method for the attribute _tag.
         """
         return self._tag
 
     @tag.setter
     def tag(self, tag):
-        """
+        """Setter method for the attribute _tag.
         """
         if tag is not None:
             self._tag = '_' + tag
 
     @property
     def time_stamp(self):
-        """
+        """Getter method for the attribute _time_stamp.
         """
         return self._time_stamp
 
     @time_stamp.setter
-    def time_stamp(self, update):
+    def time_stamp(self, update=0):
+        """Setter method for the attribute _time_stamp.
         """
-        """
+        time.sleep(1)
         if update == 1:
             self._time_stamp = datetime.datetime.now().strftime(
                 '_%Y%m%d_%H%M%S')
 
     def add_env_variable(self, key, value):
+        """Adds a variable to the environment.
         """
-        """
-        if key.startswith('$'):
-            if value.startswith('`') and value.endswith('`'):
-                # value = value[value.find('`') + 1:value.rfind('`')]
-                value = value[1:-1]
-                proc = subprocess.Popen([value],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        shell=True,
-                                        env=self._env)
-                out, _ = proc.communicate()
-                value = out.decode(errors='ignore').rstrip()
-                self._env[key[1:]] = value
-            else:
-                self._env[key[1:]] = os.path.expandvars(value)
+        if value.startswith('`') and value.endswith('`'):
+            value = value[1:-1]
+            out, _, _ = Utils().execute_shell_command(value, self._env)
+            value = out.decode(errors='ignore').rstrip()
+            # Write to env dictionary without dollar sign
+            self._env[key[1:]] = value
+        else:
+            self._env[key[1:]] = os.path.expandvars(value)
 
         os.environ.update(self._env)
 
     def add_filter(self, key, value):
+        """Adds a filter variable to the list of filters.
         """
+        # Write to filters dictionary without question mark
+        self._filters[key[1:]] = value
+
+    def add_mandatory_section(self, section):
+        """Adds the input section name to mandatory sections list.
         """
-        self._filters[key] = value
-        self._filter_results[key] = False
+        self._mandatory_sections.append(section)
 
-    def evaluate_filter(self, key):
+    def evaluate_filter(self, section_name, filter_name):
+        """Evaluates the status of the filter variable passed as an argument.
         """
-        """
-        filter_result = False
-        shell_command = self._filters[key]
-
-        # Filter evaluation
-        out, err, rc = Utils().execute_shell_command(shell_command, self._env)
-
-        #? What is it for?
-        if out != b'':
-            Log().logger.debug(err.decode(errors='ignore'))
-        if err != b'':
-            Log().logger.debug(out.decode(errors='ignore'))
-
-        # grep command returns 0 if line matches
-        if rc == 0:
-            filter_result = True
-        else:
+        if filter_name != '':
             filter_result = False
+            shell_command = self._filters[filter_name]
 
-        self._filter_results[key] = filter_result
+            # Filter evaluation
+            out, err, rc = Utils().execute_shell_command(
+                shell_command, self._env)
+
+            # In debug mode, the program logs source file lines that match the filter
+            if out != b'':
+                Log().logger.debug(err)
+            if err != b'':
+                Log().logger.debug(out)
+
+            # grep command returns 0 if line matches
+            if rc == 0:
+                filter_result = True
+            else:
+                filter_result = False
+                Log().logger.debug(
+                    '[' + section_name + '] Filter variable ' + filter_name +
+                    ' evaluation result: False. Skipping section.')
+        else:
+            filter_result = None
 
         return filter_result
 
-    def add_workdir(self):
+    def is_section_mandatory(self, section_name_no_filter):
+        """Checks if given section is mandatory or not.
         """
-        """
-        self._work_directories.append(self._cur_workdir)
+        if section_name_no_filter in self._mandatory_sections:
+            mandatory_status = True
+        else:
+            mandatory_status = False
 
-    def section_completed(self, section):
-        """
-        """
-        self._complete_sections[section] = True
+        return mandatory_status
 
-    def is_mandatory_section_complete(self):
+    def is_section_complete(self, section_name_no_filter, skip=True):
+        """Checks if given section is already complete.
         """
-        """
-        return self._complete_sections[self.mandatory_section]
+        section_status = self._complete_sections[section_name_no_filter]
 
-    def is_section_complete(self, section):
+        if section_status and skip is True:
+            Log().logger.debug(
+                '[' + section_name_no_filter +
+                '] Section has already been processed. Skipping section')
+
+        return section_status
+
+    def are_mandatory_sections_complete(self):
+        """Checks success status of all mandatory sections.
         """
+        for section_name in self._mandatory_sections:
+            #TODO not necessary in the list contains only section without filter variables
+            if '?' in section_name:
+                section_name_no_filter = section_name.split('?')[0]
+            else:
+                section_name_no_filter = section_name
+            # Is this mandatory section completed?
+            try:
+                if self.is_section_complete(section_name_no_filter,
+                                            skip=False) is False:
+                    raise SystemError()
+            except SystemError:
+                Log().logger.error('Mandatory section ' + section_name +
+                                   ' failed. Aborting program')
+                #? We really need to exit here?
+                sys.exit(-1)
+
+    def section_completed(self, section_name_no_filter):
+        """Changes the status of the given section to complete.
         """
-        return self._complete_sections[section]
+        self._complete_sections[section_name_no_filter] = True
 
     def clear(self):
-        """
+        """Clears context after each file processing.
         """
         self._env = self._init_env
         os.environ.update(self._init_env)
 
-        self._cur_workdir = ''
-        self._mandatory_section = ''
-
-        self._complete_sections.clear()
         self._filters.clear()
+        self._work_directories.append(self._current_workdir)
+
+        self.are_mandatory_sections_complete()
+        for key in self._complete_sections.keys():
+            self._complete_sections[key] = False
+
+        os.chdir(self._init_pwd)
+
+    def clear_all(self):
+        """Clears context completely at the end of the program execution.
+        """
+        self._root_workdir = ''
+        self._current_workdir = ''
+        self._work_directories = []
+        self._group_directory = ''
+
+        self._last_section = ''
+        self._mandatory_sections = []
+        self._complete_sections.clear()
 
         os.chdir(self._init_pwd)
