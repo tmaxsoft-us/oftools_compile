@@ -14,11 +14,11 @@ install_user:
 
 uninstall:
 	rm -r build dist oftools_compile.egg-info
-	pip3 uninstall oftools-compile
+	pip3 uninstall -y oftools-compile
 
 reinstall:
 	rm -r build dist oftools_compile.egg-info
-	pip3 uninstall oftools-compile
+	pip3 uninstall -y oftools-compile
 	python3 setup.py bdist_wheel
 	pip3 install dist/*.whl
 
@@ -36,12 +36,9 @@ yapf:
 
 # Optional arguments:
 # --maxfail = <num> : Stop test suite after n test failures
-pytest_integration:
-	pytest tests/integration/ -c pytest.ini --color=yes -v
-
-pytest_unit:
-	pytest tests/unit/ -c pytest.ini --color=yes -v
+test:
+	pytest --color=yes -v -c tests/pytest.ini tests/unit/
 
 coverage:
-	coverage run --source oftools_compile -m py.test -v -s
+	coverage run --source=oftools_compile -m pytest --color=yes -v -s
 	coverage report

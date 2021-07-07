@@ -71,7 +71,6 @@ class Context(object, metaclass=SingletonMeta):
         is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
         is_section_complete(section_name_no_filter, skip=True): Checks if given section is already 
             complete.
-        are_mandatory_sections_complete(): Checks success status of all mandatory sections.
         section_completed(section_name_no_filter): Changes the status of the given section to complete.
 
         clear(): Clears context after each file processing.
@@ -234,7 +233,7 @@ class Context(object, metaclass=SingletonMeta):
         """
         if value.startswith('`') and value.endswith('`'):
             value = value[1:-1]
-            out, _, _ = Utils().execute_shell_command(value, self._env)
+            out, _, _ = Utils().execute_shell_command(value, 'env_variable', self._env)
             value = out.decode(errors='ignore').rstrip()
             # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
@@ -252,7 +251,16 @@ class Context(object, metaclass=SingletonMeta):
     def add_mandatory_section(self, section):
         """Adds the input section name to mandatory sections list.
         """
-        self._mandatory_sections.append(section)
+        if '?' in section:
+            Log().logger.warning(
+                '[setup] Filter variable not allowed in the mandatory sections: ' + section )
+            section_name_no_filter = section.split('?')[0]
+        else:
+            section_name_no_filter = section
+
+        Log().logger.info(
+                '[setup] Adding section to mandatory sections: ' + section_name_no_filter )
+        self._mandatory_sections.append(section_name_no_filter)
 
     def evaluate_filter(self, section_name, filter_name):
         """Evaluates the status of the filter variable passed as an argument.
@@ -262,18 +270,15 @@ class Context(object, metaclass=SingletonMeta):
             shell_command = self._filters[filter_name]
 
             # Filter evaluation
-            out, err, rc = Utils().execute_shell_command(
-                shell_command, self._env)
-
-            # In debug mode, the program logs source file lines that match the filter
-            if out != b'':
-                Log().logger.debug(err)
-            if err != b'':
-                Log().logger.debug(out)
+            _, _, rc = Utils().execute_shell_command(
+                shell_command, 'filter', self._env)
 
             # grep command returns 0 if line matches
             if rc == 0:
                 filter_result = True
+                Log().logger.debug(
+                    '[' + section_name + '] Filter variable ' + filter_name +
+                    ' evaluation result: True. Executing section.')
             else:
                 filter_result = False
                 Log().logger.debug(
@@ -306,26 +311,6 @@ class Context(object, metaclass=SingletonMeta):
 
         return section_status
 
-    def are_mandatory_sections_complete(self):
-        """Checks success status of all mandatory sections.
-        """
-        for section_name in self._mandatory_sections:
-            #TODO not necessary in the list contains only section without filter variables
-            if '?' in section_name:
-                section_name_no_filter = section_name.split('?')[0]
-            else:
-                section_name_no_filter = section_name
-            # Is this mandatory section completed?
-            try:
-                if self.is_section_complete(section_name_no_filter,
-                                            skip=False) is False:
-                    raise SystemError()
-            except SystemError:
-                Log().logger.error('Mandatory section ' + section_name +
-                                   ' failed. Aborting program')
-                #? We really need to exit here?
-                sys.exit(-1)
-
     def section_completed(self, section_name_no_filter):
         """Changes the status of the given section to complete.
         """
@@ -338,9 +323,7 @@ class Context(object, metaclass=SingletonMeta):
         os.environ.update(self._init_env)
 
         self._filters.clear()
-        self._work_directories.append(self._current_workdir)
 
-        self.are_mandatory_sections_complete()
         for key in self._complete_sections.keys():
             self._complete_sections[key] = False
 

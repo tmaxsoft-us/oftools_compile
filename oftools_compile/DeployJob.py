@@ -58,24 +58,35 @@ class DeployJob(Job):
         else:
             rc = 1
 
-        compile_status = False
+        compile_section = False
+        completion_status = False
+
         for key, value in Context().complete_sections.items():
-            if key not in ('setup', 'deploy') and value is True:
-                compile_status = True
+            if key not in ('setup', 'deploy'):
+                compile_section = True
+                completion_status = value
                 break
 
-        if compile_status is True:
-            rc = 0
+        if compile_section is True:
             Log().logger.debug(
                 '[' + self._section_name +
-                '] Complete compile section found. Proceeding deploy job execution'
-            )
+                '] Compile section found. Evaluating completion status')
+            if completion_status is True:
+                rc = 0
+                Log().logger.debug(
+                    '[' + self._section_name +
+                    '] Complete compile section found. Proceeding deploy job execution'
+                )
+            else:
+                rc = -1
+                Log().logger.error(
+                    '[' + self._section_name +
+                    '] None of the compile section is complete. Aborting deploy job execution'
+                )
         else:
-            rc = -1
-            Log().logger.error(
-                '[' + self._section_name +
-                '] None of the compile section is complete. Aborting deploy job execution'
-            )
+            rc = 0
+            Log().logger.debug('[' + self._section_name +
+                               '] No compile section found. Deploying only')
 
         return rc
 
@@ -147,8 +158,8 @@ class DeployJob(Job):
                               self._file_name_in + ' ' + self._file_name_out)
         except shutil.SameFileError:
             rc = 0
-            Log().logger.debug('[' + self._section_name +
-                               '] No copy required, file already exists')
+            Log().logger.warning('[' + self._section_name +
+                                 '] No copy required, file already exists')
         except OSError as e:
             rc = -1
             Log().logger.error('[' + self._section_name +
@@ -174,7 +185,7 @@ class DeployJob(Job):
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
-                    shell_command,
+                    shell_command, 'deploy',
                     Context().env)
                 if rc < 0:
                     break
@@ -202,7 +213,7 @@ class DeployJob(Job):
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
-                    shell_command,
+                    shell_command, 'deploy',
                     Context().env)
                 if rc < 0:
                     break
@@ -211,7 +222,7 @@ class DeployJob(Job):
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
-                    shell_command,
+                    shell_command, 'deploy',
                     Context().env)
                 if rc < 0:
                     break
@@ -237,7 +248,7 @@ class DeployJob(Job):
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
-                    shell_command,
+                    shell_command, 'deploy',
                     Context().env)
                 if rc < 0:
                     break
@@ -246,7 +257,7 @@ class DeployJob(Job):
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
-                    shell_command,
+                    shell_command, 'deploy',
                     Context().env)
                 if rc < 0:
                     break
@@ -259,13 +270,13 @@ class DeployJob(Job):
         Returns:
             An integer, the return code of the deploy section.
         """
+        self._initialize_file_variables(file_path_in)
+        self._update_context()
+
         rc = self._analyze()
         if rc != 0:
             self._file_name_out = file_path_in
             return rc
-
-        self._initialize_file_variables(file_path_in)
-        self._update_context()
 
         rc = self._process_section()
         if rc != 0:

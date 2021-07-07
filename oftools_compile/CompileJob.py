@@ -83,9 +83,11 @@ class CompileJob(Job):
         for key, value in self._profile[self._section_name].items():
             if key == 'args':
                 compilation = True
-            elif key == 'option' and 'args' not in self._profile[
-                    self._section_name].keys():
-                compilation = True
+            elif key == 'option':
+                if 'args' in self._profile[self._section_name].keys():
+                    continue
+                else:
+                    compilation = True
             else:
                 rc = self._process_option(key, value)
 
@@ -122,7 +124,8 @@ class CompileJob(Job):
         # Run command
         Log().logger.info('[' + self._section_name + '] ' +
                           os.path.expandvars(shell_command))
-        _, _, rc = Utils().execute_shell_command(shell_command, Context().env)
+        _, _, rc = Utils().execute_shell_command(shell_command, 'compile',
+                                                 Context().env)
 
         return rc
 
@@ -132,13 +135,13 @@ class CompileJob(Job):
         Returns:
             An integer, the return code of the given compile section.
         """
+        self._initialize_file_variables(file_path_in)
+        self._update_context()
+
         rc = self._analyze()
         if rc != 0:
             self._file_name_out = file_path_in
             return rc
-
-        self._initialize_file_variables(file_path_in)
-        self._update_context()
 
         rc = self._process_section()
         if rc != 0:

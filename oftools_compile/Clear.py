@@ -43,7 +43,11 @@ class Clear():
     def _clear_work_directories(self):
         """Removes all the working directories created during the given execution.
         """
-        Log().logger.debug('Removing working directories one by one')
+        if len(self._workdir_list) == 1:
+            Log().logger.debug('CLEAR: Removing working directory')
+        else:
+            Log().logger.debug('CLEAR: Removing working directories one by one')
+            
         for directory in self._workdir_list:
             shutil.rmtree(directory, ignore_errors=True)
 
@@ -51,6 +55,7 @@ class Clear():
         """Removes the report file from the report folder.
         """
         try:
+            Log().logger.debug('CLEAR: Removing report file')
             os.remove(self._report_file_path)
         except IsADirectoryError:
             Log().logger.debug('IsADirectoryError: Is a directory: ' +

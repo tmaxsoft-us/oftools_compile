@@ -14,6 +14,7 @@ import shutil
 
 # Owned modules
 from .Context import Context
+from .Log import Log
 
 
 class Grouping(object):
@@ -52,6 +53,8 @@ class Grouping(object):
         """
         # Check if the group folder already exist
         if not os.path.isdir(self._group_directory):
+            Log().logger.debug('GROUPING: Creating group directory: ' +
+                               self._group_directory)
             os.mkdir(self._group_directory)
 
         return 0
@@ -62,22 +65,35 @@ class Grouping(object):
         Returns:
             An integer, the return code of the method.
         """
+        Log().logger.debug(
+            'GROUPING: Moving working directories and aggregating logs')
+
         with open(self._group_log, 'w') as group_log:
 
             for directory_path in self._workdir_list:
-                file_list = os.listdir(directory_path)
+                try:
+                    file_list = os.listdir(directory_path)
 
-                for file in file_list:
-                    if file == 'oftools_compile.log':
-                        # Retrieve absolute path of the current log file
-                        file_path = os.path.join(directory_path, file)
-                        with open(file_path, 'r') as oftools_compile_log:
-                            # Read the log file and write to group log file
-                            group_log.write(oftools_compile_log.read())
-                            group_log.write('\n\n')
+                    for file in file_list:
+                        if file == 'oftools_compile.log':
+                            # Retrieve absolute path of the current log file
+                            file_path = os.path.join(directory_path, file)
+                            with open(file_path, 'r') as oftools_compile_log:
+                                # Read the log file and write to group log file
+                                group_log.write(oftools_compile_log.read())
+                                group_log.write('\n\n')
 
-                # Move all compilation folders one by one
-                shutil.move(directory_path, self._group_directory)
+                    # Move all compilation folders one by one
+                    shutil.move(directory_path, self._group_directory)
+
+                except FileNotFoundError:
+                    Log().logger.warning(
+                        'FileNotFoundError: No such file or directory:' +
+                        directory_path + '. Skipping working directory')
+                except shutil.Error as e:
+                    Log().logger.warning(
+                        'Error: ' + str(e) +
+                        '. Skipping working directory move command')
 
         return 0
 

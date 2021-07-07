@@ -67,7 +67,6 @@ class Report(object):
         _success_count: An integer, the number of successes.
         _fail_count: An integer, the number of fails.
         _total_time: An integer, the accumulated elapsed time.
-        _records: A list, all the record object created by the current execution.
 
     Methods:
         __init__(): Initializes the class with all the attributes.
@@ -78,8 +77,6 @@ class Report(object):
     def __init__(self):
         """Initializes the class with all the attributes.
         """
-        self._report_file_path = ''
-
         self._success_count = 0
         self._fail_count = 0
         self._total_time = 0
@@ -101,13 +98,13 @@ class Report(object):
                 name only has been provided and not the absolute file path.
         """
         # Create report file
-        if self._report_file_path == '':
+        if Context().report_file_path == '':
             report_file_name = 'report/oftools_compile' + Context(
             ).tag + Context().time_stamp + '.csv'
-            self._report_file_path = os.path.expandvars(
+            Context().report_file_path = os.path.expandvars(
                 os.path.join(Context().root_workdir, report_file_name))
             # Writing headers to the report file
-            with open(self._report_file_path, 'w') as fd:
+            with open(Context().report_file_path, 'w') as fd:
                 fd.write('count,source,list_dir,result,rc,section,time(s)\n')
                 #fd.write('COUNT SOURCE LIST_DIR RESULT RC SECTION TIME(s)\n')
                 #fd.write('----- ---------- -------------------- -------- -- --------- -------\n')
@@ -137,7 +134,7 @@ class Report(object):
                         Context().current_workdir, processing_status, rc,
                         Context().last_section, elapsed_time)
 
-        with open(self._report_file_path, 'a') as fd:
+        with open(Context().report_file_path, 'a') as fd:
             line = record.to_csv()
             fd.write('%s\n' % line)
 
@@ -162,5 +159,5 @@ class Report(object):
 
         # Inform the user that the report has been successfully generated
         if clear is False:
-            Log().logger.info('CSV report successfully generated: ' +
-                              self._report_file_path)
+            Log().logger.info('REPORT: CSV report successfully generated: ' +
+                              Context().report_file_path)

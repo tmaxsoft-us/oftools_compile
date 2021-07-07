@@ -8,6 +8,7 @@ import os
 import sys
 import traceback
 import time
+# import logging
 
 # Third-party modules
 
@@ -158,6 +159,11 @@ class Main(object):
                 extension = profile_path.rsplit('.', 1)[1]
                 if extension != 'prof':
                     raise TypeError()
+        except IndexError:
+            Log().logger.critical(
+                'IndexError: Given profile does not have a .prof extension: ' +
+                profile)
+            sys.exit(-1)
         except TypeError:
             Log().logger.critical(
                 'TypeError: Expected .prof extension, found ' + extension +
@@ -191,20 +197,20 @@ class Main(object):
             A list of Job objects.
 
         Raises:
-            #TODO Complete docstrings, maybe change to behavior to print traceback only with DEBUG as log level
+            #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
         """
         jobs = []
         job_factory = JobFactory(profile)
 
         for section_name in profile.sections:
             try:
-                Log().logger.debug('Creating job for the section: ' +
-                                   section_name)
+                # Log().logger.debug('Creating job for the section: ' +
+                #                    section_name)
                 job = job_factory.create(section_name)
                 jobs.append(job)
             except:
                 traceback.print_exc()
-                Log().logger.debug(
+                Log().logger.error(
                     'Unexpected error detected during the job creation')
                 sys.exit(-1)
 
@@ -216,6 +222,8 @@ class Main(object):
         Returns:
             An integer, the return code of the program.
         """
+        # For testing purposes. allow to remove logs when executing coverage
+        # logging.disable(logging.CRITICAL)
         Log().open_stream()
 
         # Parse command-line options
@@ -223,6 +231,7 @@ class Main(object):
 
         # Initialize variables for program execution
         Log().set_level(args.log_level)
+        Log().logger.debug(' '.join((arg for arg in sys.argv)))
         Context().tag = args.tag
         profile_dict = {}
         report = Report()
@@ -269,7 +278,8 @@ class Main(object):
                 # Report related tasks
                 elapsed_time = time.time() - start_time
                 report.add_entry(file_path, rc, elapsed_time)
-                # Need to clear context and close log file at the end of each file processing
+                # Need to clear return code, context and close log file at the end of each file processing
+                rc = 0
                 Context().clear()
                 Log().close_file()
 

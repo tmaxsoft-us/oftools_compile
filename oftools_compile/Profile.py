@@ -134,7 +134,6 @@ class Profile(object):
         if self._data.has_option('setup', 'mandatory'):
             value = self._data.get('setup', 'mandatory')
 
-            #TODO it is forbidden to specify a mandatory section with a '?' in the name
             if value != '':
                 # Split the mandatory sections in a list
                 value = value.split(':')
@@ -144,14 +143,15 @@ class Profile(object):
                         if section in self._data.sections():
                             Context().add_mandatory_section(section)
                         else:
-                            raise SystemError()
-                    except SystemError:
-                        Log().logger.debug(
+                            raise Warning()
+                    except Warning:
+                        Log().logger.warning(
                             '[setup] Mandatory section does not exist in current profile: Skipping section: '
                             + section)
-                Log().logger.debug('Mandatory sections: ' + value)
+                Log().logger.debug('[setup] Mandatory sections: ')
+                Log().logger.debug(Context().mandatory_sections)
             else:
-                Log().logger.debug(
+                Log().logger.warning(
                     '[setup] No mandatory section specified. Skipping option: mandatory'
                 )
 

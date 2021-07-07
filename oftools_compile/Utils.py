@@ -73,7 +73,7 @@ class Utils(object, metaclass=SingletonMeta):
             path_to_file = os.path.expandvars(path_to_file)
             # Check on file size
             if os.stat(path_to_file).st_size <= 0:
-                raise SystemExit()
+                raise SystemError()
 
             if os.path.isfile(path_to_file):
                 with open(path_to_file, mode='r') as fd:
@@ -105,7 +105,7 @@ class Utils(object, metaclass=SingletonMeta):
             Log().logger.critical('PermissionError: Permission denied: ' +
                                   path_to_file)
             sys.exit(-1)
-        except SystemExit:
+        except SystemError:
             Log().logger.critical('EmptyError: File empty: ' + path_to_file)
             sys.exit(-1)
         except TypeError:
@@ -124,7 +124,7 @@ class Utils(object, metaclass=SingletonMeta):
         else:
             return file
 
-    def execute_shell_command(self, shell_command, env):
+    def execute_shell_command(self, shell_command, command_type, env):
         """Separate method to execute shell command.
         
         This method is dedicated to execute a shell command and it handles exceptions in case of 
@@ -132,6 +132,8 @@ class Utils(object, metaclass=SingletonMeta):
 
         Args:
             shell_command: A string, the actual shell command that needs to be executed.
+            command_type: A string, the type of the command to execute. As of right now, it is 
+                either compile, deploy, env_variable or filter.
             env: A dictionary, all the environment variables currently in the shell environment.
 
         Returns:
@@ -161,9 +163,17 @@ class Utils(object, metaclass=SingletonMeta):
             return_code = -1
             return stdout, stderr, return_code
 
-        if return_code < 0 and Log().level == 'DEBUG':
-            print(stdout)
-            print('\n')
-            print(stderr)
+        if Log().level == 'DEBUG':
+            if return_code != 0 and command_type != 'filter':
+                Log().logger.error(stdout)
+                Log().logger.error(stderr)
+                Log().logger.error('return code: ' + str(return_code))
+            else:
+                Log().logger.debug(stdout)
+                Log().logger.debug(stderr)
+                Log().logger.debug('return code: ' + str(return_code))
+        elif return_code != 0 and command_type != 'filter':
+            Log().logger.error(stdout)
+            Log().logger.error(stderr)
 
         return stdout, stderr, return_code

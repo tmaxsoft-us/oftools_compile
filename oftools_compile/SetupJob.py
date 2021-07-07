@@ -120,7 +120,7 @@ class SetupJob(Job):
                     '[' + self._section_name +
                     '] Working directory already exists: ' + current_workdir +
                     '. Sleeping 1 second to assign a new time stamp')
-                Context().time_stamp(1)
+                Context().time_stamp = 1
 
         # Change directory to current working directory and update Context
         os.chdir(current_workdir)
@@ -175,13 +175,13 @@ class SetupJob(Job):
         Returns:
             An integer, the return code of the setup section.
         """
+        self._initialize_file_variables(file_path_in)
+        self._update_context()
+        
         rc = self._analyze()
         if rc != 0:
             self._file_name_out = file_path_in
             return rc
-
-        self._initialize_file_variables(file_path_in)
-        self._update_context()
 
         rc = self._process_section()
         if rc != 0:

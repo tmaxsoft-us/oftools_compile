@@ -80,9 +80,9 @@ class Job(object):
         try:
             self._file_name_in = self._file_path_in.rsplit('/', 1)[1]
         except IndexError:
-            Log().logger.debug(
-                '[' + self._section_name +
-                '] A file has been specified, not a path to the file')
+            # Log().logger.debug(
+            #     '[' + self._section_name +
+            #     '] A file has been specified, not a path to the file')
             self._file_name_in = self._file_path_in
         # Initialize file_name_out
         if 'setup' in self._section_name or 'deploy' in self._section_name:
