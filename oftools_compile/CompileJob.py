@@ -27,7 +27,7 @@ class CompileJob(Job):
     Methods:
         _analyze(): Analyzes prerequisites before running the job for the section.
         _process_section(): Reads the section line by line to execute the corresponding methods.
-        _compilation(option): Runs the given shell command with all its options.
+        _compile(option): Runs the given shell command with all its options.
         run(file_path_in): Performs all the steps for any compile section of the profile.
     """
 
@@ -92,7 +92,7 @@ class CompileJob(Job):
                 rc = self._process_option(key, value)
 
             if compilation and status == 'incomplete':
-                rc = self._compilation(value)
+                rc = self._compile(value)
                 status = 'done'
 
             if rc < 0:
@@ -109,7 +109,7 @@ class CompileJob(Job):
 
         return rc
 
-    def _compilation(self, option):
+    def _compile(self, option):
         """Runs the given shell command with all its options.
 
         Returns:
