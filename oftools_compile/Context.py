@@ -1,25 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Set of functions useful in any module.
+"""Set of variables and parameters for program execution.
 
-This module gathers a set of functions that are useful in many other modules. When a 
-function is widely used in different modules, a general version of it is created and 
-can be found here.
-
-  Typical usage example:
-
-  Context = Context()
+Typical usage example:
+  Context().tag = args.tag
+  Context().clear()
 """
 
 # Generic/Built-in modules
+import datetime
 import os
-import subprocess
-from datetime import datetime
+import sys
+import time
 
 # Third-party modules
 
 # Owned modules
 from .Log import Log
+from .Utils import Utils
 
 
 class SingletonMeta(type):
@@ -32,129 +30,315 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class Context(metaclass=SingletonMeta):
-    _env = None
-    _init_env = None
-    _total_time = 0
-    _init_pwd = None
-    _mandatory = ""
-    _cur_workdir = ""
-    _root_workdir = ""
-    _filter_dict = {}
-    _const_tag = ""
+class Context(object, metaclass=SingletonMeta):
+    """A class used to store a set of variables and parameters across all modules.
 
-    _section_complete_dict = {}
+    Attributes:
+        _init_env: A dictionary, the output of the os.environ.copy method.
+        _env: A dictionary, all the environment variables for the current execution of the program.
+
+        _root_workdir: A string, the absolute path of the working directory for all compilations.
+        _current_workdir: A string, the absolute path of the directory created for the program being 
+            currently compiled.
+        _work_directories: A list of strings, the absolute paths of all the working directories. 
+        _group_directory: A string, the absolute path of the group directory if the grouping feature is 
+            being used.
+
+        _last_section: A string, the name of the last section being executed, whether it succeeds or 
+            fails.
+        _mandatory_section: A list, all the sections that are listed as mandatory.
+        _complete_sections: A dictionary, the section names and their status as complete or not.
+
+        _filters: A dictionary, filter names and their respective values.
+
+        _report_file_path: A string, the absolute path of the report file of the compilation.
+
+        _tag: A string, A keyword to identify working directories and report for a given compilation
+        _time_stamp: A string, a datetime respecting _%Y%m%d_%H%M%S format for working directories and 
+            report identification purposes.
+
+        _init_pwd: A string, the initial directory where the command has been executed. 
+
+    Methods:
+        __init__(): Initializes all attributes of the class.
+        add_env_variable(key, value): Adds a variable to the environment.
+        add_filter(key, value): Adds a filter variable to the list of filters.
+        add_mandatory_section(section): Adds the input section name to mandatory sections list.
+
+        evaluate_filter(section_name, filter_name): Evaluates the status of the filter variable passed 
+            as an argument.
+
+        is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
+        is_section_complete(section_name_no_filter, skip=True): Checks if given section is already 
+            complete.
+        section_completed(section_name_no_filter): Changes the status of the given section to complete.
+
+        clear(): Clears context after each file processing.
+        clear_all(): Clears context completely at the end of the program execution.
+    """
 
     def __init__(self):
+        """Initializes all attributes of the class.
+        """
+        # Environment
         self._init_env = os.environ.copy()
         self._env = self._init_env
+
+        # Directories
+        self._root_workdir = ''
+        self._current_workdir = ''
+        self._work_directories = []
+        self._group_directory = ''
+
+        # Profile sections
+        self._last_section = ''
+        self._mandatory_sections = []
+        self._complete_sections = {}
+
+        # Filter variables
+        self._filters = {}
+
+        # Report
+        self._report_file_path = ''
+
+        # Tag
+        self._tag = ''
+        # Timestamp
+        self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
+
+        # Other
         self._init_pwd = os.getcwd()
-        self.set_time_stamp()
-        self._workdir_list = []
-        return
 
-    def add_env(self, key, value):
-        if key.startswith('$') is False:
-            return
+    @property
+    def env(self):
+        """Getter method for the attribute _env.
+        """
+        return self._env
 
+    @property
+    def root_workdir(self):
+        """Getter method for the attribute _root_workdir.
+        """
+        return self._root_workdir
+
+    @root_workdir.setter
+    def root_workdir(self, workdir):
+        """Setter method for the attribute _root_workdir.
+        """
+        self._root_workdir = workdir
+
+    @property
+    def current_workdir(self):
+        """Getter method for the attribute _current_workdir.
+        """
+        return self._current_workdir
+
+    @current_workdir.setter
+    def current_workdir(self, workdir):
+        """Setter method for the attribute _current_workdir.
+        """
+        self._current_workdir = workdir
+        self._work_directories.append(workdir)
+
+    @property
+    def work_directories(self):
+        """Getter method for the attribute _work_directories.
+        """
+        return self._work_directories
+
+    @property
+    def group_directory(self):
+        """Getter method for the attribute _group_directory.
+        """
+        return self._group_directory
+
+    @group_directory.setter
+    def group_directory(self, directory):
+        """Setter method for the attribute _group_directory.
+        """
+        self._group_directory = directory
+
+    @property
+    def last_section(self):
+        """Getter method for the attribute _last_section.
+        """
+        return self._last_section
+
+    @last_section.setter
+    def last_section(self, section):
+        """Setter method for the attribute _last_section.
+        """
+        self._last_section = section
+
+    @property
+    def mandatory_sections(self):
+        """Getter method for the attribute _mandatory_sections.
+        """
+        return self._mandatory_sections
+
+    @property
+    def complete_sections(self):
+        """Getter method for the attribute _complete_sections.
+        """
+        return self._complete_sections
+
+    @property
+    def filters(self):
+        """Getter method for the attribute _filters.
+        """
+        return self._filters
+
+    @property
+    def report_file_path(self):
+        """Getter method for the attribute _report_file_path.
+        """
+        return self._report_file_path
+
+    @report_file_path.setter
+    def report_file_path(self, file_path):
+        """Setter method for the attribute _report_file_path.
+        """
+        self._report_file_path = file_path
+
+    @property
+    def tag(self):
+        """Getter method for the attribute _tag.
+        """
+        return self._tag
+
+    @tag.setter
+    def tag(self, tag):
+        """Setter method for the attribute _tag.
+        """
+        if tag is not None:
+            self._tag = '_' + tag
+
+    @property
+    def time_stamp(self):
+        """Getter method for the attribute _time_stamp.
+        """
+        return self._time_stamp
+
+    @time_stamp.setter
+    def time_stamp(self, update=0):
+        """Setter method for the attribute _time_stamp.
+        """
+        time.sleep(1)
+        if update == 1:
+            self._time_stamp = datetime.datetime.now().strftime(
+                '_%Y%m%d_%H%M%S')
+
+    def add_env_variable(self, key, value):
+        """Adds a variable to the environment.
+        """
         if value.startswith('`') and value.endswith('`'):
-            value = value[value.find('`') + 1:value.rfind('`')]
-            proc = subprocess.Popen([value],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True,
-                                    env=self._env)
-            out, _ = proc.communicate()
-            value = out.decode(errors="ignore").rstrip()
+            value = value[1:-1]
+            out, _, _ = Utils().execute_shell_command(value, 'env_variable', self._env)
+            value = out.decode(errors='ignore').rstrip()
+            # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
         else:
             self._env[key[1:]] = os.path.expandvars(value)
 
         os.environ.update(self._env)
 
-    def get_env(self):
-        return self._env
+    def add_filter(self, key, value):
+        """Adds a filter variable to the list of filters.
+        """
+        # Write to filters dictionary without question mark
+        self._filters[key[1:]] = value
 
-    def set_section_complete(self, section):
-        self._section_complete_dict[section] = True
+    def add_mandatory_section(self, section):
+        """Adds the input section name to mandatory sections list.
+        """
+        if '?' in section:
+            Log().logger.warning(
+                '[setup] Filter variable not allowed in the mandatory sections: ' + section )
+            section_name_no_filter = section.split('?')[0]
+        else:
+            section_name_no_filter = section
 
-    def is_section_complete(self, section):
-        if section in self._section_complete_dict:
-            return True
-        return False
+        Log().logger.info(
+                '[setup] Adding section to mandatory sections: ' + section_name_no_filter )
+        self._mandatory_sections.append(section_name_no_filter)
 
-    def is_mandatory_complete(self):
-        if self._mandatory in self._section_complete_dict:
-            return True
+    def evaluate_filter(self, section_name, filter_name):
+        """Evaluates the status of the filter variable passed as an argument.
+        """
+        if filter_name != '':
+            filter_result = False
+            shell_command = self._filters[filter_name]
 
-        return False
+            # Filter evaluation
+            _, _, rc = Utils().execute_shell_command(
+                shell_command, 'filter', self._env)
 
-    def set_time_stamp(self):
-        self._time_stamp = datetime.now().strftime("_%Y%m%d_%H%M%S")
+            # grep command returns 0 if line matches
+            if rc == 0:
+                filter_result = True
+                Log().logger.debug(
+                    '[' + section_name + '] Filter variable ' + filter_name +
+                    ' evaluation result: True. Executing section.')
+            else:
+                filter_result = False
+                Log().logger.debug(
+                    '[' + section_name + '] Filter variable ' + filter_name +
+                    ' evaluation result: False. Skipping section.')
+        else:
+            filter_result = None
 
-    def get_time_stamp(self):
-        return self._time_stamp
+        return filter_result
 
-    def set_root_workdir(self, workdir):
-        self._root_workdir = workdir
+    def is_section_mandatory(self, section_name_no_filter):
+        """Checks if given section is mandatory or not.
+        """
+        if section_name_no_filter in self._mandatory_sections:
+            mandatory_status = True
+        else:
+            mandatory_status = False
 
-    def get_root_workdir(self):
-        return self._root_workdir
+        return mandatory_status
 
-    def set_cur_workdir(self, cur_workdir):
-        self._cur_workdir = cur_workdir
+    def is_section_complete(self, section_name_no_filter, skip=True):
+        """Checks if given section is already complete.
+        """
+        section_status = self._complete_sections[section_name_no_filter]
 
-    def get_cur_workdir(self):
-        return self._cur_workdir
+        if section_status and skip is True:
+            Log().logger.debug(
+                '[' + section_name_no_filter +
+                '] Section has already been processed. Skipping section')
 
-    def add_workdir_to_list(self):
-        self._workdir_list.append(self._cur_workdir)
+        return section_status
 
-    def get_workdir_list(self):
-        return self._workdir_list
-
-    def set_mandatory_section(self, mandatory):
-        index = mandatory.find('?')
-        if index > 0:
-            mandatory = mandatory[:index]
-
-        self._mandatory = mandatory
-
-    def get_mandatory_section(self):
-        return self._mandatory
-
-    def add_filter_result(self, key, value):
-        self._filter_dict[key] = value
-
-    def get_filter_result(self, key):
-        result = False
-        index = key.find('?')
-        if index > 0:
-            key = key[index:]
-
-        if key in self._filter_dict:
-            result = self._filter_dict[key]
-
-        return result
-
-    def set_const_tag(self, tag):
-        """tag information should be erased"""
-        if tag is not None:
-            self._const_tag = "_" + tag
-
-    def get_const_tag(self):
-        return self._const_tag
+    def section_completed(self, section_name_no_filter):
+        """Changes the status of the given section to complete.
+        """
+        self._complete_sections[section_name_no_filter] = True
 
     def clear(self):
+        """Clears context after each file processing.
+        """
         self._env = self._init_env
         os.environ.update(self._init_env)
 
-        self._cur_workdir = ""
-        self._mandatory = ""
+        self._filters.clear()
 
-        #self.set_time_stamp()
+        for key in self._complete_sections.keys():
+            self._complete_sections[key] = False
 
-        self._section_complete_dict.clear()
-        self._filter_dict.clear()
+        os.chdir(self._init_pwd)
+
+    def clear_all(self):
+        """Clears context completely at the end of the program execution.
+        """
+        self._root_workdir = ''
+        self._current_workdir = ''
+        self._work_directories = []
+        self._group_directory = ''
+
+        self._last_section = ''
+        self._mandatory_sections = []
+        self._complete_sections.clear()
 
         os.chdir(self._init_pwd)

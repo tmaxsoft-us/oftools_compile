@@ -3,254 +3,298 @@
 """Main module of OpenFrame Tools Compile.
 """
 # Generic/Built-in modules
-import os
 import argparse
-import traceback
+import os
 import sys
+import traceback
 import time
-from configparser import ConfigParser
-from collections import OrderedDict
+# import logging
 
 # Third-party modules
 
 # Owned modules
 from . import __version__
-from .JobFactory import JobFactory
-from .CompileJob import CompileJob
-from .SetupJob import SetupJob
-from .DeployJob import DeployJob
-from .Log import Log
+from .Clear import Clear
 from .Context import Context
-from .ReportGenerator import ReportGenerator
 from .Grouping import Grouping
+from .JobFactory import JobFactory
+from .Log import Log
+from .Profile import Profile
+from .Report import Report
+from .Source import Source
 
 
 def main():
     return Main().run()
 
 
-class Main:
+class Main(object):
+    """Main class containing the methods for parsing the command arguments and running OpenFrame Tools 
+    Compile.
 
-    def __init__(self):
-        return
+    Methods:
+        _parse_args(): Parses command-line options.
+        _create_jobs(profile): Creates job depending on the section of the profile.
+        run(): Performs all the steps to run compilation for all sources using the appropriate profile.
+    """
 
-    def _create_jobs(self, profile):
-        jobs = []
-        job_factory = JobFactory(profile)
-        for section in profile.sections():
-            try:
-                job = job_factory.create(section)
-                jobs.append(job)
-            except:
-                traceback.print_exc()
-                print('Unexpected error detected during the job creation')
-                exit(-1)
+    def _parse_args(self):
+        """Parses command-line options.
 
-        # analyze created jobs
-        if job_factory.is_fine() is not True:
-            print('Missing jobs found. abort!')
-            exit(-1)
+        The program defines what arguments it requires, and argparse will figure out how to parse those 
+        out of sys.argv. The argparse module also automatically generates help, usage messages and 
+        issues errors when users give the program invalid arguments.
 
-        return jobs
+        Returns:
+            args, an ArgumentParser object.
 
-    def _parse_arg(self):
-        # add parse arguments
-        arg_parser = argparse.ArgumentParser()
+        Raises:
+            TypeError: An error occurs if the file extension of the profile is not .prof.
+            SystemError: An error occurs if the numbers of profile and source are not 
+                matching.           
+        """
+        parser = argparse.ArgumentParser(add_help=False,
+                                         description='OpenFrame Tools Compile')
+        parser._action_groups.pop()
+        required = parser.add_argument_group('Required arguments')
+        optional = parser.add_argument_group('Optional arguments')
 
-        arg_parser.add_argument(
+        # Required arguments
+        required.add_argument(
             '-p',
             '--profile',
             action='append',
-            help='profile which contains description of the compilation target.',
+            dest='profile_list',
+            help=
+            'name of the profile, contains the description of the compilation target',
+            metavar='PROFILE',
+            required=True,
+            type=str)
+
+        required.add_argument(
+            '-s',
+            '--source',
+            action='append',
+            dest='source_list',
+            help='name of the source, either a file or a directory',
+            metavar='SOURCE',
+            required=True,
+            type=str)
+
+        # Optional arguments
+        optional.add_argument(
+            '-c',
+            '--clear',
+            action='store_true',
+            dest='clear',
+            help='clear all the files generated during compilation',
             required=False)
 
-        arg_parser.add_argument('-s',
-                                '--source',
-                                action='append',
-                                help='name of the source which must be a file.',
-                                required=False)
-
-        arg_parser.add_argument(
-            '-t',
-            '--tag',
-            help='add tag to the name of report file and the listing directory.',
-            required=False)
-
-        arg_parser.add_argument(
-            '-l',
-            '--log',
-            help='set log level (DEBUG|INFO|WARNING|ERROR|CRITICAL).',
-            required=False)
-
-        arg_parser.add_argument(
+        optional.add_argument(
             '-g',
             '--grouping',
             action='store_true',
+            dest='grouping',
             help=
-            'put all the compilation folders in a single one for mass compilation and aggregate all the logs.',
+            'put all the compilation folders in a single one for mass compilation and aggregate all the logs',
             required=False)
 
-        arg_parser.add_argument('-v',
-                                '--version',
-                                action='store_true',
-                                help='print version information.',
-                                required=False)
+        optional.add_argument(
+            '-l',
+            '--log-level',
+            action='store',
+            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+            default='INFO',
+            dest='log_level',
+            help=
+            'set log level, potential values: DEBUG, INFO, WARNING, ERROR, CRITICAL. (default: INFO)',
+            metavar='LEVEL',
+            required=False,
+            type=str)
 
-        # deprecated args
-        arg_parser.add_argument('-r',
-                                '--recursive',
-                                action='store_true',
-                                help=argparse.SUPPRESS)
-        arg_parser.add_argument('-e',
-                                '--export',
-                                action='store_true',
-                                help=argparse.SUPPRESS)
+        optional.add_argument(
+            '-t',
+            '--tag',
+            action='store',
+            dest='tag',
+            help=
+            'add a tag to the name of the report file and the listing directory',
+            metavar='TAG',
+            required=False,
+            type=str)
 
-        # do the parsing
-        args = arg_parser.parse_args()
+        optional.add_argument('-h',
+                              '--help',
+                              action='help',
+                              help='show this help message and exit')
 
-        # analyze parsing result
-        if args.version is True:
-            return args
+        optional.add_argument(
+            '-v',
+            '--version',
+            action='version',
+            help='show this version message and exit',
+            version='%(prog)s {version}'.format(version=__version__))
 
-        if args.profile is None:
-            Log().get().critical('-p or --profile option is not specified')
-            exit(-1)
+        # Deprecated arguments
+        optional.add_argument('-r',
+                              '--recursive',
+                              action='store',
+                              help=argparse.SUPPRESS)
 
-        if args.source is None:
-            Log().get().critical('-s or --source option is not specified')
-            exit(-1)
+        optional.add_argument('-e',
+                              '--export',
+                              action='store',
+                              help=argparse.SUPPRESS)
 
-        if len(args.profile) != len(args.source):
-            Log().get().critical(
-                'the number of profile and source pairs does not match. profile='
-                + str(len(args.profile)) + ',source=' + str(len(args.source)))
-            exit(-1)
+        # Do the parsing
+        if len(sys.argv) == 1:
+            parser.print_help(sys.stdout)
+            sys.exit(0)
+        args = parser.parse_args()
 
-        for profile in args.profile:
-            if os.path.isfile(os.path.expandvars(profile)) is False:
-                Log().get().critical('cannot access profile: ' + profile)
-                exit(-1)
+        # Analyze profiles, making sure a file with .prof extension is specified for each profile
+        try:
+            for profile in args.profile_list:
+                profile_path = os.path.expandvars(profile)
+                extension = profile_path.rsplit('.', 1)[1]
+                if extension != 'prof':
+                    raise TypeError()
+        except IndexError:
+            Log().logger.critical(
+                'IndexError: Given profile does not have a .prof extension: ' +
+                profile)
+            sys.exit(-1)
+        except TypeError:
+            Log().logger.critical(
+                'TypeError: Expected .prof extension, found ' + extension +
+                ': ' + profile)
+            sys.exit(-1)
 
-        for source in args.source:
-            if os.path.exists(os.path.expandvars(source)) is False:
-                Log().get().critical('cannot access source: ' + source)
-                exit(-1)
+        # Analyze number of profiles and sources provided
+        try:
+            if len(args.profile_list) != len(args.source_list):
+                raise SystemError()
+        except SystemError:
+            Log().logger.critical(
+                'NumberError: Number of profile and source are not matching: profile='
+                + str(len(args.profile_list)) + ', source=' +
+                str(len(args.source_list)))
+            sys.exit(-1)
 
         return args
 
-    def _run_internal(self, profile, source, report_generator):
+    def _create_jobs(self, profile):
+        """Creates job depending on the section of the profile.
 
-        source_list = []
+        Running the method 'sections' on the profile which is a ConfigParser object allow us to create 
+        a list of strings, the name of each section of the profile. And then a call to the method 
+        create of the JobFactory module generate the corresponding job.
 
-        # read profile
-        profile_parser = ConfigParser(dict_type=OrderedDict)
-        profile_parser.optionxform = str
-        profile_parser.read(os.path.expandvars(profile))
+        Args:
+            profile: A ConfigParser object, the compilation profile specified for the current source.
 
-        Log().get().debug('profile path = ' + os.path.expandvars(profile))
+        Returns:
+            A list of Job objects.
 
-        # build source list
-        if os.path.isdir(source):
-            directory = os.path.expandvars(source)
+        Raises:
+            #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
+        """
+        jobs = []
+        job_factory = JobFactory(profile)
 
-            for dirpath, _, filenames in os.walk(directory):
-                if dirpath.startswith('.'):
-                    continue
-                for f in filenames:
-                    if f.startswith('.'):
-                        continue
-                    source_list.append(os.path.abspath(os.path.join(dirpath,
-                                                                    f)))
-        else:
-            source_list = [source]
+        for section_name in profile.sections:
+            try:
+                # Log().logger.debug('Creating job for the section: ' +
+                #                    section_name)
+                job = job_factory.create(section_name)
+                jobs.append(job)
+            except:
+                traceback.print_exc()
+                Log().logger.error(
+                    'Unexpected error detected during the job creation')
+                sys.exit(-1)
 
-        source_list.sort()
-
-        last_job = None
-        for source in source_list:
-            start_time = time.time()
-            Context().clear()
-            Log().clear()
-
-            in_name = ""
-            out_name = source
-            jobs = self._create_jobs(profile_parser)
-
-            for job in jobs:
-                last_job = job
-                try:
-                    in_name = out_name
-                    out_name = job.run(in_name)
-                    rc = 0
-                except KeyboardInterrupt:
-                    rc = -255
-                    break
-                except:
-                    trace_list = traceback.format_exc().splitlines()
-                    for trace in trace_list:
-                        Log().get().error(trace)
-                    rc = -3
-                    break
-
-            # stop looping when ctrl+c
-            if rc == -255:
-                break
-
-            unit_time = time.time() - start_time
-
-            success = 'Y'
-            if rc < 0:
-                success = 'N'
-
-            last_section = last_job._remove_filter_name(last_job.get_section())
-            if last_section.startswith('deploy'):
-                if Context().is_mandatory_complete() is not True:
-                    last_section = Context().get_mandatory_section()
-
-            report_generator.add(source,
-                                 Context().get_cur_workdir(), last_section,
-                                 success, unit_time)
-
-            Context().add_workdir_to_list()
-
-        return rc
+        return jobs
 
     def run(self):
-        # initialize
-        rc = 0
+        """Performs all the steps to run compilation for all sources using the appropriate profile.
 
-        # parse inline command
-        args = self._parse_arg()
+        Returns:
+            An integer, the return code of the program.
+        """
+        # For testing purposes. allow to remove logs when executing coverage
+        # logging.disable(logging.CRITICAL)
+        Log().open_stream()
 
-        if args.version is True:
-            version = 'oftools-compile ' + __version__
-            print(version)
-            return 0
+        # Parse command-line options
+        args = self._parse_args()
 
-        # set log level
-        Log().set_level(args.log)
+        # Initialize variables for program execution
+        Log().set_level(args.log_level)
+        Log().logger.debug(' '.join((arg for arg in sys.argv)))
+        Context().tag = args.tag
+        profile_dict = {}
+        report = Report()
 
-        # run jobs through sources
-        Context().set_const_tag(args.tag)
-        report_generator = ReportGenerator()
+        for i in range(len(args.source_list)):
 
-        for i in range(len(args.source)):
-            Log().clear()
-            Context().clear()
-            rc = self._run_internal(args.profile[i], args.source[i],
-                                    report_generator)
-            if rc is not 0:
-                break
+            # Profile processing
+            profile_path = os.path.expandvars(args.profile_list[i])
+            Log().logger.debug('Profile path: ' + profile_path)
+            if profile_path not in profile_dict.keys():
+                profile = Profile(profile_path)
+                profile_dict[profile_path] = profile
+            else:
+                Log().logger.debug('Profile already used: ' + profile_path +
+                                   '. Reusing Python Profile object')
+                profile = profile_dict[profile_path]
 
-        report_generator.generate()
+            # Source processing
+            source = Source(args.source_list[i])
+            Log().logger.debug('Source path: ' +
+                               os.path.expandvars(args.source_list[i]))
 
-        if args.grouping is True:
+            # Create jobs
+            jobs = self._create_jobs(profile)
+
+            for file_path in source.file_paths:
+                # Initialization of variables before running the jobs
+                file_name_in = ''
+                file_name_out = file_path
+                start_time = time.time()
+
+                for job in jobs:
+                    # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
+                    # is just the name of the file
+                    file_name_in = file_name_out
+                    rc = job.run(file_name_in)
+                    if rc < 0:
+                        Log().logger.error(
+                            'An error occurred. Aborting source file processing'
+                        )
+                        break
+                    file_name_out = job.file_name_out
+
+                # Report related tasks
+                elapsed_time = time.time() - start_time
+                report.add_entry(file_path, rc, elapsed_time)
+                # Need to clear return code, context and close log file at the end of each file processing
+                rc = 0
+                Context().clear()
+                Log().close_file()
+
+        report.summary(args.clear)
+
+        # Handle clear option
+        if args.clear is True:
+            clear = Clear()
+            clear.run()
+        elif args.grouping is True:
             grouping = Grouping()
             grouping.run()
 
-        # need to clear context to run pytest
-        Log().clear()
-        Context().clear()
+        # Need to clear context completely and close log at the end of the execution
+        Context().clear_all()
+        Log().close_stream()
 
         return rc

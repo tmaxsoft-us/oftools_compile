@@ -1,186 +1,286 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
+"""Module to run the job for the deploy section of the profile.
 
-Description more in details.
+  Typical usage example:
+
+  job = DeployJob()
+  job.run(file_path_in)
 """
 # Generic/Built-in modules
-import shutil
 import os
-import subprocess
+import shutil
 
 # Third-party modules
 
 # Owned modules
+from .Context import Context
 from .Job import Job
 from .Log import Log
-from .Context import Context
+from .Utils import Utils
 
 
 class DeployJob(Job):
+    """A class used to perform all the steps of a deploy section.
 
-    def _analyze(self, in_name):
+    Attributes:
+        Inherited from Job module.
 
-        # check if any compile job was a success
-        if Context().is_mandatory_complete() is False:
-            Log().get().error(
-                'mandatory section [' + Context().get_mandatory_section() +
-                '] did not ran successfully. aborting the deploy job')
-            exit(-1)
+    Methods:
+        _analyze(): Analyzes prerequisites before running the job for the section.
+        _process_section(): Read the section line by line to execute the corresponding methods.
+        _process_file(option): Creates a new copy of the file with the given extension.
+        _process_dataset(option): Runs the dlupdate shell command to deploy the compiled object.
+        _process_region(option): Runs the osctdlupdate shell command to deploy the compiled object.
+        _process_tdl(option): Runs the tdlupdate shell command to deploy the compiled object.
+        run(file_path_in): Performs all the steps for the deploy section of the profile.
+    """
 
-        # check if given section is already completed
-        if Context().is_section_complete(self._section):
-            Log().get().debug('section has already been processed. skipping [' +
-                              self._section + '] section.')
-            return -1
+    def _analyze(self):
+        """Analyzes prerequisites before running the job for the section.
 
-        # evaluate filter to decide whether this section should run or not
-        if self._evaluate_filter(self._section, in_name) is False:
-            Log().get().debug('[' + self._section + '] ' +
-                              self._resolve_filter_name(self._section) +
-                              ' is False. skipping section.')
-            return -1
+        It evaluates all the following elements:
+            - is the section already complete, based on the name without the filter variable
+            - is the section mandatory, list of sections in the setup section
+            - is the filter of section True or False, if there is one
+            - is any of the compile section complete
 
-        return 0
+        Returns:
+            An integer, the return code of the analysis result.
+        """
+        if Context().is_section_complete(self._section_name_no_filter):
+            rc = 1
+        elif Context().is_section_mandatory(self._section_name_no_filter):
+            rc = 0
+        elif Context().evaluate_filter(self._section_name,
+                                       self._filter_name) in (True, None):
+            rc = 0
+        else:
+            rc = 1
 
-    def _process_region(self, out_name):
+        compile_section = False
+        completion_status = False
 
-        if self._profile.has_option(self._section, 'region') is False:
-            return
+        for key, value in Context().complete_sections.items():
+            if key not in ('setup', 'deploy'):
+                compile_section = True
+                completion_status = value
+                break
 
-        regions = self._profile.get(self._section, 'region').split(':')
-        for region in regions:
-            shell_cmd = 'cp ' + out_name + ' ' + os.path.join(
-                '$OPENFRAME_HOME/osc/region',
-                os.path.expandvars(region) + '/tdl/mod')
-            shell_cmd += '; '
-            shell_cmd += 'osctdlupdate'
-            shell_cmd += ' ' + region
-            #shell_cmd += ' ' + self._remove_extension_name(out_name)
-            shell_cmd += ' ' + out_name
+        if compile_section is True:
+            Log().logger.debug(
+                '[' + self._section_name +
+                '] Compile section found. Evaluating completion status')
+            if completion_status is True:
+                rc = 0
+                Log().logger.debug(
+                    '[' + self._section_name +
+                    '] Complete compile section found. Proceeding deploy job execution'
+                )
+            else:
+                rc = -1
+                Log().logger.error(
+                    '[' + self._section_name +
+                    '] None of the compile section is complete. Aborting deploy job execution'
+                )
+        else:
+            rc = 0
+            Log().logger.debug('[' + self._section_name +
+                               '] No compile section found. Deploying only')
 
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
-            proc = subprocess.Popen([shell_cmd],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
-            out, err = proc.communicate()
+        return rc
 
-            # handle resultget
-            if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
-                exit(proc.returncode)
+    def _process_section(self):
+        """Read the section line by line to execute the corresponding methods.
 
-        return
+        For the deploy section, it analyzes either file, dataset, region or tdl options to find where 
+        to deploy the compiled program. And as any other section, it looks for environment and filter 
+        variables.
 
-    def _process_tdl(self, out_name):
-        if self._profile.has_option(self._section, 'tdl') is False:
-            return
+        Returns:
+            An integer, the return code of the section execution.
+        """
+        rc = 0
+        Log().logger.debug('[' + self._section_name +
+                           '] Starting section, input filename: ' +
+                           self._file_path_in)
+        Context().last_section = self._section_name
 
-        tdls = self._profile.get(self._section, 'tdl').split(':')
-        for tdl in tdls:
-            shell_cmd = 'cp ' + out_name + ' ' + os.path.join(
-                os.path.expandvars(tdl) + '/tdl/mod')
-            shell_cmd += '; '
-            shell_cmd += 'tdlupdate'
-            #shell_cmd += ' -m ' + self._remove_extension_name(out_name)
-            shell_cmd += ' -m ' + out_name
-            shell_cmd += ' -r ' + os.path.join(
-                os.path.expandvars(tdl) + '/tdl/mod')
+        # file option must be processed first
+        value = self._profile.get('deploy', 'file')
+        rc = self._process_file(value)
+        if rc < 0:
+            Log().logger.error(
+                '[' + self._section_name +
+                '] Step failed: file. Aborting section execution')
+            return rc
 
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
-            proc = subprocess.Popen([shell_cmd],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
-            out, err = proc.communicate()
+        for key, value in self._profile[self._section_name].items():
+            if key == 'file':
+                continue
+            if key == 'dataset':
+                rc = self._process_dataset(value)
+            elif key == 'region':
+                rc = self._process_region(value)
+            elif key == 'tdl':
+                rc = self._process_tdl(value)
+            else:
+                rc = self._process_option(key, value)
 
-            # handle result
-            if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
-                exit(proc.returncode)
+            if rc < 0:
+                Log().logger.error('[' + self._section_name +
+                                   '] Step failed: ' + key +
+                                   '. Aborting section execution')
+                break
 
-        return
+        if rc >= 0:
+            Log().logger.debug('[' + self._section_name +
+                               '] Ending section, output filename: ' +
+                               self._file_name_out)
+            Context().section_completed(self._section_name_no_filter)
 
-    def _process_dataset(self, out_name):
-        out = ""
-        err = ""
+        return rc
 
-        if self._profile.has_option(self._section, 'dataset') is False:
-            return
+    def _process_file(self, option):
+        """Creates a new copy of the file with the given extension.
 
-        datasets = self._profile.get(self._section, 'dataset').split(':')
-        for dataset in datasets:
-            shell_cmd = 'dlupdate ' + os.path.join(os.getcwd(),
-                                                   out_name) + ' ' + dataset
-            Log().get().info('[' + self._section + '] ' + shell_cmd)
-            proc = subprocess.Popen([shell_cmd],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
-            out, err = proc.communicate()
+        Returns:
+            An integer, the return code of the file processing.
+        """
+        Log().logger.debug('[' + self._section_name + '] Processing file')
 
-            # handle result
-            if proc.returncode != 0:
-                Log().get().error(err.decode(errors='ignore'))
-                Log().get().error(out.decode(errors='ignore'))
-                exit(proc.returncode)
-
-        return
-
-    def _process_file(self, in_name):
-        out_name = in_name
+        self._file_name_out = os.path.expandvars(option)
 
         try:
-            out_name = self._profile.get(self._section, 'file')
-            out_name = os.path.expandvars(out_name)
+            shutil.copy(self._file_name_in, self._file_name_out)
+            rc = 0
+            Log().logger.info('[' + self._section_name + '] cp ' +
+                              self._file_name_in + ' ' + self._file_name_out)
+        except shutil.SameFileError:
+            rc = 0
+            Log().logger.warning('[' + self._section_name +
+                                 '] No copy required, file already exists')
+        except OSError as e:
+            rc = -1
+            Log().logger.error('[' + self._section_name +
+                               '] Failed to copy: %s' % e)
 
-            if in_name != out_name:
-                Log().get().info('[' + self._section + '] ' + 'cp ' + in_name +
-                                 ' ' + out_name)
-                shutil.copy(in_name, out_name)
+        return rc
 
-        except:
-            Log().get().error('[' + self._section + '] failed to copy ' +
-                              in_name)
-            exit(-1)
+    def _process_dataset(self, option):
+        """Runs the dlupdate shell command to deploy the compiled object.
 
-        return out_name
+        Returns:
+            An integer, the return code of the dlupdate command executed.
+        """
+        rc = 0
+        Log().logger.debug('[' + self._section_name + '] Processing dataset(s)')
 
-    def run(self, in_name):
-        # analyze section
-        if self._analyze(in_name) < 0:
-            return in_name
+        datasets = option.split(':')
+        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
 
-        # start section
-        Log().get().debug("[" + self._section + "] start section")
+        for dataset in datasets:
+            if dataset != '':
+                shell_command = 'dlupdate ' + file_path_out + ' ' + dataset
+                Log().logger.info('[' + self._section_name + '] ' +
+                                  shell_command)
+                _, _, rc = Utils().execute_shell_command(
+                    shell_command, 'deploy',
+                    Context().env)
+                if rc < 0:
+                    break
 
-        # update predefined environment variable
-        base_name = self._remove_extension_name(in_name)
-        out_name = base_name + '.' + self._remove_filter_name(self._section)
-        Context().add_env('$OF_COMPILE_IN', in_name)
-        Context().add_env('$OF_COMPILE_OUT', out_name)
-        Context().add_env('$OF_COMPILE_BASE', base_name)
+        return rc
 
-        # add environment variables
-        for key in self._profile.options(self._section):
-            value = self._profile.get(self._section, key)
+    def _process_region(self, option):
+        """Runs the osctdlupdate shell command to deploy the compiled object.
 
-            if key.startswith('$'):
-                Context().add_env(key, value)
+        Returns:
+            An integer, the return code of the osctdlupdate command executed.
+        """
+        rc = 0
+        Log().logger.debug('[' + self._section_name + '] Processing region(s)')
 
-        # process others
-        out_name = self._process_file(in_name)
-        self._process_dataset(out_name)
-        self._process_tdl(out_name)
-        self._process_region(out_name)
+        regions = option.split(':')
+        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
 
-        # set section as completed
-        Context().set_section_complete(self._remove_filter_name(self._section))
+        for region in regions:
+            if region != '':
+                region_path = os.path.join(
+                    '$OPENFRAME_HOME/osc/region',
+                    os.path.expandvars(region) + '/tdl/mod')
+                shell_command = 'cp ' + file_path_out + ' ' + region_path
+                Log().logger.info('[' + self._section_name + '] ' +
+                                  shell_command)
+                _, _, rc = Utils().execute_shell_command(
+                    shell_command, 'deploy',
+                    Context().env)
+                if rc < 0:
+                    break
 
-        # end section
-        Log().get().debug("[" + self._section + "] end section")
+                shell_command = 'osctdlupdate ' + region + ' ' + self._file_name_out
+                Log().logger.info('[' + self._section_name + '] ' +
+                                  shell_command)
+                _, _, rc = Utils().execute_shell_command(
+                    shell_command, 'deploy',
+                    Context().env)
+                if rc < 0:
+                    break
 
-        return out_name
+        return rc
+
+    def _process_tdl(self, option):
+        """Runs the tdlupdate shell command to deploy the compiled object.
+
+        Returns:
+            An integer, the return code of the tdlupdate command executed.
+        """
+        rc = 0
+        Log().logger.debug('[' + self._section_name + '] Processing tdl(s)')
+
+        tdls = option.split(':')
+        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
+
+        for tdl in tdls:
+            if tdl != '':
+                tdl_path = os.path.join(os.path.expandvars(tdl) + '/tdl/mod')
+                shell_command = 'cp ' + file_path_out + ' ' + tdl_path
+                Log().logger.info('[' + self._section_name + '] ' +
+                                  shell_command)
+                _, _, rc = Utils().execute_shell_command(
+                    shell_command, 'deploy',
+                    Context().env)
+                if rc < 0:
+                    break
+
+                shell_command = 'tdlupdate -m ' + file_path_out + ' -r ' + tdl_path
+                Log().logger.info('[' + self._section_name + '] ' +
+                                  shell_command)
+                _, _, rc = Utils().execute_shell_command(
+                    shell_command, 'deploy',
+                    Context().env)
+                if rc < 0:
+                    break
+
+        return rc
+
+    def run(self, file_path_in):
+        """Performs all the steps for the deploy section of the profile.
+
+        Returns:
+            An integer, the return code of the deploy section.
+        """
+        self._initialize_file_variables(file_path_in)
+        self._update_context()
+
+        rc = self._analyze()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
+
+        rc = self._process_section()
+        if rc != 0:
+            self._file_name_out = file_path_in
+            return rc
+
+        return rc

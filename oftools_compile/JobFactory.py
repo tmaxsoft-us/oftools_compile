@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Description of the class in one sentence.
+"""Module to retrieve the parameters entered by the user and launch the corresponding job.
 
-Description more in details.
+Typical usage example:
+  job_factory = JobFactory(profile)
 """
+
 # Generic/Built-in modules
 
 # Third-party modules
@@ -14,32 +16,34 @@ from .CompileJob import CompileJob
 from .SetupJob import SetupJob
 
 
-class JobFactory:
-    _is_setup = False
-    _is_compile = False
-    _is_deploy = False
+class JobFactory(object):
+    """A class used to create all the jobs required with the given profile.
+
+    Attributes:
+        _profile: A dictionary, the data extracted from the Profile object.
+
+    Methods:
+        __init__(profile): Initializes the class with the _profile attribute.
+        create(section_name): Creates the job according to the input parameter.
+    """
 
     def __init__(self, profile):
-        self._profile = profile
-        return
+        """Initializes the class with the _profile attribute.
+        """
+        self._profile = profile.data
 
-    def create(self, section):
-        if section is None:
-            return None
-        elif section == "setup":
-            self._is_setup = True
-            return SetupJob(section, self._profile)
-        elif section.startswith("deploy"):
-            self._is_deploy = True
-            return DeployJob(section, self._profile)
+    def create(self, section_name):
+        """Creates the job according to the input parameter.
+
+        Args:
+            section_name: A string, the name of the section in the profile.
+
+        Returns:
+            A Job object, the appropriate one depending on the input.
+        """
+        if section_name.startswith('setup'):
+            return SetupJob(section_name, self._profile)
+        elif section_name.startswith('deploy'):
+            return DeployJob(section_name, self._profile)
         else:
-            self._is_compile = True
-            return CompileJob(section, self._profile)
-
-    def is_fine(self):
-        if self._is_setup is False:
-            print('setup section missing in profile')
-        if self._is_compile is False:
-            print('compile section missing in profile')
-
-        return self._is_setup and self._is_compile
+            return CompileJob(section_name, self._profile)

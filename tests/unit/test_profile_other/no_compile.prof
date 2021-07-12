@@ -1,0 +1,6 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[deploy]
+file = $OF_COMPILE_BASE.so
+dataset = SYS1.USERLIB
