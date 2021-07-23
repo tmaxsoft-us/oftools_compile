@@ -268,7 +268,7 @@ class Main(object):
                     # is just the name of the file
                     file_name_in = file_name_out
                     rc = job.run(file_name_in)
-                    if rc < 0:
+                    if rc != 0:
                         Log().logger.error(
                             'An error occurred. Aborting source file processing'
                         )

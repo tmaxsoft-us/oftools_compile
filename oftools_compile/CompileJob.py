@@ -140,6 +140,8 @@ class CompileJob(Job):
 
         rc = self._analyze()
         if rc != 0:
+            if rc > 0:
+                rc = 0
             self._file_name_out = file_path_in
             return rc
 
