@@ -116,7 +116,7 @@ class Report(object):
             source_file_name = source_file_path
 
         # Analyze input parameter: rc
-        if rc >= 0:
+        if rc == 0:
             self._success_count += 1
             processing_status = 'SUCCESS'
         else:
