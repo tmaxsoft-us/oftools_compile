@@ -127,13 +127,13 @@ class DeployJob(Job):
             else:
                 rc = self._process_option(key, value)
 
-            if rc < 0:
+            if rc != 0:
                 Log().logger.error('[' + self._section_name +
                                    '] Step failed: ' + key +
                                    '. Aborting section execution')
                 break
 
-        if rc >= 0:
+        if rc == 0:
             Log().logger.debug('[' + self._section_name +
                                '] Ending section, output filename: ' +
                                self._file_name_out)
@@ -177,17 +177,16 @@ class DeployJob(Job):
         Log().logger.debug('[' + self._section_name + '] Processing dataset(s)')
 
         datasets = option.split(':')
-        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
 
         for dataset in datasets:
             if dataset != '':
-                shell_command = 'dlupdate ' + file_path_out + ' ' + dataset
+                shell_command = 'dlupdate ' + self._file_name_out + ' ' + dataset
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
                     shell_command, 'deploy',
                     Context().env)
-                if rc < 0:
+                if rc != 0:
                     break
 
         return rc
@@ -202,20 +201,19 @@ class DeployJob(Job):
         Log().logger.debug('[' + self._section_name + '] Processing region(s)')
 
         regions = option.split(':')
-        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
 
         for region in regions:
             if region != '':
                 region_path = os.path.join(
                     '$OPENFRAME_HOME/osc/region',
                     os.path.expandvars(region) + '/tdl/mod')
-                shell_command = 'cp ' + file_path_out + ' ' + region_path
+                shell_command = 'cp ' + self._file_name_out + ' ' + region_path
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
                     shell_command, 'deploy',
                     Context().env)
-                if rc < 0:
+                if rc != 0:
                     break
 
                 shell_command = 'osctdlupdate ' + region + ' ' + self._file_name_out
@@ -224,7 +222,7 @@ class DeployJob(Job):
                 _, _, rc = Utils().execute_shell_command(
                     shell_command, 'deploy',
                     Context().env)
-                if rc < 0:
+                if rc != 0:
                     break
 
         return rc
@@ -239,27 +237,26 @@ class DeployJob(Job):
         Log().logger.debug('[' + self._section_name + '] Processing tdl(s)')
 
         tdls = option.split(':')
-        file_path_out = os.path.join(os.getcwd(), self._file_name_out)
 
         for tdl in tdls:
             if tdl != '':
                 tdl_path = os.path.join(os.path.expandvars(tdl) + '/tdl/mod')
-                shell_command = 'cp ' + file_path_out + ' ' + tdl_path
+                shell_command = 'cp ' + self._file_name_out + ' ' + tdl_path
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
                     shell_command, 'deploy',
                     Context().env)
-                if rc < 0:
+                if rc != 0:
                     break
 
-                shell_command = 'tdlupdate -m ' + file_path_out + ' -r ' + tdl_path
+                shell_command = 'tdlupdate -m ' + self._file_name_out + ' -r ' + tdl_path
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
                     shell_command, 'deploy',
                     Context().env)
-                if rc < 0:
+                if rc != 0:
                     break
 
         return rc

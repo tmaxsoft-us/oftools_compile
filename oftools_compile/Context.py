@@ -10,7 +10,6 @@ Typical usage example:
 # Generic/Built-in modules
 import datetime
 import os
-import sys
 import time
 
 # Third-party modules
@@ -233,7 +232,8 @@ class Context(object, metaclass=SingletonMeta):
         """
         if value.startswith('`') and value.endswith('`'):
             value = value[1:-1]
-            out, _, _ = Utils().execute_shell_command(value, 'env_variable', self._env)
+            out, _, _ = Utils().execute_shell_command(value, 'env_variable',
+                                                      self._env)
             value = out.decode(errors='ignore').rstrip()
             # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
@@ -253,13 +253,14 @@ class Context(object, metaclass=SingletonMeta):
         """
         if '?' in section:
             Log().logger.warning(
-                '[setup] Filter variable not allowed in the mandatory sections: ' + section )
+                '[setup] Filter variable not allowed in the mandatory sections: '
+                + section)
             section_name_no_filter = section.split('?')[0]
         else:
             section_name_no_filter = section
 
-        Log().logger.info(
-                '[setup] Adding section to mandatory sections: ' + section_name_no_filter )
+        Log().logger.info('[setup] Adding section to mandatory sections: ' +
+                          section_name_no_filter)
         self._mandatory_sections.append(section_name_no_filter)
 
     def evaluate_filter(self, section_name, filter_name):
@@ -270,8 +271,8 @@ class Context(object, metaclass=SingletonMeta):
             shell_command = self._filters[filter_name]
 
             # Filter evaluation
-            _, _, rc = Utils().execute_shell_command(
-                shell_command, 'filter', self._env)
+            _, _, rc = Utils().execute_shell_command(shell_command, 'filter',
+                                                     self._env)
 
             # grep command returns 0 if line matches
             if rc == 0:

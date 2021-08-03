@@ -95,13 +95,13 @@ class CompileJob(Job):
                 rc = self._compile(value)
                 status = 'done'
 
-            if rc < 0:
+            if rc != 0:
                 Log().logger.error('[' + self._section_name +
                                    '] Step failed: ' + key +
                                    '. Aborting section execution')
                 break
 
-        if rc >= 0:
+        if rc == 0:
             Log().logger.debug('[' + self._section_name +
                                '] Ending section, output filename: ' +
                                self._file_name_out)
