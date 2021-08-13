@@ -58,6 +58,7 @@ class Main(object):
         parser._action_groups.pop()
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
+        others = parser.add_argument_group('Help & version')
 
         # Required arguments
         required.add_argument(
@@ -113,6 +114,13 @@ class Main(object):
             type=str)
 
         optional.add_argument(
+            '--skip',
+            action='store_true',
+            dest='skip',
+            help='set skip flag, used to skip source files if not found',
+            required=False)
+
+        optional.add_argument(
             '-t',
             '--tag',
             action='store',
@@ -123,12 +131,13 @@ class Main(object):
             required=False,
             type=str)
 
-        optional.add_argument('-h',
-                              '--help',
-                              action='help',
-                              help='show this help message and exit')
+        # Other arguments
+        others.add_argument('-h',
+                            '--help',
+                            action='help',
+                            help='show this help message and exit')
 
-        optional.add_argument(
+        others.add_argument(
             '-v',
             '--version',
             action='version',
@@ -150,7 +159,11 @@ class Main(object):
         if len(sys.argv) == 1:
             parser.print_help(sys.stdout)
             sys.exit(0)
-        args = parser.parse_args()
+        try:
+            args = parser.parse_args()
+        except argparse.ArgumentError as e:
+            Log().logger.critical('ArgumentError: ' + str(e))
+            sys.exit(-1)
 
         # Analyze profiles, making sure a file with .prof extension is specified for each profile
         try:
@@ -222,6 +235,7 @@ class Main(object):
         Returns:
             An integer, the return code of the program.
         """
+        rc = 0
         # For testing purposes. allow to remove logs when executing coverage
         # logging.disable(logging.CRITICAL)
         Log().open_stream()
@@ -229,9 +243,12 @@ class Main(object):
         # Parse command-line options
         args = self._parse_args()
 
-        # Initialize variables for program execution
+        # Set log level and log oftools_compile command as DEBUG
         Log().set_level(args.log_level)
         Log().logger.debug(' '.join((arg for arg in sys.argv)))
+
+        # Initialize variables for program execution
+        Context().skip = args.skip
         Context().tag = args.tag
         profile_dict = {}
         report = Report()
@@ -250,9 +267,9 @@ class Main(object):
                 profile = profile_dict[profile_path]
 
             # Source processing
-            source = Source(args.source_list[i])
             Log().logger.debug('Source path: ' +
                                os.path.expandvars(args.source_list[i]))
+            source = Source(args.source_list[i])
 
             # Create jobs
             jobs = self._create_jobs(profile)
@@ -283,15 +300,16 @@ class Main(object):
                 Context().clear()
                 Log().close_file()
 
-        report.summary(args.clear)
+        if len(source.file_paths) != 0:
+            report.summary(args.clear)
 
-        # Handle clear option
-        if args.clear is True:
-            clear = Clear()
-            clear.run()
-        elif args.grouping is True:
-            grouping = Grouping()
-            grouping.run()
+            # Handle clear option
+            if args.clear is True:
+                clear = Clear()
+                clear.run()
+            elif args.grouping is True:
+                grouping = Grouping()
+                grouping.run()
 
         # Need to clear context completely and close log at the end of the execution
         Context().clear_all()
