@@ -13,6 +13,7 @@ import sys
 # Third-party modules
 
 # Owned modules
+from .Context import Context
 from .Log import Log
 
 
@@ -49,31 +50,41 @@ class Source(object):
 
         Raises:
             FileNotFoundError: An error occurs if the program does not find the given source.
+
+        Returns:
+            An integer, the return code of the method.
         """
+        rc = 0
         source = os.path.expandvars(self._source_path)
 
         #TODO Supports a list or a text file as source input
 
         try:
-            if os.path.exists(os.path.expandvars(source)) is False:
+            if os.path.exists(source) is False:
                 raise FileNotFoundError()
         except FileNotFoundError:
-            Log().logger.critical(
-                'FileNotFoundError: No such file or directory: ' + source)
-            sys.exit(-1)
+            if Context().skip:
+                Log().logger.info('FileNotFound: Skipping source: ' + source)
+                rc = 1
+            else:
+                Log().logger.critical(
+                    'FileNotFoundError: No such file or directory: ' + source)
+                sys.exit(-1)
 
-        if os.path.isfile(source):
-            self._file_paths = [os.path.abspath(source)]
+        if rc == 0:
+            if os.path.isfile(source):
+                self._file_paths = [os.path.abspath(source)]
 
-        elif os.path.isdir(source):
-            self._file_paths = [
-                os.path.abspath(os.path.join(root, filename))
-                for root, _, files in os.walk(source)
-                for filename in files
-                if not filename.startswith('.')
-            ]
-            # Sort the list alphabetically
-            self._file_paths.sort()
+            elif os.path.isdir(source):
+                self._file_paths = [
+                    os.path.abspath(os.path.join(root, filename))
+                    for root, _, files in os.walk(source)
+                    for filename in files
+                    if not filename.startswith('.')
+                ]
+                # Sort the list alphabetically
+                self._file_paths.sort()
 
-        Log().logger.debug('Number of source files being compiled: ' +
-                           str(len(self._file_paths)))
+            Log().logger.debug('Number of source files being compiled: ' +
+                               str(len(self._file_paths)))
+        return rc
