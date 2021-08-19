@@ -295,8 +295,7 @@ class Main(object):
                 # Report related tasks
                 elapsed_time = time.time() - start_time
                 report.add_entry(file_path, rc, elapsed_time)
-                # Need to clear return code, context and close log file at the end of each file processing
-                rc = 0
+                # Need to clear context and close log file at the end of each file processing
                 Context().clear()
                 Log().close_file()
 

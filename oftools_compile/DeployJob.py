@@ -180,7 +180,8 @@ class DeployJob(Job):
 
         for dataset in datasets:
             if dataset != '':
-                shell_command = 'dlupdate ' + self._file_name_out + ' ' + dataset
+                shell_command = 'dlupdate ' + Context(
+                ).current_workdir + '/' + self._file_name_out + ' ' + dataset
                 Log().logger.info('[' + self._section_name + '] ' +
                                   shell_command)
                 _, _, rc = Utils().execute_shell_command(
