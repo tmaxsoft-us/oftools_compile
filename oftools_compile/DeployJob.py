@@ -58,35 +58,36 @@ class DeployJob(Job):
         else:
             rc = 1
 
-        compile_section = False
-        completion_status = False
+        if rc == 0:
+            compile_section = False
+            completion_status = False
 
-        for key, value in Context().complete_sections.items():
-            if key not in ('setup', 'deploy'):
-                compile_section = True
-                completion_status = value
-                break
+            for key, value in Context().complete_sections.items():
+                if key not in ('setup', 'deploy'):
+                    compile_section = True
+                    completion_status = value
+                    break
 
-        if compile_section is True:
-            Log().logger.debug(
-                '[' + self._section_name +
-                '] Compile section found. Evaluating completion status')
-            if completion_status is True:
-                rc = 0
+            if compile_section is True:
                 Log().logger.debug(
                     '[' + self._section_name +
-                    '] Complete compile section found. Proceeding deploy job execution'
-                )
+                    '] Compile section found. Evaluating completion status')
+                if completion_status is True:
+                    rc = 0
+                    Log().logger.debug(
+                        '[' + self._section_name +
+                        '] Complete compile section found. Proceeding deploy job execution'
+                    )
+                else:
+                    rc = -1
+                    Log().logger.error(
+                        '[' + self._section_name +
+                        '] None of the compile section is complete. Aborting deploy job execution'
+                    )
             else:
-                rc = -1
-                Log().logger.error(
-                    '[' + self._section_name +
-                    '] None of the compile section is complete. Aborting deploy job execution'
-                )
-        else:
-            rc = 0
-            Log().logger.debug('[' + self._section_name +
-                               '] No compile section found. Deploying only')
+                rc = 0
+                Log().logger.debug('[' + self._section_name +
+                                '] No compile section found. Deploying only')
 
         return rc
 
