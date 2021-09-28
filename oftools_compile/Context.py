@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Set of variables and parameters for program execution.
 
@@ -104,7 +104,7 @@ class Context(object, metaclass=SingletonMeta):
         # Skip flag
         self._skip = False
         # Tag
-        self._tag = ''
+        self._tag = '_no_tag'
         # Timestamp
         self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
 
