@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """This module can be used for test purposes, to clear all generated files and check only of the compilation process is running fine.
 
