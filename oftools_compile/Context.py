@@ -104,7 +104,8 @@ class Context(object, metaclass=SingletonMeta):
         # Skip flag
         self._skip = False
         # Tag
-        self._tag = '_no_tag'
+        self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
+        self._tag = '_' + self._tag.replace('\n', '')
         # Timestamp
         self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
 

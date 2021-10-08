@@ -133,7 +133,7 @@ class Utils(object, metaclass=SingletonMeta):
         Args:
             shell_command: A string, the actual shell command that needs to be executed.
             command_type: A string, the type of the command to execute. As of right now, it is 
-                either compile, deploy, env_variable or filter.
+                either init, compile, deploy, env_variable or filter.
             env: A dictionary, all the environment variables currently in the shell environment.
 
         Returns:
