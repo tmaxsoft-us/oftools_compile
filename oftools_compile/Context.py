@@ -53,7 +53,7 @@ class Context(object, metaclass=SingletonMeta):
         _report_file_path: A string, the absolute path of the report file of the compilation.
 
         _skip: A boolean, a flag used to skip source files if not found or not.        
-        _tag: A string, a keyword to identify working directories and report for a given compilation
+        _tag: A string, a keyword to identify working directories and report for a given compilation.
         _time_stamp: A string, a datetime respecting _%Y%m%d_%H%M%S format for working directories and 
             report identification purposes.
 
@@ -104,8 +104,7 @@ class Context(object, metaclass=SingletonMeta):
         # Skip flag
         self._skip = False
         # Tag
-        self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
-        self._tag = '_' + self._tag.replace('\n', '')
+        self._tag = ''
         # Timestamp
         self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
 
@@ -226,7 +225,10 @@ class Context(object, metaclass=SingletonMeta):
     def tag(self, tag):
         """Setter method for the attribute _tag.
         """
-        if tag is not None:
+        if tag is None and self._skip is False:
+            self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
+            self._tag = '_' + self._tag.replace('\n', '')
+        else:
             self._tag = '_' + tag
 
     @property
