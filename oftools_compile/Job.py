@@ -36,7 +36,7 @@ class Job(object):
         _initialize_file_variables(file_path_in): Detects if the source provided is a file or a 
             directory, and properly retrieve the name of the file to initialize class attributes.
         _update_context(): Updates Context with name of files being manipulated in this job execution.
-        _process_option(key, value): Processes option like environment or filter variable.
+        _process_option(key, value): Processes option like environment variable or filter function.
     """
 
     def __init__(self, section_name, profile):
@@ -102,7 +102,7 @@ class Job(object):
         Context().add_env_variable('$OF_COMPILE_BASE', base_file_name)
 
     def _process_option(self, key, value):
-        """Processes option like an environment or a filter variable.
+        """Processes option like an environment variable or a filter function.
 
         The return code of this method is either 0 or 1, and not negative since it is just a warning 
         and not an error worth stopping the program execution.

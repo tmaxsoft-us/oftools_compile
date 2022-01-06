@@ -70,7 +70,7 @@ class Profile(object):
         """
         try:
             for section in self._sections:
-                # Removing filter variables from the section name
+                # Removing filter functions from the section name
                 if '?' in section:
                     section_name_no_filter = section.split('?')[0]
                 else:

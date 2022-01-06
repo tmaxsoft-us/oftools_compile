@@ -62,10 +62,10 @@ class Context(object, metaclass=SingletonMeta):
     Methods:
         __init__(): Initializes all attributes of the class.
         add_env_variable(key, value): Adds a variable to the environment.
-        add_filter(key, value): Adds a filter variable to the list of filters.
+        add_filter(key, value): Adds a filter function to the list of filters.
         add_mandatory_section(section): Adds the input section name to mandatory sections list.
 
-        evaluate_filter(section_name, filter_name): Evaluates the status of the filter variable passed 
+        evaluate_filter(section_name, filter_name): Evaluates the status of the filter function passed 
             as an argument.
 
         is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
@@ -262,7 +262,7 @@ class Context(object, metaclass=SingletonMeta):
         os.environ.update(self._env)
 
     def add_filter(self, key, value):
-        """Adds a filter variable to the list of filters.
+        """Adds a filter function to the list of filters.
         """
         # Write to filters dictionary without question mark
         self._filters[key[1:]] = value
@@ -272,7 +272,7 @@ class Context(object, metaclass=SingletonMeta):
         """
         if '?' in section:
             Log().logger.warning(
-                '[setup] Filter variable not allowed in the mandatory sections: '
+                '[setup] Filter function not allowed in the mandatory sections: '
                 + section)
             section_name_no_filter = section.split('?')[0]
         else:
@@ -283,7 +283,7 @@ class Context(object, metaclass=SingletonMeta):
         self._mandatory_sections.append(section_name_no_filter)
 
     def evaluate_filter(self, section_name, filter_name):
-        """Evaluates the status of the filter variable passed as an argument.
+        """Evaluates the status of the filter function passed as an argument.
         """
         if filter_name != '':
             filter_result = False
@@ -297,13 +297,13 @@ class Context(object, metaclass=SingletonMeta):
             if rc == 0:
                 filter_result = True
                 Log().logger.debug(
-                    '[' + section_name + '] Filter variable ' + filter_name +
-                    ' evaluation result: True. Executing section.')
+                    '[' + section_name + '] Filter function ' + filter_name +
+                    ' result: True. Executing section.')
             else:
                 filter_result = False
                 Log().logger.debug(
-                    '[' + section_name + '] Filter variable ' + filter_name +
-                    ' evaluation result: False. Skipping section.')
+                    '[' + section_name + '] Filter function ' + filter_name +
+                    ' result: False. Skipping section.')
         else:
             filter_result = None
 
