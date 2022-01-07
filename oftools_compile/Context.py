@@ -249,15 +249,18 @@ class Context(object, metaclass=SingletonMeta):
     def add_env_variable(self, key, value):
         """Adds a variable to the environment.
         """
-        if value.startswith('`') and value.endswith('`'):
-            value = value[1:-1]
+        if not value.startswith('$(') and not value.startswith('`'):
+            self._env[key[1:]] = os.path.expandvars(value)
+        else:
+            if value.startswith('$(') and value.endswith(')'):
+                value = value[2:-1]
+            elif value.startswith('`') and value.endswith('`'):
+                value = value[1:-1]
             out, _, _ = Utils().execute_shell_command(value, 'env_variable',
                                                       self._env)
-            value = out.decode(errors='ignore').rstrip()
+            value = out.rstrip()
             # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
-        else:
-            self._env[key[1:]] = os.path.expandvars(value)
 
         os.environ.update(self._env)
 
