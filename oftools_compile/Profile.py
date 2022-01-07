@@ -45,6 +45,7 @@ class Profile(object):
 
         self._is_setup = False
 
+        self._set_sections_no_filter()
         self._analyze()
 
     @property
@@ -59,6 +60,19 @@ class Profile(object):
         """
         return self._sections
 
+    def _set_sections_no_filter(self):
+        """
+            """
+        self._sections_no_filter = []
+
+        for section in self._sections:
+            # Removing filter functions from the section name
+            if '?' in section:
+                section_name_no_filter = section.split('?')[0]
+            else:
+                section_name_no_filter = section
+            self._sections_no_filter.append(section_name_no_filter)
+
     def _analyze(self):
         """Analyzes the sections of the profile.
 
@@ -69,14 +83,10 @@ class Profile(object):
             SystemError: An error occurs if the setup section is missing in the profile.
         """
         try:
-            for section in self._sections:
-                # Removing filter functions from the section name
-                if '?' in section:
-                    section_name_no_filter = section.split('?')[0]
-                else:
-                    section_name_no_filter = section
+            for i in range(len(self._sections)):
+                section = self._sections[i]
                 # Sections dictionary initialization
-                Context().complete_sections[section_name_no_filter] = False
+                Context().complete_sections[self._sections_no_filter[i]] = False
 
                 # Detailed analysis of the sections
                 if section.startswith('setup'):
@@ -140,7 +150,7 @@ class Profile(object):
                 # Check that the mandatory section actually exist in the profile
                 for section in value:
                     try:
-                        if section in self._data.sections():
+                        if section in self._sections_no_filter:
                             Context().add_mandatory_section(section)
                         else:
                             raise Warning()
