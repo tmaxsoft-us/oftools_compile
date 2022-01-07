@@ -53,7 +53,7 @@ class Context(object, metaclass=SingletonMeta):
         _report_file_path: A string, the absolute path of the report file of the compilation.
 
         _skip: A boolean, a flag used to skip source files if not found or not.        
-        _tag: A string, a keyword to identify working directories and report for a given compilation
+        _tag: A string, a keyword to identify working directories and report for a given compilation.
         _time_stamp: A string, a datetime respecting _%Y%m%d_%H%M%S format for working directories and 
             report identification purposes.
 
@@ -62,10 +62,10 @@ class Context(object, metaclass=SingletonMeta):
     Methods:
         __init__(): Initializes all attributes of the class.
         add_env_variable(key, value): Adds a variable to the environment.
-        add_filter(key, value): Adds a filter variable to the list of filters.
+        add_filter(key, value): Adds a filter function to the list of filters.
         add_mandatory_section(section): Adds the input section name to mandatory sections list.
 
-        evaluate_filter(section_name, filter_name): Evaluates the status of the filter variable passed 
+        evaluate_filter(section_name, filter_name): Evaluates the status of the filter function passed 
             as an argument.
 
         is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
@@ -104,8 +104,7 @@ class Context(object, metaclass=SingletonMeta):
         # Skip flag
         self._skip = False
         # Tag
-        self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
-        self._tag = '_' + self._tag.replace('\n', '')
+        self._tag = ''
         # Timestamp
         self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
 
@@ -226,7 +225,10 @@ class Context(object, metaclass=SingletonMeta):
     def tag(self, tag):
         """Setter method for the attribute _tag.
         """
-        if tag is not None:
+        if tag is None and self._skip is False:
+            self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
+            self._tag = '_' + self._tag.replace('\n', '')
+        else:
             self._tag = '_' + tag
 
     @property
@@ -247,20 +249,23 @@ class Context(object, metaclass=SingletonMeta):
     def add_env_variable(self, key, value):
         """Adds a variable to the environment.
         """
-        if value.startswith('`') and value.endswith('`'):
-            value = value[1:-1]
+        if not value.startswith('$(') and not value.startswith('`'):
+            self._env[key[1:]] = os.path.expandvars(value)
+        else:
+            if value.startswith('$(') and value.endswith(')'):
+                value = value[2:-1]
+            elif value.startswith('`') and value.endswith('`'):
+                value = value[1:-1]
             out, _, _ = Utils().execute_shell_command(value, 'env_variable',
                                                       self._env)
-            value = out.decode(errors='ignore').rstrip()
+            value = out.rstrip()
             # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
-        else:
-            self._env[key[1:]] = os.path.expandvars(value)
 
         os.environ.update(self._env)
 
     def add_filter(self, key, value):
-        """Adds a filter variable to the list of filters.
+        """Adds a filter function to the list of filters.
         """
         # Write to filters dictionary without question mark
         self._filters[key[1:]] = value
@@ -270,7 +275,7 @@ class Context(object, metaclass=SingletonMeta):
         """
         if '?' in section:
             Log().logger.warning(
-                '[setup] Filter variable not allowed in the mandatory sections: '
+                '[setup] Filter function not allowed in the mandatory sections: '
                 + section)
             section_name_no_filter = section.split('?')[0]
         else:
@@ -281,7 +286,7 @@ class Context(object, metaclass=SingletonMeta):
         self._mandatory_sections.append(section_name_no_filter)
 
     def evaluate_filter(self, section_name, filter_name):
-        """Evaluates the status of the filter variable passed as an argument.
+        """Evaluates the status of the filter function passed as an argument.
         """
         if filter_name != '':
             filter_result = False
@@ -295,13 +300,13 @@ class Context(object, metaclass=SingletonMeta):
             if rc == 0:
                 filter_result = True
                 Log().logger.debug(
-                    '[' + section_name + '] Filter variable ' + filter_name +
-                    ' evaluation result: True. Executing section.')
+                    '[' + section_name + '] Filter function ' + filter_name +
+                    ' result: True. Executing section.')
             else:
                 filter_result = False
                 Log().logger.debug(
-                    '[' + section_name + '] Filter variable ' + filter_name +
-                    ' evaluation result: False. Skipping section.')
+                    '[' + section_name + '] Filter function ' + filter_name +
+                    ' result: False. Skipping section.')
         else:
             filter_result = None
 

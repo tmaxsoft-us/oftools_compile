@@ -40,9 +40,9 @@ class DeployJob(Job):
         """Analyzes prerequisites before running the job for the section.
 
         It evaluates all the following elements:
-            - is the section already complete, based on the name without the filter variable
+            - is the section already complete, based on the name without the filter function
             - is the section mandatory, list of sections in the setup section
-            - is the filter of section True or False, if there is one
+            - is the filter of the section True or False, if there is one
             - is any of the compile section complete
 
         Returns:
