@@ -14,8 +14,8 @@ import sys
 
 # Owned modules
 from .Context import Context
+from .FileHandler import FileHandler
 from .Log import Log
-from .Utils import Utils
 
 
 class Profile(object):
@@ -37,7 +37,7 @@ class Profile(object):
     def __init__(self, profile_path):
         """Initializes the class with all the attributes.
         """
-        self._data = Utils().read_file(profile_path)
+        self._data = FileHandler().read_file(profile_path)
         self._sections = self._data.sections()
 
         Log().logger.debug('Profile sections: ')

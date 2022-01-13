@@ -6,16 +6,12 @@ This module gathers a set of methods that are useful in many other modules. When
 used in different modules, a general version of it is created and can be found here.
 
 Typical usage example:
-  Utils().read_file(profile_path)
   Utils().execute_shell_command(shell_command, env)
 """
 
 # Generic/Built-in modules
-import configparser
-import collections
 import os
 import subprocess
-import sys
 
 # Third-party modules
 
@@ -37,92 +33,8 @@ class Utils(object, metaclass=SingletonMeta):
     """A class used to run several useful functions across all modules.
 
     Methods:
-        read_file(path_to_file):
-        execute_shell_command(shell_command, env)
+        execute_shell_command(shell_command, env): Separate method to execute shell command.
     """
-
-    def read_file(self, path_to_file):
-        """Open and read the input file.
-
-        Supports following extensions:
-            - configuration: conf, cfg, prof
-            - text: log, tip, txt
-
-        Args:
-            path_to_file: A string, absolute path to the file.
-
-        Returns: 
-            A parsed file, the type depends on the extension of the processed file.
-
-        Raises:
-            FileNotFoundError: An error occurs if the file does not exist or is not found.
-            IsADirectoryError: An error occurs if a directory is specified instead of a file.
-            PermissionError: An error occurs if the user running the program does not have the required 
-                permissions to access the input file.
-            SystemExit: An error occurs of the file is empty.
-            TypeError: An error occurs if the file extension is not supported.
-
-            MissingSectionHeaderError: An error occurs if the config file specified does not contain 
-                any section.
-            DuplicateSectionError: An error occurs if there are two sections with the same name in the 
-                config file specified.
-            DuplicateOptionError: An error occurs if there is a duplicate option in one of the sections 
-                of the config file specified.
-        """
-        try:
-            path_to_file = os.path.expandvars(path_to_file)
-            # Check on file size
-            if os.stat(path_to_file).st_size <= 0:
-                raise SystemError()
-
-            if os.path.isfile(path_to_file):
-                with open(path_to_file, mode='r') as fd:
-                    extension = path_to_file.rsplit('.', 1)[1]
-
-                    if extension in ('conf', 'cfg', 'prof'):
-                        file = configparser.ConfigParser(
-                            dict_type=collections.OrderedDict)
-                        file.optionxform = str
-                        file.read(path_to_file)
-                    elif extension in ('log', 'tip', 'txt'):
-                        file = fd.read()
-                    else:
-                        raise TypeError()
-            elif os.path.isdir(path_to_file):
-                raise IsADirectoryError()
-            else:
-                raise FileNotFoundError()
-
-        except FileNotFoundError:
-            Log().logger.critical(
-                'FileNotFoundError: No such file or directory: ' + path_to_file)
-            sys.exit(-1)
-        except IsADirectoryError:
-            Log().logger.critical('IsADirectoryError: Is a directory: ' +
-                                  path_to_file)
-            sys.exit(-1)
-        except PermissionError:
-            Log().logger.critical('PermissionError: Permission denied: ' +
-                                  path_to_file)
-            sys.exit(-1)
-        except SystemError:
-            Log().logger.critical('EmptyError: File empty: ' + path_to_file)
-            sys.exit(-1)
-        except TypeError:
-            Log().logger.critical('TypeError: Unsupported file extension: ' +
-                                  path_to_file)
-            sys.exit(-1)
-        except configparser.MissingSectionHeaderError as e:
-            Log().logger.critical('MissingSectionHeaderError: ' + str(e))
-            sys.exit(-1)
-        except configparser.DuplicateSectionError as e:
-            Log().logger.critical('DuplicateSectionError: ' + str(e))
-            sys.exit(-1)
-        except configparser.DuplicateOptionError as e:
-            Log().logger.critical('DuplicateOptionError: ' + str(e))
-            sys.exit(-1)
-        else:
-            return file
 
     def execute_shell_command(self, shell_command, command_type, env):
         """Separate method to execute shell command.

@@ -8,6 +8,7 @@ Typical usage example:
 """
 
 # Generic/Built-in modules
+import datetime
 import os
 import shutil
 
@@ -17,6 +18,7 @@ import shutil
 from .Context import Context
 from .Job import Job
 from .Log import Log
+from .FileHandler import FileHandler
 
 
 class SetupJob(Job):
@@ -80,8 +82,11 @@ class SetupJob(Job):
                 self._init_log_file()
             elif key == 'mandatory':
                 continue
+            elif key == 'backup' and self._profile.has_option(
+                    'setup', 'housekeeping') is False:
+                rc = self._process_backup(value)
             elif key == 'housekeeping':
-                #TODO Code housekeeping feature
+                rc = self._process_housekeeping(value)
                 continue
             else:
                 rc = self._process_option(key, value)
@@ -168,6 +173,118 @@ class SetupJob(Job):
         Log().logger.info('[' + self._section_name + '] cd ' + current_workdir)
         Log().logger.info('[' + self._section_name + '] cp ' +
                           self._file_path_in + ' ' + current_workdir)
+
+    def _process_backup(self, value):
+        """Clean the root working directory from old compilation directories based on the number of backups.
+
+            Arguments:
+                value {string} -- The value of the backup option, this is an integer.
+
+            Returns:
+                integer -- The return code of the method.
+
+            Raises:
+                ValueError: An error occurs if the input value cannot be converted from string to integer.
+            """
+        try:
+            value = int(value)
+            backup_paths = FileHandler().get_duplicates(
+                Context().root_workdir,
+                self._file_name_in,
+            )[1]
+
+            if len(backup_paths) > value:
+                creation_times = FileHandler().get_creation_times(backup_paths)
+
+                # Sorting the backup_paths list based on a sorting of the creation_times list
+                backup_paths = [
+                    path
+                    for _, path in sorted(zip(creation_times, backup_paths))
+                ]
+
+                while len(backup_paths) > value:
+                    backup = backup_paths[0]
+                    backup_paths.pop(0)
+
+                    #Deletion of the directory
+                    FileHandler().delete_directory(backup)
+            rc = 0
+
+            Log().logger.error(
+                '[setup] Invalid value for the "backup" option: It must be an integer'
+            )
+            rc = -1
+        except ValueError:
+            Log().logger.error(
+                '[setup] ValueError: The "backup" option must be an integer')
+            rc = -1
+
+        return rc
+
+    def _process_housekeeping(self, value):
+        """Clean the root working directory from compilation directories older than the input date.
+
+            Arguments:
+                value {string} -- The value of the housekeeping option, this is a number of days.
+
+            Returns:
+                integer -- The return code of the method.
+
+            Raises:
+                ValueError: An error occurs if part of the input value cannot be converted from string to integer.
+            """
+        try:
+            days = int(value[:-1])
+            if value[-1] == 'd' and isinstance(value[:-1], int):
+                if self._profile.has_option('setup', 'backup'):
+
+                    backup_value = self._profile.get('setup', 'backup')
+                    threshold = datetime.datetime.today() - datetime.timedelta(
+                        days=int(days))
+
+                    backup_paths = FileHandler().get_duplicate_directories(
+                        Context().root_workdir, self._file_name_in,
+                        'directories')
+
+                    if len(backup_paths) > backup_value:
+                        creation_times = FileHandler().get_creation_times(
+                            backup_paths)
+
+                        # Sorting the creation_times list
+                        creation_times_sorted = creation_times.sort()
+                        # Sorting the backup_paths list based on a sorting on the creation_times list
+                        backup_paths = [
+                            path for _, path in sorted(
+                                zip(creation_times, backup_paths))
+                        ]
+
+                        number_of_backups = len(backup_paths)
+                        for i in range(len(backup_paths)):
+                            backup_creation_date = datetime.datetime.fromtimestamp(
+                                creation_times_sorted[i])
+
+                            if backup_creation_date < threshold:
+                                backup = backup_paths[i]
+                                number_of_backups -= 1
+
+                                #Deletion of the directory
+                                FileHandler().delete_directory(backup)
+
+                            if number_of_backups == backup_value:
+                                break
+                    rc = 0
+
+                else:
+                    Log().logger.warning(
+                        '[setup] "backup" value required to run housekeeping')
+                    rc = 1
+        except ValueError:
+            Log().logger.error(
+                '[setup] ValueError: The "housekeeping" option must be a number of days, for example: 30d'
+            )
+            rc = -1
+
+        return rc
 
     def run(self, file_path_in):
         """Performs all the steps for the setup section of the profile.
