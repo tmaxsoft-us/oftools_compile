@@ -48,7 +48,8 @@ class DeployJob(Job):
         Returns:
             An integer, the return code of the analysis result.
         """
-        if Context().is_section_complete(self._section_name_no_filter):
+        if Context().is_section_complete(self._profile,
+                                         self._section_name_no_filter):
             rc = 1
         elif Context().is_section_mandatory(self._section_name_no_filter):
             rc = 0
@@ -62,7 +63,7 @@ class DeployJob(Job):
             compile_section = False
             completion_status = False
 
-            for key, value in Context().complete_sections.items():
+            for key, value in self._profile.complete_sections.items():
                 if key not in ('setup', 'deploy'):
                     compile_section = True
                     completion_status = value
@@ -87,16 +88,16 @@ class DeployJob(Job):
             else:
                 rc = 0
                 Log().logger.debug('[' + self._section_name +
-                                '] No compile section found. Deploying only')
+                                   '] No compile section found. Deploying only')
 
         return rc
 
     def _process_section(self):
         """Read the section line by line to execute the corresponding methods.
 
-        For the deploy section, it analyzes either file, dataset, region or tdl options to find where 
-        to deploy the compiled program. And as any other section, it looks for environment and filter 
-        variables.
+        For the deploy section, it analyzes either file, dataset, region or tdl options to find 
+        where to deploy the compiled program. And as any other section, it looks for environment and
+        filter variables.
 
         Returns:
             An integer, the return code of the section execution.
@@ -108,7 +109,7 @@ class DeployJob(Job):
         Context().last_section = self._section_name
 
         # file option must be processed first
-        value = self._profile.get('deploy', 'file')
+        value = self._profile.data.get('deploy', 'file')
         rc = self._process_file(value)
         if rc < 0:
             Log().logger.error(
@@ -116,7 +117,7 @@ class DeployJob(Job):
                 '] Step failed: file. Aborting section execution')
             return rc
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'file':
                 continue
             if key == 'dataset':
@@ -138,7 +139,8 @@ class DeployJob(Job):
             Log().logger.debug('[' + self._section_name +
                                '] Ending section, output filename: ' +
                                self._file_name_out)
-            Context().section_completed(self._section_name_no_filter)
+            Context().section_completed(self._profile,
+                                        self._section_name_no_filter)
 
         return rc
 

@@ -43,7 +43,8 @@ class CompileJob(Job):
         Returns:
             An integer, the return code of the analysis result.
         """
-        if Context().is_section_complete(self._section_name_no_filter):
+        if Context().is_section_complete(self._profile,
+                                         self._section_name_no_filter):
             rc = 1
         elif Context().is_section_mandatory(self._section_name_no_filter):
             rc = 0
@@ -53,7 +54,8 @@ class CompileJob(Job):
         else:
             rc = 1
 
-        if Context().is_section_complete('setup', skip=False) == False:
+        if Context().is_section_complete(self._profile, 'setup',
+                                         skip=False) == False:
             rc = -1
             Log().logger.error(
                 '[' + self._section_name +
@@ -80,11 +82,11 @@ class CompileJob(Job):
         compilation = False
         status = 'incomplete'
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'args':
                 compilation = True
             elif key == 'option':
-                if 'args' in self._profile[self._section_name].keys():
+                if 'args' in self._profile.data[self._section_name].keys():
                     continue
                 else:
                     compilation = True
@@ -105,7 +107,8 @@ class CompileJob(Job):
             Log().logger.debug('[' + self._section_name +
                                '] Ending section, output filename: ' +
                                self._file_name_out)
-            Context().section_completed(self._section_name_no_filter)
+            Context().section_completed(self._profile,
+                                        self._section_name_no_filter)
 
         return rc
 
