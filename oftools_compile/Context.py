@@ -40,8 +40,8 @@ class Context(object, metaclass=SingletonMeta):
         _current_workdir: A string, the absolute path of the directory created for the program being 
             currently compiled.
         _work_directories: A list of strings, the absolute paths of all the working directories. 
-        _group_directory: A string, the absolute path of the group directory if the grouping feature is 
-            being used.
+        _group_directory: A string, the absolute path of the group directory if the grouping feature 
+            is being used.
 
         _last_section: A string, the name of the last section being executed, whether it succeeds or 
             fails.
@@ -93,7 +93,6 @@ class Context(object, metaclass=SingletonMeta):
         # Profile sections
         self._last_section = ''
         self._mandatory_sections = []
-        self._complete_sections = {}
 
         # Filter variables
         self._filters = {}
@@ -177,12 +176,6 @@ class Context(object, metaclass=SingletonMeta):
         """Getter method for the attribute _mandatory_sections.
         """
         return self._mandatory_sections
-
-    @property
-    def complete_sections(self):
-        """Getter method for the attribute _complete_sections.
-        """
-        return self._complete_sections
 
     @property
     def filters(self):
@@ -322,10 +315,10 @@ class Context(object, metaclass=SingletonMeta):
 
         return mandatory_status
 
-    def is_section_complete(self, section_name_no_filter, skip=True):
+    def is_section_complete(self, profile, section_name_no_filter, skip=True):
         """Checks if given section is already complete.
         """
-        section_status = self._complete_sections[section_name_no_filter]
+        section_status = profile.complete_sections[section_name_no_filter]
 
         if section_status and skip is True:
             Log().logger.debug(
@@ -334,12 +327,12 @@ class Context(object, metaclass=SingletonMeta):
 
         return section_status
 
-    def section_completed(self, section_name_no_filter):
+    def section_completed(self, profile, section_name_no_filter):
         """Changes the status of the given section to complete.
         """
-        self._complete_sections[section_name_no_filter] = True
+        profile.complete_sections[section_name_no_filter] = True
 
-    def clear(self):
+    def clear(self, profile):
         """Clears context after each file processing.
         """
         self._env = self._init_env
@@ -347,8 +340,8 @@ class Context(object, metaclass=SingletonMeta):
 
         self._filters.clear()
 
-        for key in self._complete_sections.keys():
-            self._complete_sections[key] = False
+        for key in profile.complete_sections.keys():
+            profile.complete_sections[key] = False
 
         os.chdir(self._init_pwd)
 
@@ -362,6 +355,5 @@ class Context(object, metaclass=SingletonMeta):
 
         self._last_section = ''
         self._mandatory_sections = []
-        self._complete_sections.clear()
 
         os.chdir(self._init_pwd)

@@ -46,7 +46,7 @@ class SetupJob(Job):
         Returns:
             An integer, the return code of the analysis result.
         """
-        if Context().is_section_complete(self._section_name_no_filter):
+        if Context().is_section_complete(self._profile, self._section_name_no_filter):
             rc = 1
         elif Context().is_section_mandatory(self._section_name_no_filter):
             rc = 0
@@ -73,7 +73,7 @@ class SetupJob(Job):
                            self._file_path_in)
         Context().last_section = self._section_name
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'workdir':
                 self._init_current_workdir()
                 rc = self._init_file()
@@ -96,7 +96,7 @@ class SetupJob(Job):
             Log().logger.debug('[' + self._section_name +
                                '] Ending section, output filename: ' +
                                self._file_name_out)
-            Context().section_completed(self._section_name_no_filter)
+            Context().section_completed(self._profile, self._section_name_no_filter)
 
         return rc
 
@@ -177,7 +177,7 @@ class SetupJob(Job):
         """
         self._initialize_file_variables(file_path_in)
         self._update_context()
-        
+
         rc = self._analyze()
         if rc != 0:
             if rc > 0:

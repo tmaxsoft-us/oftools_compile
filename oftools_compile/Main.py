@@ -296,7 +296,7 @@ class Main(object):
                 elapsed_time = time.time() - start_time
                 report.add_entry(file_path, rc, elapsed_time)
                 # Need to clear context and close log file at the end of each file processing
-                Context().clear()
+                Context().clear(profile)
                 Log().close_file()
 
         if len(source.file_paths) != 0:

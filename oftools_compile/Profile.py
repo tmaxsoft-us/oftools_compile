@@ -25,9 +25,13 @@ class Profile(object):
         _data: A ConfigParser object, the data extracted from the profile.
         _sections: A list, the name of the sections in the profile.
         _is_setup: A boolean, evaluates if there is a setup section in the profile.
+        _sections_no_filter: A list, section names without any filter.
+        _complete_sections: A dictionary, section names and their status as complete or not.
 
     Methods:
         __init__(profile_path): Initializes the class with all the attributes.
+        _set_sections_no_filter():
+        _set_complete_sections():
         _analyze(): Analyzes the sections of the profile.
         _analyze_setup(): Analyzes the setup section of the profile.
         _analyze_compile(section): Analyzes any compile section of the profile.
@@ -46,6 +50,7 @@ class Profile(object):
         self._is_setup = False
 
         self._set_sections_no_filter()
+        self._set_complete_sections()
         self._analyze()
 
     @property
@@ -60,8 +65,14 @@ class Profile(object):
         """
         return self._sections
 
-    def _set_sections_no_filter(self):
+    @property
+    def complete_sections(self):
+        """Getter method for the attribute _complete_sections.
         """
+        return self._complete_sections
+
+    def _set_sections_no_filter(self):
+        """Set the list of sections without any filter.
             """
         self._sections_no_filter = []
 
@@ -73,6 +84,14 @@ class Profile(object):
                 section_name_no_filter = section
             self._sections_no_filter.append(section_name_no_filter)
 
+    def _set_complete_sections(self):
+        """Set the dictionary of sections with their associated complete status.
+            """
+        self._complete_sections = {}
+
+        for section in self._sections_no_filter:
+            self._complete_sections[section] = False
+
     def _analyze(self):
         """Analyzes the sections of the profile.
 
@@ -83,11 +102,7 @@ class Profile(object):
             SystemError: An error occurs if the setup section is missing in the profile.
         """
         try:
-            for i in range(len(self._sections)):
-                section = self._sections[i]
-                # Sections dictionary initialization
-                Context().complete_sections[self._sections_no_filter[i]] = False
-
+            for section in self._sections:
                 # Detailed analysis of the sections
                 if section.startswith('setup'):
                     self._is_setup = True
@@ -111,8 +126,8 @@ class Profile(object):
 
         Raises:
             SystemError: An error occurs if the setup section does not contain a workdir option.
-            SystemError: An error occurs if a section not existing in the profile is mentioned in the 
-                mandatory list.
+            SystemError: An error occurs if a section not existing in the profile is mentioned in 
+            the mandatory list.
         """
         try:
             # Analyze working directory option
