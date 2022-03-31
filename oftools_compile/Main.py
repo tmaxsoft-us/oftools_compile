@@ -16,7 +16,10 @@ import time
 from . import __version__
 from .Clear import Clear
 from .Context import Context
+from .enums.ErrorEnum import ErrorMessage
+from .enums.LogEnum import LogMessage
 from .Grouping import Grouping
+from .handlers.FileHandler import FileHandler
 from .JobFactory import JobFactory
 from .Log import Log
 from .Profile import Profile
@@ -33,12 +36,13 @@ class Main(object):
     Compile.
 
     Methods:
-        _parse_args(): Parses command-line options.
-        _create_jobs(profile): Creates job depending on the section of the profile.
-        run(): Performs all the steps to run compilation for all sources using the appropriate profile.
+        _parse_args() -- Parses command-line options.
+        _create_jobs(profile) -- Creates job depending on the section of the profile.
+        run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
     """
 
-    def _parse_args(self):
+    @staticmethod
+    def _parse_args():
         """Parses command-line options.
 
         The program defines what arguments it requires, and argparse will figure out how to parse those 
@@ -46,11 +50,11 @@ class Main(object):
         issues errors when users give the program invalid arguments.
 
         Returns:
-            args, an ArgumentParser object.
+            args {ArgumentParser} -- List of all arguments of the tool with their corresponding value.
 
         Raises:
-            TypeError: An error occurs if the file extension of the profile is not .prof.
-            SystemError: An error occurs if the numbers of profile and source are not 
+            argparse.ArgumentError -- Exception raised if there is an issue parsing the command arguments.
+            SystemError -- Exception raised if the numbers of profile and source are not 
                 matching.           
         """
         parser = argparse.ArgumentParser(add_help=False,
@@ -67,20 +71,19 @@ class Main(object):
             action='append',
             dest='profile_list',
             help=
-            'name of the profile, contains the description of the compilation target',
+            'profile name, contains the description of the compilation target',
             metavar='PROFILE',
             required=True,
             type=str)
 
-        required.add_argument(
-            '-s',
-            '--source',
-            action='append',
-            dest='source_list',
-            help='name of the source, either a file or a directory',
-            metavar='SOURCE',
-            required=True,
-            type=str)
+        required.add_argument('-s',
+                              '--source',
+                              action='append',
+                              dest='source_list',
+                              help='source name, either a file or a directory',
+                              metavar='SOURCE',
+                              required=True,
+                              type=str)
 
         # Optional arguments
         optional.add_argument(
@@ -97,7 +100,7 @@ class Main(object):
             action='store_true',
             dest='grouping',
             help=
-            'put all the compilation folders in a single one for mass compilation and aggregate all the logs',
+            'put all the compilation directories in a single one and aggregate all the logs',
             required=False)
 
         optional.add_argument(
@@ -113,12 +116,11 @@ class Main(object):
             required=False,
             type=str)
 
-        optional.add_argument(
-            '--skip',
-            action='store_true',
-            dest='skip',
-            help='set skip flag, used to skip source files if not found',
-            required=False)
+        optional.add_argument('--skip',
+                              action='store_true',
+                              dest='skip',
+                              help='skip source files if not found',
+                              required=False)
 
         optional.add_argument(
             '-t',
@@ -126,7 +128,7 @@ class Main(object):
             action='store',
             dest='tag',
             help=
-            'add a tag to the name of the report file and the listing directory',
+            'add a tag to the name of the report file and the compilation directory',
             metavar='TAG',
             required=False,
             type=str)
@@ -161,27 +163,17 @@ class Main(object):
             sys.exit(0)
         try:
             args = parser.parse_args()
-        except argparse.ArgumentError as e:
-            Log().logger.critical('ArgumentError: ' + str(e))
+        except argparse.ArgumentError as error:
+            Log().logger.critical(ErrorMessage.ARGUMENT.value % error)
+            Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
 
         # Analyze profiles, making sure a file with .prof extension is specified for each profile
-        try:
-            for profile in args.profile_list:
-                profile_path = os.path.expandvars(profile)
-                extension = profile_path.rsplit('.', 1)[1]
-                if extension != 'prof':
-                    raise TypeError()
-        except IndexError:
-            Log().logger.critical(
-                'IndexError: Given profile does not have a .prof extension: ' +
-                profile)
-            sys.exit(-1)
-        except TypeError:
-            Log().logger.critical(
-                'TypeError: Expected .prof extension, found ' + extension +
-                ': ' + profile)
-            sys.exit(-1)
+        for profile in args.profile_list:
+            is_valid_ext = FileHandler().check_extension(profile, 'prof')
+            if is_valid_ext is False:
+                Log().logger.critical(ErrorMessage.ABORT.value)
+                sys.exit(-1)
 
         # Analyze number of profiles and sources provided
         try:
@@ -189,14 +181,15 @@ class Main(object):
                 raise SystemError()
         except SystemError:
             Log().logger.critical(
-                'NumberError: Number of profile and source are not matching: profile='
-                + str(len(args.profile_list)) + ', source=' +
-                str(len(args.source_list)))
+                ErrorMessage.SYSTEM_NUMBER.value %
+                (len(args.profile_list), len(args.source_list)))
+            Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
 
         return args
 
-    def _create_jobs(self, profile):
+    @staticmethod
+    def _create_jobs(profile):
         """Creates job depending on the section of the profile.
 
         Running the method 'sections' on the profile which is a ConfigParser object allow us to create 
@@ -204,10 +197,10 @@ class Main(object):
         create of the JobFactory module generate the corresponding job.
 
         Args:
-            profile: A ConfigParser object, the compilation profile specified for the current source.
+            profile {ConfigParser} -- Compilation profile specified for the current source.
 
         Returns:
-            A list of Job objects.
+            list[Job] -- list of Job objects.
 
         Raises:
             #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
@@ -217,14 +210,12 @@ class Main(object):
 
         for section_name in profile.sections:
             try:
-                # Log().logger.debug('Creating job for the section: ' +
-                #                    section_name)
                 job = job_factory.create(section_name)
                 jobs.append(job)
             except:
                 traceback.print_exc()
-                Log().logger.error(
-                    'Unexpected error detected during the job creation')
+                Log().logger.critical(ErrorMessage.JOB.value)
+                Log().logger.critical(ErrorMessage.ABORT.value)
                 sys.exit(-1)
 
         return jobs
@@ -233,7 +224,7 @@ class Main(object):
         """Performs all the steps to run compilation for all sources using the appropriate profile.
 
         Returns:
-            An integer, the return code of the program.
+            integer -- Return code of the program.
         """
         rc = 0
         # For testing purposes. allow to remove logs when executing coverage
@@ -257,18 +248,18 @@ class Main(object):
 
             # Profile processing
             profile_path = os.path.expandvars(args.profile_list[i])
-            Log().logger.debug('Profile path: ' + profile_path)
+            Log().logger.debug(LogMessage.PROFILE_PATH.value % profile_path)
             if profile_path not in profile_dict.keys():
                 profile = Profile(profile_path)
                 profile_dict[profile_path] = profile
             else:
-                Log().logger.debug('Profile already used: ' + profile_path +
-                                   '. Reusing Python Profile object')
+                Log().logger.debug(LogMessage.PROFILE_REUSE.value %
+                                   profile_path)
                 profile = profile_dict[profile_path]
 
             # Source processing
-            Log().logger.debug('Source path: ' +
-                               os.path.expandvars(args.source_list[i]))
+            source_path = os.path.expandvars(args.source_list[i])
+            Log().logger.debug(LogMessage.SOURCE_PATH.value % source_path)
             source = Source(args.source_list[i])
 
             # Create jobs
@@ -286,9 +277,8 @@ class Main(object):
                     file_name_in = file_name_out
                     rc = job.run(file_name_in)
                     if rc != 0:
-                        Log().logger.error(
-                            'An error occurred. Aborting source file processing'
-                        )
+                        Log().logger.error(LogMessage.ABORT_FILE.value %
+                                           file_name_in)
                         break
                     file_name_out = job.file_name_out
 
@@ -311,6 +301,7 @@ class Main(object):
                 grouping.run()
 
         # Need to clear context completely and close log at the end of the execution
+        Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
         Context().clear_all()
         Log().close_stream()
 
