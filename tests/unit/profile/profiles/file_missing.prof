@@ -1,0 +1,5 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[deploy]
+dataset = SYS1.USERLIB
