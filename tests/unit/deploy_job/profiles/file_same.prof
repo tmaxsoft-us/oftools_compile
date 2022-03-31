@@ -1,0 +1,5 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[deploy]
+file = $OF_COMPILE_BASE.cbl

@@ -1,0 +1,13 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[ofcbpp]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
+
+[ofcob]
+args = $OF_COMPILE_IN -o $OF_COMPILE_OUT --enable-debug
+
+[deploy]
+file = $OF_COMPILE_BASE.so
+dataset = SYS1.USERLIB:SYS1.TEMPLIB
