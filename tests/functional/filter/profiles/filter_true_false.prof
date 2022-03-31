@@ -1,0 +1,19 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+?filter_true_false = grep -a 'multiplier' $OF_COMPILE_IN
+
+[ofcbpp?filter_true_false]
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT; echo "Filter True"
+
+[ofcbpp]
+args = -i failed
+
+[sed]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = 's/multiplier/number/g' $OF_COMPILE_IN > $OF_COMPILE_OUT
+
+[ofcob?filter_true_false]
+args = failed
+
+[ofcob]
+args = $OF_COMPILE_IN -o $OF_COMPILE_OUT --enable-debug
