@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Module to run the job for any compile section of the profile.
+"""Module to run the job for any profile compile section.
 
 Typical usage example:
   job = CompileJob()
   job.run(file_path_in)
 """
 # Generic/Built-in modules
-import os
 
 # Third-party modules
 
 # Owned modules
 from .Context import Context
+from .enums.LogEnum import LogMessage
+from .handlers.ShellHandler import ShellHandler
 from .Job import Job
 from .Log import Log
-from .Utils import Utils
 
 
 class CompileJob(Job):
@@ -25,10 +25,10 @@ class CompileJob(Job):
         Inherited from Job module.
     
     Methods:
-        _analyze(): Analyzes prerequisites before running the job for the section.
-        _process_section(): Reads the section line by line to execute the corresponding methods.
-        _compile(option): Runs the given shell command with all its options.
-        run(file_path_in): Performs all the steps for any compile section of the profile.
+        _analyze() -- Analyzes prerequisites before running the job for the section.
+        _process_section() -- Reads the section line by line to execute the corresponding methods.
+        _compile(args) -- Runs the given shell command with all its arguments.
+        run(file_path_in) -- Performs all the steps for any compile section of the profile.
     """
 
     def _analyze(self):
@@ -38,27 +38,30 @@ class CompileJob(Job):
             - is the section already complete, based on the name without the filter function
             - is the section mandatory, list of sections in the setup section
             - is the filter of the section True or False, if there is one
-            - was the the setup section successful
+            - is the the setup section successful or not
 
         Returns:
-            An integer, the return code of the analysis result.
+            integer -- Return code of the analysis.
         """
-        if Context().is_section_complete(self._section_name_no_filter):
+        filter_function = Context().get_filter_function(self._filter)
+
+        if Context().is_section_complete(self._section_name,
+                                         self._section_no_filter):
             rc = 1
-        elif Context().is_section_mandatory(self._section_name_no_filter):
+        elif Context().is_section_mandatory(self._section_name,
+                                            self._section_no_filter):
             rc = 0
-        elif Context().evaluate_filter(self._section_name,
-                                       self._filter_name) in (True, None):
+        elif ShellHandler().evaluate_filter(filter_function, self._filter,
+                                            self._section_name,
+                                            Context().env) in (True, None):
             rc = 0
         else:
             rc = 1
 
-        if Context().is_section_complete('setup', skip=False) == False:
+        if Context().is_section_complete('setup', 'setup', skip=False) == False:
             rc = -1
-            Log().logger.error(
-                '[' + self._section_name +
-                '] Cannot proceed: setup section not complete. Aborting compilation job execution'
-            )
+            Log().logger.error(LogMessage.SETUP_NOT_COMPLETE.value %
+                               self._section_name)
 
         return rc
 
@@ -69,13 +72,11 @@ class CompileJob(Job):
         section, it looks for environment and filter variables.
 
         Returns:
-            An integer, the return code of the section execution.
+            integer -- Return code of the method.
         """
         rc = 0
-        Log().logger.debug('[' + self._section_name +
-                           '] Starting section, input filename: ' +
-                           self._file_path_in)
-        Context().last_section = self._section_name
+        Log().logger.debug(LogMessage.START_SECTION.value %
+                           (self._section_name, self._file_path_in))
 
         compilation = False
         status = 'incomplete'
@@ -96,36 +97,34 @@ class CompileJob(Job):
                 status = 'done'
 
             if rc != 0:
-                Log().logger.error('[' + self._section_name +
-                                   '] Step failed: ' + key +
-                                   '. Aborting section execution')
+                Log().logger.error(LogMessage.ABORT_SECTION.value %
+                                   (self._section_name, key))
                 break
 
         if rc == 0:
-            Log().logger.debug('[' + self._section_name +
-                               '] Ending section, output filename: ' +
-                               self._file_name_out)
-            Context().section_completed(self._section_name_no_filter)
+            Log().logger.debug(LogMessage.END_SECTION.value %
+                               (self._section_name, self._file_name_out))
+            Context().section_completed(self._section_no_filter)
 
         return rc
 
-    def _compile(self, option):
-        """Runs the given shell command with all its options.
+    def _compile(self, args):
+        """Runs the given shell command with all its arguments.
+
+        Arguments:
+            args {string} -- Arguments of the command being executed.
 
         Returns:
-            An integer, the return code of the shell command executed.
+            integer -- Return code of the shell command executed.
         """
-        Log().logger.debug('[' + self._section_name +
-                           '] Processing compilation')
-
         # Build command
-        shell_command = self._section_name_no_filter + ' ' + option
+        shell_command = self._section_no_filter + ' ' + args
 
         # Run command
-        Log().logger.info('[' + self._section_name + '] ' +
-                          os.path.expandvars(shell_command))
-        _, _, rc = Utils().execute_shell_command(shell_command, 'compile',
-                                                 Context().env)
+        Log().logger.info(LogMessage.RUN_COMMAND.value %
+                          (self._section_name, shell_command))
+        _, _, rc = ShellHandler().execute_command(shell_command,
+                                                  env=Context().env)
 
         return rc
 
@@ -133,7 +132,7 @@ class CompileJob(Job):
         """Performs all the steps for any compile section of the profile.
 
         Returns:
-            An integer, the return code of the given compile section.
+            integer -- Return code of the given compile section.
         """
         self._initialize_file_variables(file_path_in)
         self._update_context()

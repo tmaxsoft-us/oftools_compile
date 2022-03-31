@@ -1,0 +1,6 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+?false = grep -a 'False' $OF_COMPILE_IN
+
+[ofcbpp?false]
+args = failed
