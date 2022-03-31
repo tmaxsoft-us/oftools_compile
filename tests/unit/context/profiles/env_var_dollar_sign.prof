@@ -1,0 +1,6 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+$DEFAULT = $(echo 'Environment variable dollar sign test')
+
+[echo]
+args = $DEFAULT
