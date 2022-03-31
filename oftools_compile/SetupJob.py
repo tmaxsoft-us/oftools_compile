@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Module to run the job for the setup section of the profile.
+"""Module to run the job for the profile setup section.
 
 Typical usage example:
   job = SetupJob()
@@ -10,31 +10,35 @@ Typical usage example:
 # Generic/Built-in modules
 import datetime
 import os
-import shutil
 
 # Third-party modules
 
 # Owned modules
 from .Context import Context
+from .enums.ErrorEnum import ErrorMessage
+from .enums.LogEnum import LogMessage
+from .handlers.FileHandler import FileHandler
+from .handlers.ShellHandler import ShellHandler
 from .Job import Job
 from .Log import Log
-from .FileHandler import FileHandler
 
 
 class SetupJob(Job):
-    """A class used to perform all the steps of a setup section.
+    """A class used to perform all the setup section steps.
 
     Attributes:
         Inherited from Job module.
 
     Methods:
-        _analyze(): Analyzes prerequisites before running the job for the section.
-        _process_section(): Reads the section line by line to execute the corresponding methods.
-        _init_current_workdir(): Initializes the working directory for the file being currently 
+        _analyze() -- Analyzes prerequisites before running the job for the section.
+        _process_section() -- Reads the section line by line to execute the corresponding methods.
+        _init_current_workdir() -- Initializes the working directory for the file being currently 
             processed.
-        _init_file(): Copies the file to the working directory.
-        _init_log_file(): Initializes the log file for the file being currently processed.
-        run(file_path_in): Performs all the steps for the setup section of the profile.
+        _init_file() -- Copies the file to the working directory.
+        _init_log_file() -- Initializes the log file for the file being currently processed.
+        _process_backup(value) -- Cleans the root working directory from old compilation directories based on the number of backups to be kept.
+        _process_housekeeping(value) -- Cleans the root working directory from compilation directories older than the input number of days.
+        run(file_path_in) -- Performs all the steps for the setup section of the profile.
     """
 
     def _analyze(self):
@@ -46,14 +50,19 @@ class SetupJob(Job):
             - is the filter of the section True or False, if there is one
 
         Returns:
-            An integer, the return code of the analysis result.
+            integer - Return code of the analysis.
         """
-        if Context().is_section_complete(self._section_name_no_filter):
+        filter_function = Context().get_filter_function(self._filter)
+
+        if Context().is_section_complete(self._section_name,
+                                         self._section_no_filter):
             rc = 1
-        elif Context().is_section_mandatory(self._section_name_no_filter):
+        elif Context().is_section_mandatory(self._section_name,
+                                            self._section_no_filter):
             rc = 0
-        elif Context().evaluate_filter(self._section_name,
-                                       self._filter_name) in (True, None):
+        elif ShellHandler().evaluate_filter(filter_function, self._filter,
+                                            self._section_name,
+                                            Context().env) in (True, None):
             rc = 0
         else:
             rc = 1
@@ -63,21 +72,23 @@ class SetupJob(Job):
     def _process_section(self):
         """Reads the section line by line to execute the corresponding methods.
 
-        For the setup section, it mainly analyzes the workdir and mandatory options. And as any other 
+        For the setup section, it mainly analyzes the workdir options, but also processes options such as mandatory, backup and housekeeping. And as any other 
         section, it looks for environment and filter variables.
 
         Returns:
-            An integer, the return code of the section execution. 
+            integer -- Return code of the method.
         """
         rc = 0
-        Log().logger.debug('[' + self._section_name +
-                           '] Starting section, input filename: ' +
-                           self._file_path_in)
-        Context().last_section = self._section_name
+        Log().logger.debug(LogMessage.START_SECTION.value %
+                           (self._section_name, self._file_path_in))
 
         for key, value in self._profile[self._section_name].items():
             if key == 'workdir':
-                self._init_current_workdir()
+                rc = self._init_current_workdir()
+                if rc != 0:
+                    Log().logger.error(LogMessage.ABORT_SECTION.value %
+                                       (self._section_name, key))
+                    break
                 rc = self._init_file()
                 self._init_log_file()
             elif key == 'mandatory':
@@ -87,105 +98,103 @@ class SetupJob(Job):
                 rc = self._process_backup(value)
             elif key == 'housekeeping':
                 rc = self._process_housekeeping(value)
-                continue
             else:
                 rc = self._process_option(key, value)
 
             if rc != 0:
-                Log().logger.error('[' + self._section_name +
-                                   '] Step failed: ' + key +
-                                   '. Aborting section execution')
+                Log().logger.error(LogMessage.ABORT_SECTION.value %
+                                   (self._section_name, key))
                 break
 
         if rc == 0:
-            Log().logger.debug('[' + self._section_name +
-                               '] Ending section, output filename: ' +
-                               self._file_name_out)
-            Context().section_completed(self._section_name_no_filter)
+            Log().logger.debug(LogMessage.END_SECTION.value %
+                               (self._section_name, self._file_name_out))
+            Context().section_completed(self._section_no_filter)
 
         return rc
 
     def _init_current_workdir(self):
         """Initializes the working directory for the file being currently processed.
+
+        Returns:
+            integer -- Return code of the method.
         """
-        Log().logger.debug('[' + self._section_name +
-                           '] Creating working directory')
+        Log().logger.debug(LogMessage.START_WORKING_DIRECTORY.value %
+                           self._section_name)
 
         while True:
             current_workdir = os.path.join(
                 Context().root_workdir,
                 self._file_name_in + Context().tag + Context().time_stamp)
 
-            # Check if the working directory already exists
-            if not os.path.isdir(current_workdir):
-                os.mkdir(current_workdir)
-                break
-            else:
-                Log().logger.warning(
-                    '[' + self._section_name +
-                    '] Working directory already exists: ' + current_workdir +
-                    '. Sleeping 1 second to assign a new time stamp')
+            rc = FileHandler().create_directory(current_workdir)
+            if rc != 0:
+                Log().logger.debug(LogMessage.ADD_TIME_TO_TIME_STAMP.value %
+                                   (self._section_name, current_workdir))
                 Context().time_stamp = 1
+            else:
+                # Update Context and change directory to current working directory
+                Context().current_workdir = current_workdir
+                os.chdir(current_workdir)
+                break
 
-        # Change directory to current working directory and update Context
-        os.chdir(current_workdir)
-        Context().current_workdir = current_workdir
+        Log().logger.debug(LogMessage.END_WORKING_DIRECTORY.value %
+                           self._section_name)
+
+        return rc
 
     def _init_file(self):
         """Copies the file to the current working directory.
 
         Returns:
-            An integer, the return code of the copy of the file.
+            integer -- Return code of the method.
         """
-        current_workdir = Context().current_workdir
-        Log().logger.debug('[' + self._section_name + '] Processing file copy')
+        Log().logger.debug(LogMessage.START_SETUP_FILE.value %
+                           self._section_name)
 
-        try:
-            shutil.copy(self._file_path_in, current_workdir)
-            rc = 0
-        except shutil.SameFileError as e:
-            rc = -1
-            Log().logger.error('[' + self._section_name +
-                               '] Failed to copy: %s' % e)
-        except OSError as e:
-            rc = -1
-            Log().logger.error('[' + self._section_name +
-                               '] Failed to copy: %s' % e)
-        finally:
-            return rc
+        current_workdir = Context().current_workdir
+        rc = FileHandler().copy_file(self._file_path_in, current_workdir)
+
+        Log().logger.debug(LogMessage.END_SETUP_FILE.value % self._section_name)
+
+        return rc
 
     def _init_log_file(self):
         """Initializes the log file for the file being currently processed.
 
         It first opens the file, then write the header and the setup section steps to the file.
         """
-        current_workdir = Context().current_workdir
-        Log().logger.debug('[' + self._section_name + '] Creating log file')
-        Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
+        Log().logger.debug(LogMessage.START_LOG_FILE.value % self._section_name)
 
+        current_workdir = Context().current_workdir
+        Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
         header = '================================================================================'
         header = header[0:4] + ' ' + self._file_name_in + ' ' + header[
             len(self._file_name_in) + 4:]
 
         Log().logger.info(header)
-        Log().logger.info('[' + self._section_name + '] mkdir ' +
-                          current_workdir)
-        Log().logger.info('[' + self._section_name + '] cd ' + current_workdir)
-        Log().logger.info('[' + self._section_name + '] cp ' +
-                          self._file_path_in + ' ' + current_workdir)
+        Log().logger.info(LogMessage.MKDIR_COMMAND.value %
+                          (self._section_name, current_workdir))
+        Log().logger.info(LogMessage.CD_COMMAND.value %
+                          (self._section_name, current_workdir))
+        Log().logger.info(
+            LogMessage.CP_COMMAND.value %
+            (self._section_name, self._file_path_in, current_workdir))
+
+        Log().logger.debug(LogMessage.END_LOG_FILE.value % self._section_name)
 
     def _process_backup(self, value):
-        """Clean the root working directory from old compilation directories based on the number of backups.
+        """Cleans the root working directory from old compilation directories based on the number of backups to be kept.
 
-            Arguments:
-                value {string} -- The value of the backup option, this is an integer.
+        Arguments:
+            value {string} -- Value of the backup option, this is an integer.
 
-            Returns:
-                integer -- The return code of the method.
+        Returns:
+            integer -- Return code of the method.
 
-            Raises:
-                ValueError: An error occurs if the input value cannot be converted from string to integer.
-            """
+        Raises:
+            ValueError -- Exception raised if the input value cannot be converted from string to integer.
+        """
         try:
             value = int(value)
             backup_paths = FileHandler().get_duplicates(
@@ -209,34 +218,29 @@ class SetupJob(Job):
                     #Deletion of the directory
                     FileHandler().delete_directory(backup)
             rc = 0
-
-            Log().logger.error(
-                '[setup] Invalid value for the "backup" option: It must be an integer'
-            )
-            rc = -1
         except ValueError:
-            Log().logger.error(
-                '[setup] ValueError: The "backup" option must be an integer')
+            Log().logger.error(ErrorMessage.VALUE_BACKUP.value)
             rc = -1
 
         return rc
 
     def _process_housekeeping(self, value):
-        """Clean the root working directory from compilation directories older than the input date.
+        """Cleans the root working directory from compilation directories older than the input number of days.
 
-            Arguments:
-                value {string} -- The value of the housekeeping option, this is a number of days.
+        Arguments:
+            value {string} -- Value of the housekeeping option, this must be a number of days.
 
-            Returns:
-                integer -- The return code of the method.
+        Returns:
+            integer -- Return code of the method.
 
-            Raises:
-                ValueError: An error occurs if part of the input value cannot be converted from string to integer.
-            """
+        Raises:
+            ValueError -- Exception raised if part of the input value cannot be converted from string to integer.
+        """
         try:
-            days = int(value[:-1])
-            if value[-1] == 'd' and isinstance(value[:-1], int):
-                if self._profile.has_option('setup', 'backup'):
+            if self._profile.has_option('setup', 'backup'):
+                #TODO Improve the two lines below
+                days = int(value[:-1])
+                if value[-1] == 'd' and isinstance(value[:-1], int):
 
                     backup_value = self._profile.get('setup', 'backup')
                     threshold = datetime.datetime.today() - datetime.timedelta(
@@ -273,15 +277,12 @@ class SetupJob(Job):
                             if number_of_backups == backup_value:
                                 break
                     rc = 0
-
-                else:
-                    Log().logger.warning(
-                        '[setup] "backup" value required to run housekeeping')
-                    rc = 1
+            else:
+                Log().logger.warning(
+                    '[setup] "backup" value required to run housekeeping')
+                rc = 1
         except ValueError:
-            Log().logger.error(
-                '[setup] ValueError: The "housekeeping" option must be a number of days, for example: 30d'
-            )
+            Log().logger.error(ErrorMessage.VALUE_HOUSEKEEPING.value)
             rc = -1
 
         return rc
@@ -290,11 +291,11 @@ class SetupJob(Job):
         """Performs all the steps for the setup section of the profile.
 
         Returns:
-            An integer, the return code of the setup section.
+            integer -- Return code of the setup section.
         """
         self._initialize_file_variables(file_path_in)
         self._update_context()
-        
+
         rc = self._analyze()
         if rc != 0:
             if rc > 0:
