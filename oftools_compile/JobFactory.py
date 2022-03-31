@@ -30,7 +30,7 @@ class JobFactory(object):
     def __init__(self, profile):
         """Initializes the class with the _profile attribute.
         """
-        self._profile = profile.data
+        self._profile = profile
 
     def create(self, section_name):
         """Creates the job according to the input parameter.
@@ -42,8 +42,8 @@ class JobFactory(object):
             A Job object, the appropriate one depending on the input.
         """
         if section_name.startswith('setup'):
-            return SetupJob(section_name, self._profile)
+            return SetupJob(self._profile, section_name)
         elif section_name.startswith('deploy'):
-            return DeployJob(section_name, self._profile)
+            return DeployJob(self._profile, section_name)
         else:
-            return CompileJob(section_name, self._profile)
+            return CompileJob(self._profile, section_name)
