@@ -42,8 +42,8 @@ class JobFactory(object):
             A Job object, the appropriate one depending on the input.
         """
         if section_name.startswith('setup'):
-            return SetupJob(section_name, self._profile)
+            return SetupJob(self._profile, section_name)
         elif section_name.startswith('deploy'):
-            return DeployJob(section_name, self._profile)
+            return DeployJob(self._profile, section_name)
         else:
-            return CompileJob(section_name, self._profile)
+            return CompileJob(self._profile, section_name)

@@ -1,0 +1,3 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+mandatory = setup

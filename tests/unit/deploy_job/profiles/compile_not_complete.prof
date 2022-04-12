@@ -1,0 +1,9 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+?filter_false = grep -a 'False' $OF_COMPILE_IN
+
+[ofcbpp?filter_false]
+args = failed
+
+[deploy]
+file = $OF_COMPILE_BASE.so

@@ -1,0 +1,9 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[grep]
+args = -a 'False' $OF_COMPILE_IN
+
+[ofcbpp]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = failed

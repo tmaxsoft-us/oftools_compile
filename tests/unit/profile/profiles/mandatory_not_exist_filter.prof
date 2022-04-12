@@ -1,0 +1,11 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+mandatory = not_exist?true
+?true = grep -a 'IDENTIFICATION' $OF_COMPILE_IN
+
+[ofcbpp?true]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
+
+[ofcbpp]
+args = failed

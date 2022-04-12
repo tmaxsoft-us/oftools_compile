@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Module to run the job for the deploy section of the profile.
+"""Module to run the job for the profile deploy section.
 
-  Typical usage example:
-
+Typical usage example:
   job = DeployJob()
   job.run(file_path_in)
 """
 # Generic/Built-in modules
 import os
-import shutil
 
 # Third-party modules
 
 # Owned modules
 from .Context import Context
+from .enums.LogEnum import LogMessage
+from .handlers.FileHandler import FileHandler
+from .handlers.ShellHandler import ShellHandler
 from .Job import Job
 from .Log import Log
-from .Utils import Utils
 
 
 class DeployJob(Job):
@@ -29,10 +29,10 @@ class DeployJob(Job):
     Methods:
         _analyze(): Analyzes prerequisites before running the job for the section.
         _process_section(): Read the section line by line to execute the corresponding methods.
-        _process_file(option): Creates a new copy of the file with the given extension.
-        _process_dataset(option): Runs the dlupdate shell command to deploy the compiled object.
-        _process_region(option): Runs the osctdlupdate shell command to deploy the compiled object.
-        _process_tdl(option): Runs the tdlupdate shell command to deploy the compiled object.
+        _process_file(option): Creates a new copy of the file based on the option value.
+        _process_dataset(option): Runs the dlupdate command to deploy the compiled object.
+        _process_region(option): Runs the osctdlupdate command to deploy the compiled object.
+        _process_tdl(option): Runs the tdlupdate command to deploy the compiled object.
         run(file_path_in): Performs all the steps for the deploy section of the profile.
     """
 
@@ -46,49 +46,48 @@ class DeployJob(Job):
             - is any of the compile section complete
 
         Returns:
-            An integer, the return code of the analysis result.
+            integer -- Return code of the analysis.
         """
-        if Context().is_section_complete(self._profile,
-                                         self._section_name_no_filter):
+        filter_function = Context().get_filter_function(self._filter)
+
+        if Context().is_section_complete(self._section_name,
+                                         self._section_no_filter):
             rc = 1
-        elif Context().is_section_mandatory(self._section_name_no_filter):
+        elif Context().is_section_mandatory(self._section_name,
+                                            self._section_no_filter):
             rc = 0
-        elif Context().evaluate_filter(self._section_name,
-                                       self._filter_name) in (True, None):
+        elif ShellHandler().evaluate_filter(filter_function, self._filter,
+                                            self._section_name,
+                                            Context().env) in (True, None):
             rc = 0
         else:
             rc = 1
 
         if rc == 0:
             compile_section = False
-            completion_status = False
+            complete_status = False
 
             for key, value in self._profile.complete_sections.items():
                 if key not in ('setup', 'deploy'):
                     compile_section = True
-                    completion_status = value
+                    complete_status = value
                     break
 
             if compile_section is True:
-                Log().logger.debug(
-                    '[' + self._section_name +
-                    '] Compile section found. Evaluating completion status')
-                if completion_status is True:
+                Log().logger.debug(LogMessage.COMPILE_FOUND.value %
+                                   self._section_name)
+                if complete_status is True:
                     rc = 0
-                    Log().logger.debug(
-                        '[' + self._section_name +
-                        '] Complete compile section found. Proceeding deploy job execution'
-                    )
+                    Log().logger.debug(LogMessage.COMPLETE_FOUND.value %
+                                       self._section_name)
                 else:
                     rc = -1
-                    Log().logger.error(
-                        '[' + self._section_name +
-                        '] None of the compile section is complete. Aborting deploy job execution'
-                    )
+                    Log().logger.error(LogMessage.COMPLETE_NOT_FOUND.value %
+                                       self._section_name)
             else:
                 rc = 0
-                Log().logger.debug('[' + self._section_name +
-                                   '] No compile section found. Deploying only')
+                Log().logger.debug(LogMessage.COMPILE_NOT_FOUND.value %
+                                   self._section_name)
 
         return rc
 
@@ -100,21 +99,18 @@ class DeployJob(Job):
         filter variables.
 
         Returns:
-            An integer, the return code of the section execution.
+            integer - Return code of the method.
         """
         rc = 0
-        Log().logger.debug('[' + self._section_name +
-                           '] Starting section, input filename: ' +
-                           self._file_path_in)
-        Context().last_section = self._section_name
+        Log().logger.debug(LogMessage.START_SECTION.value %
+                           (self._section_name, self._file_path_in))
 
         # file option must be processed first
-        value = self._profile.data.get('deploy', 'file')
+        value = self._profile.get(self._section_name, 'file')
         rc = self._process_file(value)
         if rc < 0:
-            Log().logger.error(
-                '[' + self._section_name +
-                '] Step failed: file. Aborting section execution')
+            Log().logger.error(LogMessage.ABORT_SECTION.value %
+                               (self._section_name, 'file'))
             return rc
 
         for key, value in self._profile.data[self._section_name].items():
@@ -130,138 +126,144 @@ class DeployJob(Job):
                 rc = self._process_option(key, value)
 
             if rc != 0:
-                Log().logger.error('[' + self._section_name +
-                                   '] Step failed: ' + key +
-                                   '. Aborting section execution')
+                Log().logger.error(LogMessage.ABORT_SECTION.value %
+                                   (self._section_name, key))
                 break
 
         if rc == 0:
-            Log().logger.debug('[' + self._section_name +
-                               '] Ending section, output filename: ' +
-                               self._file_name_out)
-            Context().section_completed(self._profile,
-                                        self._section_name_no_filter)
+            Log().logger.debug(LogMessage.END_SECTION.value %
+                               (self._section_name, self._file_name_out))
+            Context().section_completed(self._section_no_filter)
 
         return rc
 
     def _process_file(self, option):
-        """Creates a new copy of the file with the given extension.
+        """Creates a new copy of the file based on the option value.
+
+        Arguments:
+            option {string} -- Value of the file option.
 
         Returns:
-            An integer, the return code of the file processing.
+            integer -- Return code of the file processing.
         """
-        Log().logger.debug('[' + self._section_name + '] Processing file')
+        Log().logger.debug(LogMessage.START_DEPLOY_FILE.value %
+                           self._section_name)
 
         self._file_name_out = os.path.expandvars(option)
 
-        try:
-            shutil.copy(self._file_name_in, self._file_name_out)
+        Log().logger.info(
+            LogMessage.CP_COMMAND.value %
+            (self._section_name, self._file_name_in, self._file_name_out))
+        rc = FileHandler().copy_file(self._file_name_in, self._file_name_out)
+
+        if rc == 1:
+            Log().logger.warning(LogMessage.FILE_ALREADY_EXISTS.value %
+                                 (self._section_name, self._file_name_out))
             rc = 0
-            Log().logger.info('[' + self._section_name + '] cp ' +
-                              self._file_name_in + ' ' + self._file_name_out)
-        except shutil.SameFileError:
-            rc = 0
-            Log().logger.warning('[' + self._section_name +
-                                 '] No copy required, file already exists')
-        except OSError as e:
-            rc = -1
-            Log().logger.error('[' + self._section_name +
-                               '] Failed to copy: %s' % e)
+
+        Log().logger.debug(LogMessage.END_DEPLOY_FILE.value %
+                           self._section_name)
 
         return rc
 
     def _process_dataset(self, option):
-        """Runs the dlupdate shell command to deploy the compiled object.
+        """Runs the dlupdate command to deploy the compiled object.
+
+        Arguments:
+            option {string} -- Value of the dataset option.
 
         Returns:
-            An integer, the return code of the dlupdate command executed.
+            integer -- Return code of the dataset processing.
         """
-        rc = 0
-        Log().logger.debug('[' + self._section_name + '] Processing dataset(s)')
+        Log().logger.debug(LogMessage.START_DATASET.value % self._section_name)
 
+        rc = 0
         datasets = option.split(':')
 
         for dataset in datasets:
             if dataset != '':
                 shell_command = 'dlupdate ' + Context(
                 ).current_workdir + '/' + self._file_name_out + ' ' + dataset
-                Log().logger.info('[' + self._section_name + '] ' +
-                                  shell_command)
-                _, _, rc = Utils().execute_shell_command(
+                Log().logger.info(LogMessage.RUN_COMMAND.value %
+                                  (self._section_name, shell_command))
+                _, _, rc = ShellHandler().execute_command(
                     shell_command, 'deploy',
                     Context().env)
                 if rc != 0:
                     break
+
+        Log().logger.debug(LogMessage.END_DATASET.value % self._section_name)
 
         return rc
 
     def _process_region(self, option):
-        """Runs the osctdlupdate shell command to deploy the compiled object.
+        """Runs the osctdlupdate command to deploy the compiled object.
+
+        Arguments:
+            option {string} -- Value of the region option.
 
         Returns:
-            An integer, the return code of the osctdlupdate command executed.
+            integer -- Return code of the region processing.
         """
-        rc = 0
-        Log().logger.debug('[' + self._section_name + '] Processing region(s)')
+        Log().logger.debug(LogMessage.START_REGION.value % self._section_name)
 
+        rc = 0
         regions = option.split(':')
 
         for region in regions:
             if region != '':
-                region_path = os.path.join(
-                    '$OPENFRAME_HOME/osc/region',
-                    os.path.expandvars(region) + '/tdl/mod')
-                shell_command = 'cp ' + self._file_name_out + ' ' + region_path
-                Log().logger.info('[' + self._section_name + '] ' +
-                                  shell_command)
-                _, _, rc = Utils().execute_shell_command(
-                    shell_command, 'deploy',
-                    Context().env)
+                region = os.path.expandvars(region)
+                region_path = os.path.join('$OPENFRAME_HOME/osc/region',
+                                           region + '/tdl/mod')
+                rc = FileHandler().copy_file(self._file_name_out, region_path)
                 if rc != 0:
                     break
 
                 shell_command = 'osctdlupdate ' + region + ' ' + self._file_name_out
-                Log().logger.info('[' + self._section_name + '] ' +
-                                  shell_command)
-                _, _, rc = Utils().execute_shell_command(
+                Log().logger.info(LogMessage.RUN_COMMAND.value %
+                                  (self._section_name, shell_command))
+                _, _, rc = ShellHandler().execute_command(
                     shell_command, 'deploy',
                     Context().env)
                 if rc != 0:
                     break
+
+        Log().logger.debug(LogMessage.END_REGION.value % self._section_name)
 
         return rc
 
     def _process_tdl(self, option):
-        """Runs the tdlupdate shell command to deploy the compiled object.
+        """Runs the tdlupdate command to deploy the compiled object.
+
+        Arguments:
+            option {string} -- Value of the tdl option.
 
         Returns:
-            An integer, the return code of the tdlupdate command executed.
+            integer -- Return code of the TDL processing.
         """
-        rc = 0
-        Log().logger.debug('[' + self._section_name + '] Processing tdl(s)')
+        Log().logger.debug(LogMessage.START_TDL.value % self._section_name)
 
+        rc = 0
         tdls = option.split(':')
 
         for tdl in tdls:
             if tdl != '':
-                tdl_path = os.path.join(os.path.expandvars(tdl) + '/tdl/mod')
-                shell_command = 'cp ' + self._file_name_out + ' ' + tdl_path
-                Log().logger.info('[' + self._section_name + '] ' +
-                                  shell_command)
-                _, _, rc = Utils().execute_shell_command(
+                tdl = os.path.expandvars(tdl)
+                tdl_path = os.path.join(tdl + '/tdl/mod')
+                rc = FileHandler().copy_file(self._file_name_out, tdl_path)
+                if rc != 0:
+                    break
+
+                shell_command = 'tdlupdate -m ' + self._file_name_out + ' -r ' + tdl_path
+                Log().logger.info(LogMessage.RUN_COMMAND.value %
+                                  (self._section_name, shell_command))
+                _, _, rc = ShellHandler().execute_command(
                     shell_command, 'deploy',
                     Context().env)
                 if rc != 0:
                     break
 
-                shell_command = 'tdlupdate -m ' + self._file_name_out + ' -r ' + tdl_path
-                Log().logger.info('[' + self._section_name + '] ' +
-                                  shell_command)
-                _, _, rc = Utils().execute_shell_command(
-                    shell_command, 'deploy',
-                    Context().env)
-                if rc != 0:
-                    break
+        Log().logger.debug(LogMessage.END_TDL.value % self._section_name)
 
         return rc
 
@@ -269,7 +271,7 @@ class DeployJob(Job):
         """Performs all the steps for the deploy section of the profile.
 
         Returns:
-            An integer, the return code of the deploy section.
+            integer -- Return code of the deploy section.
         """
         self._initialize_file_variables(file_path_in)
         self._update_context()

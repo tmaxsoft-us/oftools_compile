@@ -7,26 +7,25 @@ Typical usage example:
 """
 
 # Generic/Built-in modules
-import os
-import sys
 
 # Third-party modules
 
 # Owned modules
-from .Context import Context
+from .enums.LogEnum import LogMessage
+from .handlers.FileHandler import FileHandler
 from .Log import Log
 
 
 class Source(object):
-    """A class used to initialize the source and analyze it, to see if it a file or a directory.
+    """A class used to initialize the source and analyze it, to see if this is a file or a directory.
 
     Attributes:
-        _source_path: A string, the absolute path of the source.
-        _file_paths: A list, all the files found in the source provided.
+        _source_path {string} -- Absolute path of the source.
+        _file_paths {list[string]} - List of files found in the source provided.
 
     Methods:
-        __init__(source_path): Initializes the class with all the attributes.
-        _analyze(): Creates the source list based on the input.
+        __init__(source_path) -- Initializes the class with all the attributes.
+        _analyze() -- Creates the source list based on the input.
     """
 
     def __init__(self, source_path):
@@ -48,43 +47,18 @@ class Source(object):
 
         It checks whether source is a file or a folder and then creates the source list.
 
-        Raises:
-            FileNotFoundError: An error occurs if the program does not find the given source.
-
         Returns:
-            An integer, the return code of the method.
+            integer -- Return code of the method.
         """
-        rc = 0
-        source = os.path.expandvars(self._source_path)
-
         #TODO Supports a list or a text file as source input
 
-        try:
-            if os.path.exists(source) is False:
-                raise FileNotFoundError()
-        except FileNotFoundError:
-            if Context().skip:
-                Log().logger.info('FileNotFound: Skipping source: ' + source)
-                rc = 1
-            else:
-                Log().logger.critical(
-                    'FileNotFoundError: No such file or directory: ' + source)
-                sys.exit(-1)
+        if FileHandler().check_path_exists(self._source_path):
+            self._file_paths = FileHandler().get_files(self._source_path)
+            Log().logger.debug(LogMessage.SOURCE_COUNT.value %
+                               len(self._file_paths))
+            rc = 0
+        else:
+            Log().logger.info(LogMessage.SOURCE_SKIP.value)
+            rc = 1
 
-        if rc == 0:
-            if os.path.isfile(source):
-                self._file_paths = [os.path.abspath(source)]
-
-            elif os.path.isdir(source):
-                self._file_paths = [
-                    os.path.abspath(os.path.join(root, filename))
-                    for root, _, files in os.walk(source)
-                    for filename in files
-                    if not filename.startswith('.')
-                ]
-                # Sort the list alphabetically
-                self._file_paths.sort()
-
-            Log().logger.debug('Number of source files being compiled: ' +
-                               str(len(self._file_paths)))
         return rc

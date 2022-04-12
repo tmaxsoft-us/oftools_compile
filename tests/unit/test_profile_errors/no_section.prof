@@ -1,6 +1,0 @@
-workdir = /opt/tmaxapp/compile
-
-$OF_COMPILE_OUT = $OF_COMPILE_BASE.cbl
-args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
-
-args = $OF_COMPILE_IN -o $OF_COMPILE_OUT --enable-debug

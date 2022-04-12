@@ -1,0 +1,14 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[ofcbpp]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
+
+?true = grep -a 'IDENTIFICATION' $OF_COMPILE_IN
+
+[ofcob?true]
+args = $OF_COMPILE_IN -o $OF_COMPILE_OUT --enable-debug; echo "Filter True"
+
+[ofcob]
+args = failed

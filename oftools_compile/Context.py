@@ -10,16 +10,22 @@ Typical usage example:
 # Generic/Built-in modules
 import datetime
 import os
-import time
+import sys
 
 # Third-party modules
 
 # Owned modules
+from .enums.ErrorEnum import ErrorMessage
+from .enums.LogEnum import LogMessage
 from .Log import Log
-from .Utils import Utils
+from .handlers.ShellHandler import ShellHandler
 
 
 class SingletonMeta(type):
+    """This pattern restricts the instantiation of a class to one object. 
+    
+    It is a type of creational pattern and involves only one class to create methods and specified objects. It provides a global point of access to the instance created.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -33,48 +39,44 @@ class Context(object, metaclass=SingletonMeta):
     """A class used to store a set of variables and parameters across all modules.
 
     Attributes:
-        _init_env: A dictionary, the output of the os.environ.copy method.
-        _env: A dictionary, all the environment variables for the current execution of the program.
+        _init_env {dictionary} -- Output of the os.environ.copy method.
+        _env {dictionary} -- All the environment variables for the current execution of the program.
 
-        _root_workdir: A string, the absolute path of the working directory for all compilations.
-        _current_workdir: A string, the absolute path of the directory created for the program being 
-            currently compiled.
-        _work_directories: A list of strings, the absolute paths of all the working directories. 
-        _group_directory: A string, the absolute path of the group directory if the grouping feature 
-            is being used.
+        _root_workdir {string} -- Absolute path of the root working directory.
+        _current_workdir {string} -- Absolute path of the current working directory.
+        _work_directories {list} -- Absolute paths of all the working directories. 
+        _group_directory {string} -- Absolute path of the group directory.
 
-        _last_section: A string, the name of the last section being executed, whether it succeeds or 
+        _last_section {string} -- Name of the last section being executed, whether it succeeds or 
             fails.
-        _mandatory_section: A list, all the sections that are listed as mandatory.
-        _complete_sections: A dictionary, the section names and their status as complete or not.
+        _mandatory_section {list} -- Sections that are listed as mandatory.
+        _complete_sections {dictionary} -- Section names and their status as complete or not.
 
-        _filters: A dictionary, filter names and their respective values.
+        _filters {dictionary} -- Filter names and their respective values.
 
-        _report_file_path: A string, the absolute path of the report file of the compilation.
+        _report_file_path {string} -- Absolute path of the report file of the compilation.
 
-        _skip: A boolean, a flag used to skip source files if not found or not.        
-        _tag: A string, a keyword to identify working directories and report for a given compilation.
-        _time_stamp: A string, a datetime respecting _%Y%m%d_%H%M%S format for working directories and 
+        _skip {boolean} -- Flag used to skip source files if not found or not.        
+        _tag {string} -- Keyword to tag working directories and report file.
+        _time_stamp {string} -- Datetime respecting _%Y%m%d_%H%M%S format for working directories and 
             report identification purposes.
 
-        _init_pwd: A string, the initial directory where the command has been executed. 
+        _init_pwd {string} -- Absolute path of the initial directory where the command has been executed. 
 
     Methods:
-        __init__(): Initializes all attributes of the class.
-        add_env_variable(key, value): Adds a variable to the environment.
-        add_filter(key, value): Adds a filter function to the list of filters.
-        add_mandatory_section(section): Adds the input section name to mandatory sections list.
+        __init__() -- Initializes all attributes of the class.
+        add_env_variable(key, value) -- Adds a variable to the environment.
+        add_filter(key, value) -- Adds a filter function to the list of filters.
+        get_filter_function(key) -- Retrieves the expression of the filter function from the Context.
+        add_mandatory_section(section) -- Adds the input section name to mandatory sections list.
 
-        evaluate_filter(section_name, filter_name): Evaluates the status of the filter function passed 
-            as an argument.
-
-        is_section_mandatory(section_name_no_filter): Checks if given section is mandatory or not.
-        is_section_complete(section_name_no_filter, skip=True): Checks if given section is already 
+        is_section_mandatory(section_name_no_filter) -- Checks if given section is mandatory or not.
+        is_section_complete(section_name_no_filter, skip=True) -- Checks if given section is already 
             complete.
-        section_completed(section_name_no_filter): Changes the status of the given section to complete.
+        section_completed(section_name_no_filter) -- Changes the status of the given section to complete.
 
-        clear(): Clears context after each file processing.
-        clear_all(): Clears context completely at the end of the program execution.
+        clear() -- Clears context after each file processing.
+        clear_all() -- Clears context completely at the end of the program execution.
     """
 
     def __init__(self):
@@ -105,7 +107,7 @@ class Context(object, metaclass=SingletonMeta):
         # Tag
         self._tag = ''
         # Timestamp
-        self._time_stamp = datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')
+        self._time_stamp = datetime.datetime.now()
 
         # Other
         self._init_pwd = os.getcwd()
@@ -126,7 +128,7 @@ class Context(object, metaclass=SingletonMeta):
     def root_workdir(self, workdir):
         """Setter method for the attribute _root_workdir.
         """
-        self._root_workdir = workdir
+        self._root_workdir = os.path.expandvars(workdir)
 
     @property
     def current_workdir(self):
@@ -218,8 +220,9 @@ class Context(object, metaclass=SingletonMeta):
     def tag(self, tag):
         """Setter method for the attribute _tag.
         """
-        if tag is None and self._skip is False:
-            self._tag, _, _ = Utils().execute_shell_command('logname', 'init', self._env)
+        if tag is None:
+            self._tag, _, _ = ShellHandler().execute_command(
+                'logname', 'tag', self._env)
             self._tag = '_' + self._tag.replace('\n', '')
         else:
             self._tag = '_' + tag
@@ -228,19 +231,24 @@ class Context(object, metaclass=SingletonMeta):
     def time_stamp(self):
         """Getter method for the attribute _time_stamp.
         """
-        return self._time_stamp
+        return self._time_stamp.strftime('_%Y%m%d_%H%M%S')
 
     @time_stamp.setter
-    def time_stamp(self, update=0):
+    def time_stamp(self, update):
         """Setter method for the attribute _time_stamp.
+
+        Arguments:
+            update {integer} -- Number of seconds needed to update the time stamp.
         """
-        time.sleep(1)
-        if update == 1:
-            self._time_stamp = datetime.datetime.now().strftime(
-                '_%Y%m%d_%H%M%S')
+        time_update = datetime.timedelta(seconds=update)
+        self._time_stamp += time_update
 
     def add_env_variable(self, key, value):
         """Adds a variable to the environment.
+
+        Arguments:
+            key {string} -- Name of the environment variable.
+            value {string} -- Value of the environment variable.
         """
         if not value.startswith('$(') and not value.startswith('`'):
             self._env[key[1:]] = os.path.expandvars(value)
@@ -249,8 +257,8 @@ class Context(object, metaclass=SingletonMeta):
                 value = value[2:-1]
             elif value.startswith('`') and value.endswith('`'):
                 value = value[1:-1]
-            out, _, _ = Utils().execute_shell_command(value, 'env_variable',
-                                                      self._env)
+            out, _, _ = ShellHandler().execute_command(value, 'env_variable',
+                                                       self._env)
             value = out.rstrip()
             # Write to env dictionary without dollar sign
             self._env[key[1:]] = value
@@ -259,78 +267,90 @@ class Context(object, metaclass=SingletonMeta):
 
     def add_filter(self, key, value):
         """Adds a filter function to the list of filters.
+
+        Arguments:
+            key {string} -- Name of the filter function.
+            value {string} -- Expression of the filter function.
         """
-        # Write to filters dictionary without question mark
+        # Remove question mark from filter function name
         self._filters[key[1:]] = value
 
-    def add_mandatory_section(self, section):
-        """Adds the input section name to mandatory sections list.
+    def get_filter_function(self, key):
+        """Retrieves the expression of the filter function from the Context.
+
+        Arguments:
+            key {string} -- Name of the filter function.
+
+        Returns:
+            string -- Expression of the filter function.
+
+        Raises:
+            KeyError -- Exception raised if a filter function is used in the profile before being defined.
         """
-        if '?' in section:
-            Log().logger.warning(
-                '[setup] Filter function not allowed in the mandatory sections: '
-                + section)
-            section_name_no_filter = section.split('?')[0]
-        else:
-            section_name_no_filter = section
-
-        Log().logger.info('[setup] Adding section to mandatory sections: ' +
-                          section_name_no_filter)
-        self._mandatory_sections.append(section_name_no_filter)
-
-    def evaluate_filter(self, section_name, filter_name):
-        """Evaluates the status of the filter function passed as an argument.
-        """
-        if filter_name != '':
-            filter_result = False
-            shell_command = self._filters[filter_name]
-
-            # Filter evaluation
-            _, _, rc = Utils().execute_shell_command(shell_command, 'filter',
-                                                     self._env)
-
-            # grep command returns 0 if line matches
-            if rc == 0:
-                filter_result = True
-                Log().logger.debug(
-                    '[' + section_name + '] Filter function ' + filter_name +
-                    ' result: True. Executing section.')
+        try:
+            if key == '':
+                filter_function = ''
             else:
-                filter_result = False
-                Log().logger.debug(
-                    '[' + section_name + '] Filter function ' + filter_name +
-                    ' result: False. Skipping section.')
-        else:
-            filter_result = None
+                filter_function = self.filters[key]
+        except KeyError:
+            Log().logger.error(ErrorMessage.KEY_FILTER.value % key)
+            self.clear_all()
+            sys.exit(-1)
 
-        return filter_result
+        return filter_function
 
-    def is_section_mandatory(self, section_name_no_filter):
-        """Checks if given section is mandatory or not.
+    def add_mandatory_section(self, section_no_filter):
+        """Adds the input section name to mandatory sections list.
+
+        Arguments:
+            section {string} -- Name of the section.
         """
-        if section_name_no_filter in self._mandatory_sections:
+        Log().logger.info(LogMessage.MANDATORY_ADD.value % section_no_filter)
+        self._mandatory_sections.append(section_no_filter)
+
+    def is_section_mandatory(self, section, section_no_filter):
+        """Checks if given section is mandatory or not.
+
+        Arguments:
+            section {string} -- Name of the section.
+            section_no_filter {string} -- Name of the section without filter.
+
+        Returns:
+            boolean -- Status of the section, if it is mandatory or not.
+        """
+        if section_no_filter in self._mandatory_sections:
+            Log().logger.debug(LogMessage.SECTION_MANDATORY.value % section)
             mandatory_status = True
         else:
             mandatory_status = False
 
         return mandatory_status
 
-    def is_section_complete(self, profile, section_name_no_filter, skip=True):
+    def is_section_complete(self, section, section_no_filter, skip=True):
         """Checks if given section is already complete.
+
+        Arguments:
+            section {string} -- Name of the section.
+            section_no_filter {string} -- Name of the section without filter.
+            skip {boolean} -- Value of the skip flag.
+
+        Returns:
+            boolean -- Status of the section, if it is completer or not.
         """
-        section_status = profile.complete_sections[section_name_no_filter]
+        section_status = self._complete_sections[section_no_filter]
 
         if section_status and skip is True:
-            Log().logger.debug(
-                '[' + section_name_no_filter +
-                '] Section has already been processed. Skipping section')
+            Log().logger.debug(LogMessage.SECTION_COMPLETE.value % section)
 
         return section_status
 
-    def section_completed(self, profile, section_name_no_filter):
+    def section_completed(self, section_no_filter):
         """Changes the status of the given section to complete.
+
+        Arguments:
+            section_no_filter {string} -- Name of the section without filter.
         """
-        profile.complete_sections[section_name_no_filter] = True
+        self._complete_sections[section_no_filter] = True
 
     def clear(self, profile):
         """Clears context after each file processing.
@@ -339,9 +359,8 @@ class Context(object, metaclass=SingletonMeta):
         os.environ.update(self._init_env)
 
         self._filters.clear()
-
-        for key in profile.complete_sections.keys():
-            profile.complete_sections[key] = False
+        for key in self._complete_sections.keys():
+            self._complete_sections[key] = False
 
         os.chdir(self._init_pwd)
 

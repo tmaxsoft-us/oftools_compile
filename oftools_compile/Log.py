@@ -62,9 +62,9 @@ class Log(object, metaclass=SingletonType):
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
 
-        self._formatter = logging.Formatter(
-            fmt="%(asctime)-8s [%(levelname)-8s] %(message)s",
-            datefmt="%H:%M:%S")
+        fmt = "%(asctime)-8s [%(levelname)-8s] %(message)s"
+        self._formatter = logging.Formatter(fmt, datefmt="%H:%M:%S")
+        self._custom_formatter = CustomFormatter(fmt, datefmt="%H:%M:%S")
 
         self._file_handler = None
         self._stream_handler = None
@@ -88,10 +88,8 @@ class Log(object, metaclass=SingletonType):
             level: A string, the user input for log level.
         """
         if level == 'DEBUG':
-            self._formatter = logging.Formatter(
-                fmt=
-                "%(asctime)-8s [%(levelname)-8s] %(message)s (%(module)s:%(lineno)s)",
-                datefmt="%H:%M:%S")
+            fmt = "%(asctime)-8s [%(levelname)-8s] %(message)s (%(module)s:%(lineno)s)"
+            self._formatter = logging.Formatter(fmt, datefmt="%H:%M:%S")
 
         self._level = level
         self._logger.setLevel(self._level_dict[level])
@@ -101,7 +99,7 @@ class Log(object, metaclass=SingletonType):
         """
         if self._stream_handler is None:
             self._stream_handler = logging.StreamHandler()
-            self._stream_handler.setFormatter(self._formatter)
+            self._stream_handler.setFormatter(self._custom_formatter)
             self._logger.addHandler(self._stream_handler)
 
     def close_stream(self):
@@ -129,3 +127,37 @@ class Log(object, metaclass=SingletonType):
             self._logger.removeHandler(self._file_handler)
             self._file_handler.close()
             self._file_handler = None
+
+
+class CustomFormatter(logging.Formatter):
+    """
+    """
+    # DEBUG & INFO
+    white = '\x1b[39m'
+    # WARNING
+    yellow = '\x1b[33m'
+    # ERROR & CRITICAL
+    red = '\x1b[91m'
+
+    reset = '\x1b[0m'
+
+    def __init__(self, fmt, datefmt):
+        """
+        """
+        super().__init__()
+        self.fmt = fmt
+        self._date_fmt = datefmt
+        self.FORMATS = {
+            logging.DEBUG: self.white + self.fmt + self.reset,
+            logging.INFO: self.white + self.fmt + self.reset,
+            logging.WARNING: self.yellow + self.fmt + self.reset,
+            logging.ERROR: self.red + self.fmt + self.reset,
+            logging.CRITICAL: self.red + self.fmt + self.reset
+        }
+
+    def format(self, record):
+        """
+        """
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
