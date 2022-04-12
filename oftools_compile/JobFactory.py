@@ -20,7 +20,7 @@ class JobFactory(object):
     """A class used to create all the jobs required with the given profile.
 
     Attributes:
-        _profile: A dictionary, the data extracted from the Profile object.
+        _profile: Profile object.
 
     Methods:
         __init__(profile): Initializes the class with the _profile attribute.

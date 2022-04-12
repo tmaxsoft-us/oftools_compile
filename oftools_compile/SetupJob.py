@@ -82,7 +82,7 @@ class SetupJob(Job):
         Log().logger.debug(LogMessage.START_SECTION.value %
                            (self._section_name, self._file_path_in))
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'workdir':
                 rc = self._init_current_workdir()
                 if rc != 0:

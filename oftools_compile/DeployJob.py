@@ -67,7 +67,7 @@ class DeployJob(Job):
             compile_section = False
             complete_status = False
 
-            for key, value in Context().complete_sections.items():
+            for key, value in self._profile.complete_sections.items():
                 if key not in ('setup', 'deploy'):
                     compile_section = True
                     complete_status = value
@@ -94,7 +94,9 @@ class DeployJob(Job):
     def _process_section(self):
         """Read the section line by line to execute the corresponding methods.
 
-        For the deploy section, it analyzes either file, dataset, region or tdl options to find where to deploy the compiled program. And as any other section, it looks for environment and filter variables.
+        For the deploy section, it analyzes either file, dataset, region or tdl options to find 
+        where to deploy the compiled program. And as any other section, it looks for environment and
+        filter variables.
 
         Returns:
             integer - Return code of the method.
@@ -111,7 +113,7 @@ class DeployJob(Job):
                                (self._section_name, 'file'))
             return rc
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'file':
                 continue
             if key == 'dataset':

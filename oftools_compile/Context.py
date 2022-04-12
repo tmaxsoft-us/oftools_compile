@@ -95,7 +95,6 @@ class Context(object, metaclass=SingletonMeta):
         # Profile sections
         self._last_section = ''
         self._mandatory_sections = []
-        self._complete_sections = {}
 
         # Filter variables
         self._filters = {}
@@ -179,12 +178,6 @@ class Context(object, metaclass=SingletonMeta):
         """Getter method for the attribute _mandatory_sections.
         """
         return self._mandatory_sections
-
-    @property
-    def complete_sections(self):
-        """Getter method for the attribute _complete_sections.
-        """
-        return self._complete_sections
 
     @property
     def filters(self):
@@ -359,7 +352,7 @@ class Context(object, metaclass=SingletonMeta):
         """
         self._complete_sections[section_no_filter] = True
 
-    def clear(self):
+    def clear(self, profile):
         """Clears context after each file processing.
         """
         self._env = self._init_env
@@ -381,6 +374,5 @@ class Context(object, metaclass=SingletonMeta):
 
         self._last_section = ''
         self._mandatory_sections = []
-        self._complete_sections.clear()
 
         os.chdir(self._init_pwd)

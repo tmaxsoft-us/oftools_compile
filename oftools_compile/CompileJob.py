@@ -58,6 +58,7 @@ class CompileJob(Job):
         else:
             rc = 1
 
+
         if Context().is_section_complete('setup', 'setup', skip=False) == False:
             rc = -1
             Log().logger.error(LogMessage.SETUP_NOT_COMPLETE.value %
@@ -81,11 +82,11 @@ class CompileJob(Job):
         compilation = False
         status = 'incomplete'
 
-        for key, value in self._profile[self._section_name].items():
+        for key, value in self._profile.data[self._section_name].items():
             if key == 'args':
                 compilation = True
             elif key == 'option':
-                if 'args' in self._profile[self._section_name].keys():
+                if 'args' in self._profile.data[self._section_name].keys():
                     continue
                 else:
                     compilation = True

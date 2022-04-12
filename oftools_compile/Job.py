@@ -82,6 +82,10 @@ class Job(object):
             extension = self._section_no_filter
             self._file_name_out = filename + '.' + extension
 
+        if self._file_name_in.startswith(('$', '#', '@')):
+            self._file_name_in = '\\' + self._file_name_in
+            self._file_name_out = '\\' + self._file_name_out
+
     def _update_context(self):
         """Updates Context with the name of files being manipulated in this job execution.
         """

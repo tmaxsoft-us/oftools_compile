@@ -95,6 +95,14 @@ class Profile(object):
         # Initializing complete sections dictionary
         Context().complete_sections[section_no_filter] = False
 
+    def _set_complete_sections(self):
+        """Set the dictionary of sections with their associated complete status.
+            """
+        self._complete_sections = {}
+
+        for section in self._sections_no_filter:
+            self._complete_sections[section] = False
+
     def _analyze(self):
         """Analyzes the sections of the profile.
 
