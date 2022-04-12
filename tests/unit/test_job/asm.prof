@@ -1,0 +1,9 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+
+[ofasmpp]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.asmi
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
+
+[ofasma]
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
