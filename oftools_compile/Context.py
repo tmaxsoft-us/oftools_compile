@@ -16,7 +16,6 @@ import sys
 
 # Owned modules
 from .enums.ErrorEnum import ErrorMessage
-from .enums.LogEnum import LogMessage
 from .Log import Log
 from .handlers.ShellHandler import ShellHandler
 
@@ -49,8 +48,6 @@ class Context(object, metaclass=SingletonMeta):
 
         _last_section {string} -- Name of the last section being executed, whether it succeeds or 
             fails.
-        _mandatory_section {list} -- Sections that are listed as mandatory.
-        _complete_sections {dictionary} -- Section names and their status as complete or not.
 
         _filters {dictionary} -- Filter names and their respective values.
 
@@ -68,12 +65,6 @@ class Context(object, metaclass=SingletonMeta):
         add_env_variable(key, value) -- Adds a variable to the environment.
         add_filter(key, value) -- Adds a filter function to the list of filters.
         get_filter_function(key) -- Retrieves the expression of the filter function from the Context.
-        add_mandatory_section(section) -- Adds the input section name to mandatory sections list.
-
-        is_section_mandatory(section_name_no_filter) -- Checks if given section is mandatory or not.
-        is_section_complete(section_name_no_filter, skip=True) -- Checks if given section is already 
-            complete.
-        section_completed(section_name_no_filter) -- Changes the status of the given section to complete.
 
         clear() -- Clears context after each file processing.
         clear_all() -- Clears context completely at the end of the program execution.
@@ -94,7 +85,6 @@ class Context(object, metaclass=SingletonMeta):
 
         # Profile sections
         self._last_section = ''
-        self._mandatory_sections = []
 
         # Filter variables
         self._filters = {}
@@ -172,12 +162,6 @@ class Context(object, metaclass=SingletonMeta):
         """Setter method for the attribute _last_section.
         """
         self._last_section = section
-
-    @property
-    def mandatory_sections(self):
-        """Getter method for the attribute _mandatory_sections.
-        """
-        return self._mandatory_sections
 
     @property
     def filters(self):
@@ -299,68 +283,18 @@ class Context(object, metaclass=SingletonMeta):
 
         return filter_function
 
-    def add_mandatory_section(self, section_no_filter):
-        """Adds the input section name to mandatory sections list.
-
-        Arguments:
-            section {string} -- Name of the section.
-        """
-        Log().logger.info(LogMessage.MANDATORY_ADD.value % section_no_filter)
-        self._mandatory_sections.append(section_no_filter)
-
-    def is_section_mandatory(self, section, section_no_filter):
-        """Checks if given section is mandatory or not.
-
-        Arguments:
-            section {string} -- Name of the section.
-            section_no_filter {string} -- Name of the section without filter.
-
-        Returns:
-            boolean -- Status of the section, if it is mandatory or not.
-        """
-        if section_no_filter in self._mandatory_sections:
-            Log().logger.debug(LogMessage.SECTION_MANDATORY.value % section)
-            mandatory_status = True
-        else:
-            mandatory_status = False
-
-        return mandatory_status
-
-    def is_section_complete(self, section, section_no_filter, skip=True):
-        """Checks if given section is already complete.
-
-        Arguments:
-            section {string} -- Name of the section.
-            section_no_filter {string} -- Name of the section without filter.
-            skip {boolean} -- Value of the skip flag.
-
-        Returns:
-            boolean -- Status of the section, if it is completer or not.
-        """
-        section_status = self._complete_sections[section_no_filter]
-
-        if section_status and skip is True:
-            Log().logger.debug(LogMessage.SECTION_COMPLETE.value % section)
-
-        return section_status
-
-    def section_completed(self, section_no_filter):
-        """Changes the status of the given section to complete.
-
-        Arguments:
-            section_no_filter {string} -- Name of the section without filter.
-        """
-        self._complete_sections[section_no_filter] = True
-
     def clear(self, profile):
         """Clears context after each file processing.
+
+        Arguments:
+            profile {Profile object} -- From the Profile module.
         """
         self._env = self._init_env
         os.environ.update(self._init_env)
 
         self._filters.clear()
-        for key in self._complete_sections.keys():
-            self._complete_sections[key] = False
+        for key in profile.sections_complete.keys():
+            profile.sections_complete[key] = False
 
         os.chdir(self._init_pwd)
 

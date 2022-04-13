@@ -42,7 +42,7 @@ class Job(object):
     def __init__(self, profile, section_name):
         """Initializes the class with all the attributes.
         """
-        self._profile = profile.data
+        self._profile = profile
         self._section_name = section_name
         self._section_no_filter = profile.sections_no_filter[section_name]
         self._filter = profile.filters[section_name]
@@ -82,6 +82,7 @@ class Job(object):
             extension = self._section_no_filter
             self._file_name_out = filename + '.' + extension
 
+        # Handle cases where the file name starts with a special character
         if self._file_name_in.startswith(('$', '#', '@')):
             self._file_name_in = '\\' + self._file_name_in
             self._file_name_out = '\\' + self._file_name_out

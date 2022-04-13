@@ -25,9 +25,11 @@ class Profile(object):
 
     Attributes:
         _data {ConfigParser} -- Data extracted from the profile.
-        _sections {list[string]} -- List of the section names in the profile.
-        _sections_no_filter {list[string]} -- List of the section names without filters if any.
-        _filters {list[string]} -- List of the filter functions.
+        _sections {dictionary} -- List of the section names in the profile.
+        _filters {dictionary} -- List of the filter functions.
+        _sections_complete {dictionary} -- List of the section names and their completion status.
+        _sections_mandatory_ {list} -- Sections that are listed as mandatory.
+        _sections_no_filter {dictionary} -- List of the section names without filters if any.
 
     Methods:
         __init__(profile_path) -- Initializes the class with all the attributes.
@@ -37,6 +39,11 @@ class Profile(object):
         _analyze_mandatory(section) -- Analyzes the mandatory option in the setup section.
         _analyze_compile(section) -- Analyzes any compile section of the profile.
         _analyze_deploy(section) -- Analyzes the deploy section of the profile.
+        
+        is_section_mandatory(section_name_no_filter) -- Checks if given section is mandatory or not.
+        is_section_complete(section_name_no_filter, skip=True) -- Checks if given section is already 
+            complete.
+        section_completed(section_name_no_filter) -- Changes the status of the given section to complete.
     """
 
     def __init__(self, profile_path):
@@ -46,8 +53,11 @@ class Profile(object):
         self._sections = self._data.sections()
         Log().logger.debug(LogMessage.PROFILE_SECTIONS.value % self._sections)
 
-        self._sections_no_filter = {}
         self._filters = {}
+
+        self._sections_complete = {}
+        self._sections_mandatory = []
+        self._sections_no_filter = {}
 
         self._analyze()
 
@@ -75,10 +85,19 @@ class Profile(object):
         """
         return self._filters
 
+    @property
+    def sections_complete(self):
+        """Getter method for the attribute _complete_sections.
+        """
+        return self._sections_complete
+
     def _split_section_and_filter(self, section):
         """Separates the section name from the filter function if any.
 
         It also initializes the complete_sections dictionary.
+
+        Arguments:
+            section {string} -- Full name of the setup section.
         """
         # Spliting section name and filter function
         if '?' in section:
@@ -89,19 +108,11 @@ class Profile(object):
             filter_name = ''
 
         # Adding new entry in both dictionaries
-        self._sections_no_filter[section] = section_no_filter
         self._filters[section] = filter_name
+        self._sections_no_filter[section] = section_no_filter
 
         # Initializing complete sections dictionary
-        Context().complete_sections[section_no_filter] = False
-
-    def _set_complete_sections(self):
-        """Set the dictionary of sections with their associated complete status.
-            """
-        self._complete_sections = {}
-
-        for section in self._sections_no_filter:
-            self._complete_sections[section] = False
+        self._sections_complete[section_no_filter] = False
 
     def _analyze(self):
         """Analyzes the sections of the profile.
@@ -203,8 +214,8 @@ class Profile(object):
                         try:
                             if mandatory_section in self._sections_no_filter.values(
                             ):
-                                Context().add_mandatory_section(
-                                    mandatory_section)
+                                Log().logger.info(LogMessage.MANDATORY_ADD.value % mandatory_section)
+                                self._sections_mandatory.append(mandatory_section)
                             else:
                                 if mandatory_section in self._sections and '?' in mandatory_section:
                                     Log().logger.info(
@@ -220,7 +231,7 @@ class Profile(object):
                                 ErrorMessage.WARNING_MANDATORY.value %
                                 mandatory_section)
                     Log().logger.debug(LogMessage.MANDATORY_SECTIONS.value %
-                                       Context().mandatory_sections)
+                                       self._sections_mandatory)
                 else:
                     raise ValueError()
             except ValueError:
@@ -292,3 +303,48 @@ class Profile(object):
                                   (section, 'file'))
             Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
+
+    def is_section_mandatory(self, section):
+        """Checks if given section is mandatory or not.
+
+        Arguments:
+            section {string} -- Name of the section.
+
+        Returns:
+            boolean -- Status of the section, if it is mandatory or not.
+        """
+        section_no_filter = self._sections_no_filter[section]
+
+        if section_no_filter in self._sections_mandatory:
+            Log().logger.debug(LogMessage.SECTION_MANDATORY.value % section)
+            status = True
+        else:
+            status = False
+
+        return status
+    
+    def is_section_complete(self, section, skip=True):
+        """Checks if given section is already complete.
+
+        Arguments:
+            section {string} -- Name of the section.
+            skip {boolean} -- Value of the skip flag.
+
+        Returns:
+            boolean -- Status of the section, if it is complete or not.
+        """
+        section_no_filter = self.sections_no_filter[section]
+        status = self.sections_complete[section_no_filter]
+
+        if status and skip is True:
+            Log().logger.debug(LogMessage.SECTION_COMPLETE.value % section)
+
+        return status
+
+    def section_completed(self, section_no_filter):
+        """Changes the status of the given section to complete.
+
+        Arguments:
+            section_no_filter {string} -- Name of the section without filter.
+        """
+        self.sections_complete[section_no_filter] = True

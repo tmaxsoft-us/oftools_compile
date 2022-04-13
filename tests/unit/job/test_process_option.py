@@ -30,7 +30,7 @@ class TestProcessOption(object):
     def init_pwd():
         """Specify the absolute path to the current test directory.
         """
-        pwd = os.getcwd() + '/tests/unit/job_new/'
+        pwd = os.getcwd() + '/tests/unit/job/'
         return pwd
 
     @staticmethod

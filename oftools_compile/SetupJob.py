@@ -54,11 +54,9 @@ class SetupJob(Job):
         """
         filter_function = Context().get_filter_function(self._filter)
 
-        if Context().is_section_complete(self._section_name,
-                                         self._section_no_filter):
+        if self._profile.is_section_complete(self._section_name):
             rc = 1
-        elif Context().is_section_mandatory(self._section_name,
-                                            self._section_no_filter):
+        elif self._profile.is_section_mandatory(self._section_name):
             rc = 0
         elif ShellHandler().evaluate_filter(filter_function, self._filter,
                                             self._section_name,
@@ -109,7 +107,7 @@ class SetupJob(Job):
         if rc == 0:
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
-            Context().section_completed(self._section_no_filter)
+            self._profile.section_completed(self._section_no_filter)
 
         return rc
 
