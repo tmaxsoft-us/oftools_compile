@@ -44,11 +44,7 @@ class Clear(object):
     def _clear_working_directories(self):
         """Removes all the working directories created during the given execution.
         """
-        if len(self._working_directory_list) == 1:
-            Log().logger.debug(LogMessage.CLEAR_WORKING_DIRECTORY.value %
-                               self._working_directory_list[0])
-        else:
-            Log().logger.debug('CLEAR: Removing working directories one by one')
+        Log().logger.debug(LogMessage.CLEAR_WORKING_DIRECTORY.value)
 
         for directory in self._working_directory_list:
             FileHandler().delete_directory(directory)

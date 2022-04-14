@@ -28,7 +28,8 @@ class ErrorMessage(enum.Enum):
     # Main module
     ARGUMENT = 'ArgumentError: %s'
     JOB = 'JobError: Unexpected error detected during the job creation'
-    KEYBOARD_INTERRUPT = ''
+    KEYBOARD_ABORT_COMPILATION = 'KeyboardInterrupt: Aborting compilation for current program: %s'
+    KEYBOARD_INTERRUPT = 'KeyboardInterrupt: Execution ended by user'
     SYSTEM_NUMBER = 'NumberError: Number of profile and source are not matching: profile: %s, source: %s'
 
     # Profile module

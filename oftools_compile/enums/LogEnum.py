@@ -26,7 +26,7 @@ class LogMessage(enum.Enum):
 
     # Clear module
     CLEAR_REPORT_FILE = '(CLEAR) Remove report file: %s'
-    CLEAR_WORKING_DIRECTORY = '(CLEAR) Remove working directory: %s'
+    CLEAR_WORKING_DIRECTORY = '(CLEAR) Remove working directories one by one'
 
     # CompileJob module
     SETUP_NOT_COMPLETE = '[%s] Abort compile job execution: setup section not complete'
@@ -60,6 +60,8 @@ class LogMessage(enum.Enum):
     ABORT_FILE = 'Aborting source file processing: %s'
     PROFILE_PATH = 'Profile path: %s'
     PROFILE_REUSE = 'Profile already used: %s: Reusing corresponding Profile Python object'
+    SIGINT = 'Signal SIGINT detected'
+    SIGQUIT = 'Signal SIGQUIT detected'
     SOURCE_PATH = 'Source path: %s'
 
     # Profile module
