@@ -221,9 +221,9 @@ class FileHandler(object, metaclass=SingletonMeta):
                         content.write(fd)
                     elif extension == 'csv':
                         writer = csv.writer(fd, delimiter=',')
-                        if isinstance(content, str):
+                        if isinstance(content, list):
                             writer.writerow(content)
-                        elif isinstance(content, list):
+                        elif isinstance(content[0], list):
                             writer.writerows(content)
                     elif extension == 'json':
                         json.dump(content, fd)

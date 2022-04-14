@@ -56,8 +56,6 @@ class LogMessage(enum.Enum):
     CREATE_GROUP_DIRECTORY = '(GROUPING) Create group directory: %s'
     MOVE_WORKING_DIRECTORY = '(GROUPING) Move working directory %s to group directory %s'
 
-    # Job module
-
     # Main module
     ABORT_FILE = 'Aborting source file processing: %s'
     PROFILE_PATH = 'Profile path: %s'
@@ -79,7 +77,6 @@ class LogMessage(enum.Enum):
     TOTAL_SUCCESS = 'SUCCESS    : %d'
     TOTAL_FAIL = 'FAIL       : %d'
     TOTAL_TIME = 'TOTAL TIME : %fs'
-    WRITE_HEADERS = '(REPORT) Write headers to report file: %s'
 
     # SetupJob module
     ADD_TIME_TO_TIME_STAMP = '[%s] Add 1 second to the time stamp: directory already exists: %s'
@@ -98,8 +95,6 @@ class LogMessage(enum.Enum):
     SOURCE_TYPE = '(SOURCE) Source type specified: %s'
 
     # Handlers
-
-    # FileHandler module
 
     # ShellHandler module
     FILTER_FALSE = '[%s] Filter function %s result: False: Skipping section'

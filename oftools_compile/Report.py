@@ -40,25 +40,25 @@ class Record(object):
                  rc, last_section, elapsed_time):
         """Initializes the record with all the attributes.
         """
-        self._count = count
+        self._count = str(count)
         self._file_name = file_name
         self._working_directory = working_directory
         self._processing_status = processing_status
-        self._rc = rc
+        self._rc = str(rc)
         self._last_section = last_section
-        self._elapsed_time = elapsed_time
+        self._elapsed_time = str(round(elapsed_time, 4))
 
     def to_csv(self):
         """Converts the record data to a CSV record format, with a "," as a delimiter.
 
         Returns:
-             string - A CSV formatted record.
+             list - A formatted record.
         """
-        return str(
-            self._count
-        ) + ',' + self._file_name + ',' + self._working_directory + ',' + self._processing_status + ',' + str(
-            self._rc) + ',' + self._last_section + ',' + str(
-                round(self._elapsed_time, 4))
+        return [
+            self._count, self._file_name, self._working_directory,
+            self._processing_status, self._rc, self._last_section,
+            self._elapsed_time
+        ]
 
 
 class Report(object):
@@ -95,12 +95,12 @@ class Report(object):
         record. Finally, it writes the record to the report file.
 
         Arguments:
-            file_path {string} -- Absolute path of the source file.
+            source_file_path {string} -- Absolute path of the source file.
             rc {integer} -- Return code of the file processing.
             elapsed_time {integer} --Processing time.
 
         Raises:
-            IndexError: Exception raised if there is no '/' symbol in the filename, which means the file 
+            IndexError -- Exception raised if there is no '/' symbol in the filename, which means the file 
                 name only has been provided and not the absolute file path.
         """
         if Context().report_file_path == '':
@@ -109,8 +109,10 @@ class Report(object):
             path = os.path.join(Context().root_workdir, report_file_name)
             Log().logger.debug(LogMessage.CREATE_REPORT_FILE.value % path)
 
-            headers = 'count,source,_working_directory,result,rc,section,time(s)'
-            Log().logger.debug(LogMessage.WRITE_HEADERS.value % headers)
+            headers = [
+                'count', 'source', 'working_directory', 'result', 'rc',
+                'section', 'time(s)'
+            ]
             FileHandler().write_file(path, headers)
             Context().report_file_path = path
 
@@ -123,20 +125,21 @@ class Report(object):
         # Analyze input parameter: rc
         if rc == 0:
             self._success_count += 1
-            build_status = 'SUCCESSFUL'
+            processing_status = 'SUCCESSFUL'
             color = self._green
         else:
             self._fail_count += 1
-            build_status = 'FAILED'
+            processing_status = 'FAILED'
             color = self._red
 
         Log().logger.info(color + LogMessage.BUILD_STATUS.value %
-                          (build_status, round(elapsed_time, 4)) + self._white)
+                          (processing_status, round(elapsed_time, 4)) +
+                          self._white)
         print('')
 
         self._total_count = self._success_count + self._fail_count
         record = Record(self._total_count, source_file_name,
-                        Context().current_workdir, build_status, rc,
+                        Context().current_workdir, processing_status, rc,
                         Context().last_section, elapsed_time)
         row = record.to_csv()
         FileHandler().write_file(Context().report_file_path, row, mode='a')
@@ -153,11 +156,15 @@ class Report(object):
         Arguments:
             clear {boolean} -- Value of the argument clear from the CLI.
         """
-        
+
         Log().logger.info(LogMessage.REPORT_SUMMARY.value)
         Log().logger.info(LogMessage.TOTAL_PROGRAMS.value % self._total_count)
-        Log().logger.info(self._green + LogMessage.TOTAL_SUCCESS.value % self._success_count + self._white)
-        Log().logger.info(self._red + LogMessage.TOTAL_FAIL.value % self._fail_count + self._white)
+        Log().logger.info(self._green +
+                          LogMessage.TOTAL_SUCCESS.value % self._success_count +
+                          self._white)
+        Log().logger.info(self._red +
+                          LogMessage.TOTAL_FAIL.value % self._fail_count +
+                          self._white)
         Log().logger.info(LogMessage.TOTAL_TIME.value %
                           round(self._total_time, 4))
 

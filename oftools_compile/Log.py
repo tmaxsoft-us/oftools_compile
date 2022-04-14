@@ -38,13 +38,12 @@ class Log(object, metaclass=SingletonType):
         _stream_handler: A StreamHandler object, to be able to write log messages to stdout.
 
     Methods:
-        __init__(): Initializes the class with all the attributes.
-        set_level(level): Changes log level based on user input.
-        open_stream(): Opens the stream handler to write log messages to stdout.
-        close_stream(): Closes the stream handler at the end of the program execution.
-        open_file(path_to_file): Opens the file handler to write log messages to the log file.
-        close_file(): Closes the file handler at the end of each file processing.
-
+        __init__() -- Initializes the class with all the attributes.
+        set_level(level) -- Changes log level based on user input.
+        open_stream() -- Opens the stream handler to write log messages to stdout.
+        close_stream() -- Closes the stream handler at the end of the program execution.
+        open_file(path_to_file) -- Opens the file handler to write log messages to the log file.
+        close_file() -- Closes the file handler at the end of each file processing.
     """
 
     def __init__(self):

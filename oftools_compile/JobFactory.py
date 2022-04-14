@@ -20,11 +20,11 @@ class JobFactory(object):
     """A class used to create all the jobs required with the given profile.
 
     Attributes:
-        _profile: Profile object.
+        _profile {Profile}
 
     Methods:
-        __init__(profile): Initializes the class with the _profile attribute.
-        create(section_name): Creates the job according to the input parameter.
+        __init__(profile) -- Initializes the class with the _profile attribute.
+        create(section_name) -- Creates the job according to the input parameter.
     """
 
     def __init__(self, profile):
@@ -35,11 +35,11 @@ class JobFactory(object):
     def create(self, section_name):
         """Creates the job according to the input parameter.
 
-        Args:
-            section_name: A string, the name of the section in the profile.
+        Arguments:
+            section_name {string} -- Name of the section in the profile.
 
         Returns:
-            A Job object, the appropriate one depending on the input.
+            Job object -- Appropriate Job object depending on the input.
         """
         if section_name.startswith('setup'):
             return SetupJob(self._profile, section_name)

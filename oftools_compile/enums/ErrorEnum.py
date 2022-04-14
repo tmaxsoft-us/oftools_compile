@@ -19,6 +19,7 @@ class ErrorMessage(enum.Enum):
     # Shared
     ABORT = 'Error: Aborting program execution'
 
+    # Context module
     KEY_FILTER = 'KeyError: Filter function must be defined before being used in a section: %s'
 
     # Job module
