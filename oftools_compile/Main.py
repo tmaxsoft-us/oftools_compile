@@ -5,6 +5,7 @@
 # Generic/Built-in modules
 import argparse
 import os
+import signal
 import sys
 import traceback
 import time
@@ -25,6 +26,9 @@ from .Log import Log
 from .Profile import Profile
 from .Report import Report
 from .Source import Source
+
+# Global variables
+INTERRUPT = False
 
 
 def main():
@@ -189,6 +193,14 @@ class Main(object):
         return args
 
     @staticmethod
+    def _signal_handler(signum, frame):
+        """
+        """
+        global INTERRUPT
+        INTERRUPT = True
+        raise KeyboardInterrupt()
+
+    @staticmethod
     def _create_jobs(profile):
         """Creates job depending on the section of the profile.
 
@@ -226,6 +238,9 @@ class Main(object):
         Returns:
             integer -- Return code of the program.
         """
+        # This is normal if there is an error using this with Windows as the OS, SIGQUIT only exist in Unix
+        signal.signal(signal.SIGQUIT, self._signal_handler)
+
         rc = 0
         # For testing purposes. allow to remove logs when executing coverage
         # logging.disable(logging.CRITICAL)
@@ -244,65 +259,87 @@ class Main(object):
         profile_dict = {}
         report = Report()
 
-        for i in range(len(args.source_list)):
+        try:
+            for i in range(len(args.source_list)):
 
-            # Profile processing
-            profile_path = os.path.expandvars(args.profile_list[i])
-            Log().logger.debug(LogMessage.PROFILE_PATH.value % profile_path)
-            if profile_path not in profile_dict.keys():
-                profile = Profile(profile_path)
-                profile_dict[profile_path] = profile
-            else:
-                Log().logger.debug(LogMessage.PROFILE_REUSE.value %
+                # Profile processing
+                profile_path = os.path.expandvars(args.profile_list[i])
+                Log().logger.debug(LogMessage.PROFILE_PATH.value % profile_path)
+                if profile_path not in profile_dict.keys():
+                    profile = Profile(profile_path)
+                    profile_dict[profile_path] = profile
+                else:
+                    Log().logger.debug(LogMessage.PROFILE_REUSE.value %
                                    profile_path)
-                profile = profile_dict[profile_path]
+                    profile = profile_dict[profile_path]
 
-            # Source processing
-            source_path = os.path.expandvars(args.source_list[i])
-            Log().logger.debug(LogMessage.SOURCE_PATH.value % source_path)
-            source = Source(args.source_list[i])
+                # Source processing
+                source_path = os.path.expandvars(args.source_list[i])
+                Log().logger.debug(LogMessage.SOURCE_PATH.value % source_path)
+                source = Source(args.source_list[i])
 
-            # Create jobs
-            jobs = self._create_jobs(profile)
+                # Create jobs
+                jobs = self._create_jobs(profile)
 
-            for file_path in source.file_paths:
-                # Initialization of variables before running the jobs
-                file_name_in = ''
-                file_name_out = file_path
-                start_time = time.time()
+                for file_path in source.file_paths:
+                    try:
+                        # Initialization of variables before running the jobs
+                        file_name_in = ''
+                        file_name_out = file_path
+                        start_time = time.time()
 
-                for job in jobs:
-                    # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
-                    # is just the name of the file
-                    file_name_in = file_name_out
-                    rc = job.run(file_name_in)
-                    if rc != 0:
-                        Log().logger.error(LogMessage.ABORT_FILE.value %
+                        for job in jobs:
+                            # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
+                            # is just the name of the file
+                            file_name_in = file_name_out
+                            rc = job.run(file_name_in)
+                            if rc != 0:
+                                Log().logger.error(LogMessage.ABORT_FILE.value %
                                            file_name_in)
-                        break
-                    file_name_out = job.file_name_out
+                                break
+                            file_name_out = job.file_name_out
 
-                # Report related tasks
-                elapsed_time = time.time() - start_time
-                report.add_entry(file_path, rc, elapsed_time)
-                # Need to clear context and close log file at the end of each file processing
-                Context().clear(profile)
-                Log().close_file()
+                        # Report related tasks
+                        elapsed_time = time.time() - start_time
+                        report.add_entry(file_path, rc, elapsed_time)
+                        # Need to clear context and close log file at the end of each file processing
+                        Context().clear(profile)
+                        Log().close_file()
 
-        if len(source.file_paths) != 0:
-            report.summary(args.clear)
+                    except KeyboardInterrupt:
+                        Log().logger.critical(ErrorMessage.KEYBOARD_ABORT_COMPILATION.value % file_path)
+                        report.add_entry(file_path, 255, 0)
+                        Context().clear(profile)
+                        Log().close_file()
+                        
+                        if INTERRUPT is True:
+                            raise KeyboardInterrupt()
 
-            # Handle clear option
-            if args.clear is True:
-                clear = Clear()
-                clear.run()
-            elif args.grouping is True:
-                grouping = Grouping()
-                grouping.run()
+            if len(source.file_paths) != 0:
+                report.summary(args.clear)
 
-        # Need to clear context completely and close log at the end of the execution
-        Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
-        Context().clear_all()
-        Log().close_stream()
+                # Handle clear option
+                if args.clear is True:
+                    clear = Clear()
+                    clear.run()
+                elif args.grouping is True:
+                    grouping = Grouping()
+                    grouping.run()
+
+            # Need to clear context completely and close log at the end of the execution
+            Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
+            Context().clear_all()
+            Log().close_stream()
+
+        except KeyboardInterrupt:
+            if INTERRUPT is True:
+                Log().logger.debug(LogMessage.SIGQUIT.value)
+            else:
+                Log().logger.debug(LogMessage.SIGINT.value)
+            
+            Log().logger.critical(ErrorMessage.KEYBOARD_INTERRUPT.value)
+            Context().clear_all()
+            Log().close_stream()
+            sys.exit(255)
 
         return rc
