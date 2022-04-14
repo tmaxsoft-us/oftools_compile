@@ -12,7 +12,6 @@ import os
 # Third-party modules
 
 # Owned modules
-from .Context import Context
 from .enums.LogEnum import LogMessage
 from .handlers.FileHandler import FileHandler
 from .Log import Log
@@ -23,7 +22,7 @@ class Grouping(object):
     compilation logs in one group log.
 
     Attributes:
-        _workdir_list {list[string]} -- List of working directories created during the execution of the 
+        _working_directories {list[string]} -- List of working directories created during the execution of the 
             program.
         _group_directory {string} -- Absolute path of the group directory.
         _group_log {string} -- Absolute path of the group log file.
@@ -35,16 +34,13 @@ class Grouping(object):
         run(): General run method for the Grouping module.
     """
 
-    def __init__(self):
+    def __init__(self, working_directories, root_working_dir, tag, time_stamp):
         """Initializes the class with all the attributes.
         """
-        self._workdir_list = Context().work_directories
-        self._group_directory = os.path.join(
-            Context().root_workdir,
-            'group' + Context().tag + Context().time_stamp)
+        self._working_directories = working_directories
+        self._group_directory = os.path.join(root_working_dir,
+                                             'group' + tag + time_stamp)
         self._group_log = os.path.join(self._group_directory, 'group.log')
-
-        Context().group_directory = self._group_directory
 
     def _create_group_directory(self):
         """Runs a mkdir command to create the group directory.
@@ -54,7 +50,7 @@ class Grouping(object):
         """
         # Check if the group folder already exist
         Log().logger.debug(LogMessage.CREATE_GROUP_DIRECTORY.value %
-                               self._group_directory)
+                           self._group_directory)
         rc = FileHandler().create_directory(self._group_directory, 'group')
 
         return rc
@@ -67,7 +63,7 @@ class Grouping(object):
         """
         with open(self._group_log, 'w') as group_log:
 
-            for directory_path in self._workdir_list:
+            for directory_path in self._working_directories:
                 file_list = os.listdir(directory_path)
 
                 for file_name in file_list:
@@ -76,7 +72,8 @@ class Grouping(object):
                         file_path = os.path.join(directory_path, file_name)
                         with open(file_path, 'r') as oftools_compile_log:
                             # Read the log file and write to group log file
-                            Log().logger.debug(LogMessage.AGGREGATE_LOG_FILE.value)
+                            Log().logger.debug(
+                                LogMessage.AGGREGATE_LOG_FILE.value)
                             group_log.write(oftools_compile_log.read())
                             group_log.write('\n\n')
 

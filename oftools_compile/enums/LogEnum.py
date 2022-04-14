@@ -63,6 +63,7 @@ class LogMessage(enum.Enum):
     SIGINT = 'Signal SIGINT detected'
     SIGQUIT = 'Signal SIGQUIT detected'
     SOURCE_PATH = 'Source path: %s'
+    WORKING_DIRECTORY = 'Current working directory: %s'
 
     # Profile module
     PROFILE_SECTIONS = 'Profile sections: %s'
@@ -74,7 +75,7 @@ class LogMessage(enum.Enum):
     BUILD_STATUS = 'BUILD %s (%fs)'
     CREATE_REPORT_FILE = '(REPORT) Create report file: %s'
     REPORT_GENERATED = '(REPORT) CSV report successfully generated: %s'
-    REPORT_SUMMARY = '============ SUMMARY ===================================='
+    REPORT_SUMMARY = '======== SUMMARY ================================================================='
     TOTAL_PROGRAMS = 'TOTAL      : %d'
     TOTAL_SUCCESS = 'SUCCESS    : %d'
     TOTAL_FAIL = 'FAIL       : %d'
