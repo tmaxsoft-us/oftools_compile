@@ -38,7 +38,7 @@ class Clear(object):
     def __init__(self):
         """Initializes the class with all the attributes.
         """
-        self._working_directory_list = Context().work_directories
+        self._working_directories = Context().working_dirs
         self._report_file_path = Context().report_file_path
 
     def _clear_working_directories(self):
@@ -46,7 +46,7 @@ class Clear(object):
         """
         Log().logger.debug(LogMessage.CLEAR_WORKING_DIRECTORY.value)
 
-        for directory in self._working_directory_list:
+        for directory in self._working_directories:
             FileHandler().delete_directory(directory)
 
     def _clear_report_file(self):

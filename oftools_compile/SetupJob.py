@@ -167,8 +167,8 @@ class SetupJob(Job):
         current_workdir = Context().current_workdir
         Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
         header = '================================================================================'
-        header = header[0:4] + ' ' + self._file_name_in + ' ' + header[
-            len(self._file_name_in) + 4:]
+        header = header[0:8] + ' ' + self._file_name_in + ' ' + header[
+            len(self._file_name_in) + 8:]
 
         Log().logger.info(header)
         Log().logger.info(LogMessage.MKDIR_COMMAND.value %
