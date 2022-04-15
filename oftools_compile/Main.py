@@ -62,8 +62,11 @@ class Main(object):
             SystemError -- Exception raised if the numbers of profile and source are not 
                 matching.           
         """
-        parser = argparse.ArgumentParser(add_help=False,
-                                         description='OpenFrame Tools Compile')
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            description='OpenFrame Tools Compile',
+            formatter_class=argparse.RawTextHelpFormatter)
+
         parser._action_groups.pop()
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
@@ -77,18 +80,20 @@ class Main(object):
             dest='profile_list',
             help=
             'profile name, contains the description of the compilation target',
-            metavar='PROFILE',
+            metavar='FILENAME',
             required=True,
             type=str)
 
-        required.add_argument('-s',
-                              '--source',
-                              action='append',
-                              dest='source_list',
-                              help='source name, either a file or a directory',
-                              metavar='SOURCE',
-                              required=True,
-                              type=str)
+        required.add_argument(
+            '-s',
+            '--source',
+            action='append',
+            dest='source_list',
+            help=
+            'source name, currently supported:\n- file or a directory\n- colon-separated list of files of directories\n- text file containing a list of files or directories',
+            metavar='SOURCE',
+            required=True,
+            type=str)
 
         # Optional arguments
         optional.add_argument(
@@ -116,7 +121,7 @@ class Main(object):
             default='INFO',
             dest='log_level',
             help=
-            'set log level, potential values: DEBUG, INFO, WARNING, ERROR, CRITICAL. (default: INFO)',
+            'set log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
             metavar='LEVEL',
             required=False,
             type=str)

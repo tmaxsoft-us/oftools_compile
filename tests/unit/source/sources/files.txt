@@ -1,0 +1,2 @@
+tests/shared/sources/SAMPLE1.cbl
+./tests/shared/sources/SAMPLE2.cbl
