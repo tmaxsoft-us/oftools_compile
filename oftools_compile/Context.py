@@ -43,8 +43,7 @@ class Context(object, metaclass=SingletonMeta):
 
         _root_workdir {string} -- Absolute path of the root working directory.
         _current_workdir {string} -- Absolute path of the current working directory.
-        _work_directories {list} -- Absolute paths of all the working directories. 
-        _group_directory {string} -- Absolute path of the group directory.
+        _working_dirs {list} -- Absolute paths of all the working directories.
 
         _last_section {string} -- Name of the last section being executed, whether it succeeds or 
             fails.
@@ -80,8 +79,7 @@ class Context(object, metaclass=SingletonMeta):
         # Directories
         self._root_workdir = ''
         self._current_workdir = ''
-        self._work_directories = []
-        self._group_directory = ''
+        self._working_dirs = []
 
         # Profile sections
         self._last_section = ''
@@ -115,10 +113,10 @@ class Context(object, metaclass=SingletonMeta):
         return self._root_workdir
 
     @root_workdir.setter
-    def root_workdir(self, workdir):
+    def root_workdir(self, working_dir):
         """Setter method for the attribute _root_workdir.
         """
-        self._root_workdir = os.path.expandvars(workdir)
+        self._root_workdir = os.path.expandvars(working_dir)
 
     @property
     def current_workdir(self):
@@ -127,29 +125,17 @@ class Context(object, metaclass=SingletonMeta):
         return self._current_workdir
 
     @current_workdir.setter
-    def current_workdir(self, workdir):
+    def current_workdir(self, working_dir):
         """Setter method for the attribute _current_workdir.
         """
-        self._current_workdir = workdir
-        self._work_directories.append(workdir)
+        self._current_workdir = working_dir
+        self._working_dirs.append(working_dir)
 
     @property
-    def work_directories(self):
-        """Getter method for the attribute _work_directories.
+    def working_dirs(self):
+        """Getter method for the attribute _working_dirs.
         """
-        return self._work_directories
-
-    @property
-    def group_directory(self):
-        """Getter method for the attribute _group_directory.
-        """
-        return self._group_directory
-
-    @group_directory.setter
-    def group_directory(self, directory):
-        """Setter method for the attribute _group_directory.
-        """
-        self._group_directory = directory
+        return self._working_dirs
 
     @property
     def last_section(self):
@@ -292,6 +278,8 @@ class Context(object, metaclass=SingletonMeta):
         self._env = self._init_env
         os.environ.update(self._init_env)
 
+        self._current_workdir = ''
+
         self._filters.clear()
         for key in profile.sections_complete.keys():
             profile.sections_complete[key] = False
@@ -302,11 +290,12 @@ class Context(object, metaclass=SingletonMeta):
         """Clears context completely at the end of the program execution.
         """
         self._root_workdir = ''
-        self._current_workdir = ''
-        self._work_directories = []
-        self._group_directory = ''
+        self._working_dirs = []
 
+        self._filters = {}
         self._last_section = ''
-        self._mandatory_sections = []
+        self._report_file_path = ''
+        self._tag = ''
+        self._time_stamp = datetime.datetime.now()
 
         os.chdir(self._init_pwd)

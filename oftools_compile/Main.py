@@ -42,6 +42,7 @@ class Main(object):
     Methods:
         _parse_args() -- Parses command-line options.
         _create_jobs(profile) -- Creates job depending on the section of the profile.
+        _end_processing(mode, rc, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program
         run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
     """
 
@@ -61,8 +62,11 @@ class Main(object):
             SystemError -- Exception raised if the numbers of profile and source are not 
                 matching.           
         """
-        parser = argparse.ArgumentParser(add_help=False,
-                                         description='OpenFrame Tools Compile')
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            description='OpenFrame Tools Compile',
+            formatter_class=argparse.RawTextHelpFormatter)
+
         parser._action_groups.pop()
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
@@ -76,18 +80,20 @@ class Main(object):
             dest='profile_list',
             help=
             'profile name, contains the description of the compilation target',
-            metavar='PROFILE',
+            metavar='FILENAME',
             required=True,
             type=str)
 
-        required.add_argument('-s',
-                              '--source',
-                              action='append',
-                              dest='source_list',
-                              help='source name, either a file or a directory',
-                              metavar='SOURCE',
-                              required=True,
-                              type=str)
+        required.add_argument(
+            '-s',
+            '--source',
+            action='append',
+            dest='source_list',
+            help=
+            'source name, currently supported:\n- file or a directory\n- colon-separated list of files of directories\n- text file containing a list of files or directories',
+            metavar='SOURCE',
+            required=True,
+            type=str)
 
         # Optional arguments
         optional.add_argument(
@@ -115,7 +121,7 @@ class Main(object):
             default='INFO',
             dest='log_level',
             help=
-            'set log level, potential values: DEBUG, INFO, WARNING, ERROR, CRITICAL. (default: INFO)',
+            'set log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
             metavar='LEVEL',
             required=False,
             type=str)
@@ -232,6 +238,51 @@ class Main(object):
 
         return jobs
 
+    @staticmethod
+    def _end_processing(mode,
+                        rc,
+                        report=None,
+                        file_path=None,
+                        elapsed_time=None,
+                        profile=None):
+        """Common method to end file processing or entire program.
+
+        Modes:
+            0: end the file processing normally.
+            1: end the file processing when user press Ctrl + C.
+            2: end the entire program normally.
+            3: end the entire program when the user press Ctrl + \\.
+
+        Arguments:
+            mode {integer} -- Ending mode for the program.
+            rc {integer} -- Return code of the file processing.
+            report {Report}
+            file_path {string} -- Absolute path to the source file.
+            elapsed_time {integer} -- Elapsed processing time.
+            profile {Profile}
+        """
+        if mode == 1:
+            Log().logger.critical(
+                ErrorMessage.KEYBOARD_ABORT_COMPILATION.value % file_path)
+        elif mode == 3:
+            if INTERRUPT is True:
+                Log().logger.debug(LogMessage.SIGQUIT.value)
+            else:
+                Log().logger.debug(LogMessage.SIGINT.value)
+            Log().logger.critical(ErrorMessage.KEYBOARD_INTERRUPT.value)
+
+        if mode in (0, 1):
+            Log().logger.info(LogMessage.WORKING_DIRECTORY.value %
+                              Context().current_workdir)
+            report.add_entry(file_path, rc, elapsed_time)
+            Context().clear(profile)
+            Log().close_file()
+
+        if mode in (2, 3):
+            Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
+            Context().clear_all()
+            Log().close_stream()
+
     def run(self):
         """Performs all the steps to run compilation for all sources using the appropriate profile.
 
@@ -270,7 +321,7 @@ class Main(object):
                     profile_dict[profile_path] = profile
                 else:
                     Log().logger.debug(LogMessage.PROFILE_REUSE.value %
-                                   profile_path)
+                                       profile_path)
                     profile = profile_dict[profile_path]
 
                 # Source processing
@@ -295,23 +346,19 @@ class Main(object):
                             rc = job.run(file_name_in)
                             if rc != 0:
                                 Log().logger.error(LogMessage.ABORT_FILE.value %
-                                           file_name_in)
+                                                   file_name_in)
                                 break
                             file_name_out = job.file_name_out
 
                         # Report related tasks
                         elapsed_time = time.time() - start_time
-                        report.add_entry(file_path, rc, elapsed_time)
-                        # Need to clear context and close log file at the end of each file processing
-                        Context().clear(profile)
-                        Log().close_file()
+                        self._end_processing(0, rc, report, file_path,
+                                             elapsed_time, profile)
 
                     except KeyboardInterrupt:
-                        Log().logger.critical(ErrorMessage.KEYBOARD_ABORT_COMPILATION.value % file_path)
-                        report.add_entry(file_path, 255, 0)
-                        Context().clear(profile)
-                        Log().close_file()
-                        
+                        rc = -2
+                        self._end_processing(1, rc, report, file_path, 0,
+                                             profile)
                         if INTERRUPT is True:
                             raise KeyboardInterrupt()
 
@@ -323,23 +370,16 @@ class Main(object):
                     clear = Clear()
                     clear.run()
                 elif args.grouping is True:
-                    grouping = Grouping()
+                    grouping = Grouping(Context().working_dirs,
+                                        Context().root_workdir,
+                                        Context().tag,
+                                        Context().time_stamp)
                     grouping.run()
 
-            # Need to clear context completely and close log at the end of the execution
-            Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
-            Context().clear_all()
-            Log().close_stream()
+            self._end_processing(2, rc)
 
         except KeyboardInterrupt:
-            if INTERRUPT is True:
-                Log().logger.debug(LogMessage.SIGQUIT.value)
-            else:
-                Log().logger.debug(LogMessage.SIGINT.value)
-            
-            Log().logger.critical(ErrorMessage.KEYBOARD_INTERRUPT.value)
-            Context().clear_all()
-            Log().close_stream()
-            sys.exit(255)
+            rc = -3
+            self._end_processing(3, rc, report, file_path, 0, profile)
 
         return rc
