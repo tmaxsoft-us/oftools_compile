@@ -66,7 +66,7 @@ class FileHandler(object, metaclass=SingletonMeta):
         check_write_access (path) -- Evaluates if the user has write access on the given path.
         get_files (path) -- Gets the list of files in a given path.
         get_duplicates(path, pattern) -- Gets duplicate files and folders in given path.
-        get_creation_times(path) -- Gets creation time of the input path(s).
+        get_creation_times(path) -- Gets modified timestamp of the input path(s).
     """
 
     def __init__(self):
@@ -652,8 +652,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             return duplicate_directories, duplicate_files
 
     @staticmethod
-    def get_creation_times(path):
-        """Gets creation time of the input path(s).
+    def get_modified_times(path):
+        """Gets modified timestamp of the input path(s).
 
         Arguments:
             path {string or list[string]} - One or several absolute path(s) to files or directories.
@@ -671,7 +671,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                 path_expand = os.path.expandvars(path)
                 creation_times = .0
                 if os.path.exists(path_expand):
-                    creation_times = os.path.getctime(path_expand)
+                    creation_times = os.path.getmtime(path_expand)
                 else:
                     raise FileNotFoundError()
             elif isinstance(path, list):
@@ -681,7 +681,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                 for element in paths:
                     path_expand = os.path.expandvars(element)
                     if os.path.exists(path_expand):
-                        creation_time = os.path.getctime(element)
+                        creation_time = os.path.getmtime(element)
                         creation_times.append(creation_time)
                     else:
                         raise FileNotFoundError()

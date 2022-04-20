@@ -18,6 +18,8 @@ class ErrorMessage(enum.Enum):
 
     # Shared
     ABORT = 'Error: Aborting program execution'
+    VALUE_EMPTY = 'ValueError: Option empty in the %s section: %s'
+    VALUE_SKIP = 'Skipping option: %s'
 
     # Context module
     KEY_FILTER = 'KeyError: Filter function must be defined before being used in a section: %s'
@@ -36,13 +38,11 @@ class ErrorMessage(enum.Enum):
     OS_ISSUE_WORKDIR = 'OSError: Issue in the %s section with the option: workdir'
     SYSTEM_MISSING_SETUP = 'MissingSectionError: Missing section in the profile: setup'
     SYSTEM_MISSING_OPTION = 'MissingOptionError: Missing option in the %s section: %s'
-    VALUE_EMPTY = 'ValueError: Option empty in the %s section: %s'
-    VALUE_SKIP_MANDATORY = 'Skipping mandatory option'
     WARNING_MANDATORY = 'Warning: Skipping mandatory section: %s'
 
     # SetupJob module
-    VALUE_BACKUP = 'ValueError: The "backup" option value must be an integer: for example, 10'
-    VALUE_HOUSEKEEPING = 'ValueError: The "housekeeping" option value must be a number of days: for example, 30d'
+    VALUE_BACKUP = 'ValueError: The "backup" option value must be an integer: current = %s, expected (example) = 10'
+    VALUE_HOUSEKEEPING = 'ValueError: The "housekeeping" option value must be a number of days: current = %s, expected (example) = 30d'
 
     # Handlers
 

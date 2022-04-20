@@ -45,7 +45,7 @@ class TestAnalyze(object):
     @staticmethod
     def test_section_complete(init_pwd, shared):
         """Test with two setup sections, to trigger the already complete case.
-            """
+        """
         sys.argv = [sys.argv[0]]
         sys.argv.append('--clear')
         sys.argv.extend(['--log-level', 'DEBUG'])
