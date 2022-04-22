@@ -77,6 +77,7 @@ class SetupJob(Job):
             integer -- Return code of the method.
         """
         rc = 0
+        backup_run = False
         Log().logger.debug(LogMessage.START_SECTION.value %
                            (self._section_name, self._file_path_in))
 
@@ -91,11 +92,21 @@ class SetupJob(Job):
                 self._init_log_file()
             elif key == 'mandatory':
                 continue
-            elif key == 'backup' and self._profile.has_option(
-                    'setup', 'housekeeping') is False:
-                rc = self._process_backup(value)
+            elif key == 'backup':
+                if self._profile.data.has_option(
+                        'setup',
+                        'housekeeping') is False and backup_run is False:
+                    rc = self._process_backup(value)
+                else:
+                    continue
             elif key == 'housekeeping':
                 rc = self._process_housekeeping(value)
+                if rc == 0:
+                    backup_value = self._profile.data.get('setup', 'backup')
+                    rc = self._process_backup(backup_value)
+                    backup_run = True
+                elif rc == 1:
+                    rc = 0
             else:
                 rc = self._process_option(key, value)
 
@@ -193,31 +204,45 @@ class SetupJob(Job):
         Raises:
             ValueError -- Exception raised if the input value cannot be converted from string to integer.
         """
+        Log().logger.debug(LogMessage.START_CLEANING.value %
+                           (self._section_name, 'backup'))
+
         try:
-            value = int(value)
-            backup_paths = FileHandler().get_duplicates(
-                Context().root_workdir,
-                self._file_name_in,
-            )[1]
+            if value != '':
+                value = int(value)
+                backup_paths = FileHandler().get_duplicates(
+                    Context().root_workdir,
+                    self._file_name_in,
+                )[0]
 
-            if len(backup_paths) > value:
-                creation_times = FileHandler().get_creation_times(backup_paths)
+                if len(backup_paths) > value:
+                    creation_times = FileHandler().get_modified_times(
+                        backup_paths)
+                    # Sorting the backup_paths list based on a sorting of the creation_times list
+                    backup_paths = [
+                        path
+                        for _, path in sorted(zip(creation_times, backup_paths))
+                    ]
 
-                # Sorting the backup_paths list based on a sorting of the creation_times list
-                backup_paths = [
-                    path
-                    for _, path in sorted(zip(creation_times, backup_paths))
-                ]
+                    while len(backup_paths) > value:
+                        backup = backup_paths[0]
+                        backup_paths.pop(0)
+                        FileHandler().delete_directory(backup)
+                else:
+                    Log().logger.debug(LogMessage.VALUE_BELOW_THRESHOLD.value %
+                                       (self._section_name,
+                                        len(backup_paths) - 1, value, 'backup'))
 
-                while len(backup_paths) > value:
-                    backup = backup_paths[0]
-                    backup_paths.pop(0)
+                Log().logger.debug(LogMessage.END_CLEANING.value %
+                                   (self._section_name, 'backup'))
+            else:
+                Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
+                                     ('setup', 'backup'))
+                Log().logger.info(ErrorMessage.VALUE_SKIP.value % 'backup')
 
-                    #Deletion of the directory
-                    FileHandler().delete_directory(backup)
             rc = 0
         except ValueError:
-            Log().logger.error(ErrorMessage.VALUE_BACKUP.value)
+            Log().logger.error(ErrorMessage.VALUE_BACKUP.value % value)
             rc = -1
 
         return rc
@@ -234,53 +259,74 @@ class SetupJob(Job):
         Raises:
             ValueError -- Exception raised if part of the input value cannot be converted from string to integer.
         """
+        Log().logger.debug(LogMessage.START_CLEANING.value %
+                           (self._section_name, 'housekeeping'))
+
         try:
-            if self._profile.has_option('setup', 'backup'):
-                #TODO Improve the two lines below
-                days = int(value[:-1])
-                if value[-1] == 'd' and isinstance(value[:-1], int):
+            if value != '':
+                if self._profile.data.has_option('setup', 'backup'):
+                    if value[-1] == 'd':
 
-                    backup_value = self._profile.get('setup', 'backup')
-                    threshold = datetime.datetime.today() - datetime.timedelta(
-                        days=int(days))
+                        days = int(value[:-1])
+                        threshold = datetime.datetime.today(
+                        ) - datetime.timedelta(days=int(days))
+                        backup_paths = FileHandler().get_duplicates(
+                            Context().root_workdir, self._file_name_in)[0]
+                        backup_value = int(
+                            self._profile.data.get('setup', 'backup'))
 
-                    backup_paths = FileHandler().get_duplicate_directories(
-                        Context().root_workdir, self._file_name_in,
-                        'directories')
+                        if len(backup_paths) > backup_value:
+                            creation_times = FileHandler().get_modified_times(
+                                backup_paths)
+                            creation_times.sort()
+                            # Sorting the backup_paths list based on a sorting on the creation_times list
+                            backup_paths = [
+                                path for _, path in sorted(
+                                    zip(creation_times, backup_paths))
+                            ]
 
-                    if len(backup_paths) > backup_value:
-                        creation_times = FileHandler().get_creation_times(
-                            backup_paths)
+                            number_of_backups = len(backup_paths)
+                            for i, backup in enumerate(backup_paths):
+                                backup_modified_date = datetime.datetime.fromtimestamp(
+                                    creation_times[i])
 
-                        # Sorting the creation_times list
-                        creation_times_sorted = creation_times.sort()
-                        # Sorting the backup_paths list based on a sorting on the creation_times list
-                        backup_paths = [
-                            path for _, path in sorted(
-                                zip(creation_times, backup_paths))
-                        ]
+                                if backup_modified_date < threshold:
+                                    number_of_backups -= 1
+                                    FileHandler().delete_directory(backup)
 
-                        number_of_backups = len(backup_paths)
-                        for i in range(len(backup_paths)):
-                            backup_creation_date = datetime.datetime.fromtimestamp(
-                                creation_times_sorted[i])
+                                if number_of_backups == backup_value:
+                                    break
 
-                            if backup_creation_date < threshold:
-                                backup = backup_paths[i]
-                                number_of_backups -= 1
-
-                                #Deletion of the directory
-                                FileHandler().delete_directory(backup)
-
-                            if number_of_backups == backup_value:
-                                break
-                    rc = 0
+                            if number_of_backups == len(backup_paths):
+                                Log().logger.info(
+                                    LogMessage.NOT_OLD_ENOUGH.value %
+                                    (self._section_name, 'housekeeping'))
+                            else:
+                                Log().logger.debug(
+                                    LogMessage.END_CLEANING.value %
+                                    (self._section_name, 'housekeeping'))
+                        else:
+                            Log().logger.debug(
+                                LogMessage.VALUE_BELOW_THRESHOLD.value %
+                                (self._section_name, len(backup_paths) - 1,
+                                 backup_value, 'housekeeping'))
+                        rc = 0
+                    else:
+                        raise ValueError()
+                else:
+                    Log().logger.warning(LogMessage.MISSING_BACKUP.value %
+                                         self._section_name)
+                    Log().logger.debug(LogMessage.ABORT_HOUSEKEEPING.value %
+                                       self._section_name)
+                    rc = 1
             else:
-                Log().logger.warning(
-                    '[setup] "backup" value required to run housekeeping')
-                rc = 1
+                Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
+                                     ('setup', 'housekeeping'))
+                Log().logger.info(ErrorMessage.VALUE_SKIP.value %
+                                  'housekeeping')
+                rc = 0
         except ValueError:
-            Log().logger.error(ErrorMessage.VALUE_HOUSEKEEPING.value)
+            Log().logger.error(ErrorMessage.VALUE_HOUSEKEEPING.value % value)
             rc = -1
 
         return rc
