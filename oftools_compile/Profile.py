@@ -253,7 +253,7 @@ class Profile(object):
             except ValueError:
                 Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
                                      ('setup', 'mandatory'))
-                Log().logger.info(ErrorMessage.VALUE_SKIP_MANDATORY.value)
+                Log().logger.info(ErrorMessage.VALUE_SKIP.value % 'mandatory')
 
     def _analyze_compile(self, section):
         """Analyzes any compile section of the profile.

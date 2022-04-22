@@ -60,10 +60,10 @@ class LogMessage(enum.Enum):
     WORKING_DIRECTORY = 'Current working directory: %s'
 
     # Profile module
-    PROFILE_SECTIONS = 'Profile sections: %s'
     MANDATORY_SECTIONS = 'Mandatory sections: %s'
     MANDATORY_FILTER = 'Filter function not allowed in mandatory section: %s'
     MANDATORY_NOT_FOUND = 'Mandatory section not found in profile: %s'
+    PROFILE_SECTIONS = 'Profile sections: %s'
 
     # Report module
     BUILD_STATUS = 'BUILD %s (%fs)'
@@ -76,15 +76,21 @@ class LogMessage(enum.Enum):
     TOTAL_TIME = 'TOTAL TIME : %fs'
 
     # SetupJob module
+    ABORT_HOUSEKEEPING = '[%s] Aborting housekeeping execution'
     ADD_TIME_TO_TIME_STAMP = '[%s] Add 1 second to the time stamp: directory already exists: %s'
     CD_COMMAND = '[%s] cd %s'
     END_LOG_FILE = '[%s] End log file initialization'
+    END_CLEANING = '[%s] Root working directory now clean: %s'
     END_SETUP_FILE = '[%s] End source file copy'
     END_WORKING_DIRECTORY = '[%s] End working directory creation'
+    MISSING_BACKUP = '[%s] "backup" option required to run housekeeping'
     MKDIR_COMMAND = '[%s] mkdir %s'
-    START_WORKING_DIRECTORY = '[%s] Start working directory creation'
-    START_SETUP_FILE = '[%s] Start source file copy'
+    NOT_OLD_ENOUGH = '[%s] No directory found old enough to be deleted: Skipping option: %s'
+    START_CLEANING = '[%s] Start cleaning root working directory: %s'
     START_LOG_FILE = '[%s] Initialize log file'
+    START_SETUP_FILE = '[%s] Start source file copy'
+    START_WORKING_DIRECTORY = '[%s] Start working directory creation'
+    VALUE_BELOW_THRESHOLD = '[%s] Number of backups below threshold (%d < %d): Skipping option: %s'
 
     # Source module
     SOURCE_COUNT = '(SOURCE) Number of source files being compiled: %d'
