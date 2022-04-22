@@ -42,8 +42,8 @@ class Context(object, metaclass=SingletonMeta):
         _env {dictionary} -- All the environment variables for the current execution of the program.
 
         _root_workdir {string} -- Absolute path of the root working directory.
+        _exec_working_dir {string} -- Absolute path of the working directory where new working directories are created and files processed.
         _current_workdir {string} -- Absolute path of the current working directory.
-        _working_dirs {list} -- Absolute paths of all the working directories.
 
         _last_section {string} -- Name of the last section being executed, whether it succeeds or 
             fails.
@@ -52,8 +52,11 @@ class Context(object, metaclass=SingletonMeta):
 
         _report_file_path {string} -- Absolute path of the report file of the compilation.
 
-        _skip {boolean} -- Flag used to skip source files if not found or not.        
+        _grouping {boolean} -- Flag used to group all working directories into one group directory.
+        _skip {boolean} -- Flag used to skip source files if not found or not.
+
         _tag {string} -- Keyword to tag working directories and report file.
+        
         _time_stamp {string} -- Datetime respecting _%Y%m%d_%H%M%S format for working directories and 
             report identification purposes.
 
@@ -78,8 +81,8 @@ class Context(object, metaclass=SingletonMeta):
 
         # Directories
         self._root_workdir = ''
+        self._exec_working_dir = ''
         self._current_workdir = ''
-        self._working_dirs = []
 
         # Profile sections
         self._last_section = ''
@@ -90,10 +93,13 @@ class Context(object, metaclass=SingletonMeta):
         # Report
         self._report_file_path = ''
 
-        # Skip flag
+        # Argument flags
+        self._grouping = False
         self._skip = False
+
         # Tag
         self._tag = ''
+
         # Timestamp
         self._time_stamp = datetime.datetime.now()
 
@@ -119,6 +125,18 @@ class Context(object, metaclass=SingletonMeta):
         self._root_workdir = os.path.expandvars(working_dir)
 
     @property
+    def exec_working_dir(self):
+        """Getter method for the attribute _exec_working_dir.
+        """
+        return self._exec_working_dir
+
+    @exec_working_dir.setter
+    def exec_working_dir(self, working_dir):
+        """Setter method for the attribute _exec_working_dir.
+        """
+        self._exec_working_dir = os.path.expandvars(working_dir)
+
+    @property
     def current_workdir(self):
         """Getter method for the attribute _current_workdir.
         """
@@ -129,13 +147,6 @@ class Context(object, metaclass=SingletonMeta):
         """Setter method for the attribute _current_workdir.
         """
         self._current_workdir = working_dir
-        self._working_dirs.append(working_dir)
-
-    @property
-    def working_dirs(self):
-        """Getter method for the attribute _working_dirs.
-        """
-        return self._working_dirs
 
     @property
     def last_section(self):
@@ -166,6 +177,19 @@ class Context(object, metaclass=SingletonMeta):
         """Setter method for the attribute _report_file_path.
         """
         self._report_file_path = file_path
+
+    @property
+    def grouping(self):
+        """Getter method for the attribute _grouping.
+        """
+        return self._grouping
+
+    @grouping.setter
+    def grouping(self, grouping):
+        """Setter method for the attribute _grouping.
+        """
+        if grouping is not None:
+            self._grouping = grouping
 
     @property
     def skip(self):
@@ -290,7 +314,7 @@ class Context(object, metaclass=SingletonMeta):
         """Clears context completely at the end of the program execution.
         """
         self._root_workdir = ''
-        self._working_dirs = []
+        self._exec_working_dir = ''
 
         self._filters = {}
         self._last_section = ''

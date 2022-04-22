@@ -12,6 +12,7 @@ import os
 # Third-party modules
 
 # Owned modules
+from .Context import Context
 from .enums.LogEnum import LogMessage
 from .handlers.FileHandler import FileHandler
 from .Log import Log
@@ -22,67 +23,51 @@ class Grouping(object):
     compilation logs in one group log.
 
     Attributes:
-        _working_directories {list[string]} -- List of working directories created during the execution of the 
-            program.
-        _group_directory {string} -- Absolute path of the group directory.
-        _group_log {string} -- Absolute path of the group log file.
+        _clear {boolean} -- Value of the argument clear from the CLI.
+        _directory {string} -- Absolute path of the group directory.
+        _log {string} -- Absolute path of the group log file.
 
     Methods:
-        __init(): Initializes the class with all the attributes.
-        _create_group_dir(): Runs a mkdir command to create the group directory.
-        _group_logs_and_folders(): Moves the working directories to the group as well as performs log aggregation.
+        __init(clear) -- Initializes the class with all the attributes.
+        _aggregate_logs() -- Performs log aggregation.
         run(): General run method for the Grouping module.
     """
 
-    def __init__(self, working_directories, root_working_dir, tag, time_stamp):
+    def __init__(self, clear):
         """Initializes the class with all the attributes.
         """
-        self._working_directories = working_directories
-        self._group_directory = os.path.join(root_working_dir,
-                                             'group' + tag + time_stamp)
-        self._group_log = os.path.join(self._group_directory, 'group.log')
+        self._clear = clear
 
-    def _create_group_directory(self):
-        """Runs a mkdir command to create the group directory.
+        self._directory = Context().exec_working_dir
+        self._log = os.path.join(self._directory, 'group.log')
 
-        Returns:
-            integer -- Return code of the method.
+    def _aggregate_logs(self):
+        """Performs log aggregation.
+
+        Arguments:
+            working_dir {string} -- Absolute path of the current working directory.
         """
-        # Check if the group folder already exist
-        Log().logger.debug(LogMessage.CREATE_GROUP_DIRECTORY.value %
-                           self._group_directory)
-        rc = FileHandler().create_directory(self._group_directory, 'group')
+        working_dirs = [
+            d.path for d in os.scandir(self._directory) if d.is_dir()
+        ]
 
-        return rc
+        with open(self._log, 'w') as group_log:
 
-    def _group_logs_and_directories(self):
-        """Moves the working directories to the group as well as performs log aggregation.
+            for working_dir in working_dirs:
+                files = os.listdir(working_dir)
 
-        Returns:
-            integer -- Return code of the method.
-        """
-        with open(self._group_log, 'w') as group_log:
-
-            for directory_path in self._working_directories:
-                file_list = os.listdir(directory_path)
-
-                for file_name in file_list:
+                for file_name in files:
                     if file_name == 'oftools_compile.log':
                         # Retrieve absolute path of the current log file
-                        file_path = os.path.join(directory_path, file_name)
+                        file_path = os.path.join(working_dir, file_name)
+
                         with open(file_path, 'r') as oftools_compile_log:
                             # Read the log file and write to group log file
                             Log().logger.debug(
-                                LogMessage.AGGREGATE_LOG_FILE.value)
+                                LogMessage.AGGREGATE_LOG_FILE.value % file_path)
+
                             group_log.write(oftools_compile_log.read())
                             group_log.write('\n\n')
-
-                # Move all compilation folders one by one
-                Log().logger.debug(LogMessage.MOVE_WORKING_DIRECTORY.value)
-                FileHandler().move_directory(directory_path,
-                                             self._group_directory)
-
-        return 0
 
     def run(self):
         """General run method for the Grouping module.
@@ -90,10 +75,10 @@ class Grouping(object):
         Returns:
             integer -- Return code of the method.
         """
-        rc = self._create_group_directory()
-        if rc != 0:
-            return rc
-
-        self._group_logs_and_directories()
+        if self._clear is True:
+            rc = FileHandler().delete_directory(self._directory)
+        else:
+            self._aggregate_logs()
+            rc = 0
 
         return rc

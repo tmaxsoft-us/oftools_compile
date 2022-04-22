@@ -164,8 +164,21 @@ class Profile(object):
                     if FileHandler().is_a_directory(
                             working_directory) and FileHandler(
                             ).check_write_access(working_directory):
+
+                        # Set group directory as working directory for the execution if grouping option used
+                        if Context().grouping:
+                            group_directory = os.path.join(
+                                working_directory,
+                                'group' + Context().tag + Context().time_stamp)
+                            FileHandler().create_directory(
+                                group_directory, 'group')
+                            Context().exec_working_dir = group_directory
+                        else:
+                            Context().exec_working_dir = working_directory
+
                         # Save root working directory path to Context
                         Context().root_workdir = working_directory
+
                         # Create report directory if it does not already exist
                         report_directory = os.path.join(working_directory,
                                                         'report')
@@ -214,8 +227,11 @@ class Profile(object):
                         try:
                             if mandatory_section in self._sections_no_filter.values(
                             ):
-                                Log().logger.info(LogMessage.MANDATORY_ADD.value % mandatory_section)
-                                self._sections_mandatory.append(mandatory_section)
+                                Log().logger.info(
+                                    LogMessage.MANDATORY_ADD.value %
+                                    mandatory_section)
+                                self._sections_mandatory.append(
+                                    mandatory_section)
                             else:
                                 if mandatory_section in self._sections and '?' in mandatory_section:
                                     Log().logger.info(
@@ -322,7 +338,7 @@ class Profile(object):
             status = False
 
         return status
-    
+
     def is_section_complete(self, section, skip=True):
         """Checks if given section is already complete.
 
