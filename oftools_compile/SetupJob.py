@@ -133,7 +133,7 @@ class SetupJob(Job):
 
         while True:
             current_workdir = os.path.join(
-                Context().root_workdir,
+                Context().exec_working_dir,
                 self._file_name_in + Context().tag + Context().time_stamp)
 
             rc = FileHandler().create_directory(current_workdir)

@@ -15,7 +15,6 @@ import time
 
 # Owned modules
 from . import __version__
-from .Clear import Clear
 from .Context import Context
 from .enums.ErrorEnum import ErrorMessage
 from .enums.LogEnum import LogMessage
@@ -207,7 +206,7 @@ class Main(object):
         raise KeyboardInterrupt()
 
     @staticmethod
-    def _create_jobs(profile):
+    def _create_jobs(profile, clear):
         """Creates job depending on the section of the profile.
 
         Running the method 'sections' on the profile which is a ConfigParser object allow us to create 
@@ -216,6 +215,7 @@ class Main(object):
 
         Args:
             profile {ConfigParser} -- Compilation profile specified for the current source.
+            clear {boolean} -- Value of the argument clear from the CLI.
 
         Returns:
             list[Job] -- list of Job objects.
@@ -226,25 +226,32 @@ class Main(object):
         jobs = []
         job_factory = JobFactory(profile)
 
-        for section_name in profile.sections:
-            try:
+        try:
+            for section_name in profile.sections:
                 job = job_factory.create(section_name)
                 jobs.append(job)
-            except:
-                traceback.print_exc()
-                Log().logger.critical(ErrorMessage.JOB.value)
-                Log().logger.critical(ErrorMessage.ABORT.value)
-                sys.exit(-1)
+
+            if clear is True:
+                job = job_factory.create('clear')
+                jobs.append(job)
+        except:
+            traceback.print_exc()
+            Log().logger.critical(ErrorMessage.JOB.value)
+            Log().logger.critical(ErrorMessage.ABORT.value)
+            sys.exit(-1)
 
         return jobs
 
     @staticmethod
-    def _end_processing(mode,
-                        rc,
-                        report=None,
-                        file_path=None,
-                        elapsed_time=None,
-                        profile=None):
+    def _end_processing(
+        mode,
+        rc,
+        clear=None,
+        report=None,
+        file_path=None,
+        elapsed_time=None,
+        profile=None,
+    ):
         """Common method to end file processing or entire program.
 
         Modes:
@@ -256,6 +263,7 @@ class Main(object):
         Arguments:
             mode {integer} -- Ending mode for the program.
             rc {integer} -- Return code of the file processing.
+            clear {boolean} -- Value of the argument clear from the CLI.
             report {Report}
             file_path {string} -- Absolute path to the source file.
             elapsed_time {integer} -- Elapsed processing time.
@@ -272,8 +280,9 @@ class Main(object):
             Log().logger.critical(ErrorMessage.KEYBOARD_INTERRUPT.value)
 
         if mode in (0, 1):
-            Log().logger.info(LogMessage.WORKING_DIRECTORY.value %
-                              Context().current_workdir)
+            if clear is not True:
+                Log().logger.info(LogMessage.WORKING_DIRECTORY.value %
+                                  Context().current_workdir)
             report.add_entry(file_path, rc, elapsed_time)
             Context().clear(profile)
             Log().close_file()
@@ -305,10 +314,11 @@ class Main(object):
         Log().logger.debug(' '.join((arg for arg in sys.argv)))
 
         # Initialize variables for program execution
+        Context().grouping = args.grouping
         Context().skip = args.skip
         Context().tag = args.tag
+        report = Report(args.clear)
         profile_dict = {}
-        report = Report()
 
         try:
             for i in range(len(args.source_list)):
@@ -330,7 +340,7 @@ class Main(object):
                 source = Source(args.source_list[i])
 
                 # Create jobs
-                jobs = self._create_jobs(profile)
+                jobs = self._create_jobs(profile, args.clear)
 
                 for file_path in source.file_paths:
                     try:
@@ -352,34 +362,27 @@ class Main(object):
 
                         # Report related tasks
                         elapsed_time = time.time() - start_time
-                        self._end_processing(0, rc, report, file_path,
-                                             elapsed_time, profile)
+                        self._end_processing(0, rc, args.clear, report,
+                                             file_path, elapsed_time, profile)
 
                     except KeyboardInterrupt:
                         rc = -2
-                        self._end_processing(1, rc, report, file_path, 0,
-                                             profile)
+                        self._end_processing(1, rc, args.clear, report,
+                                             file_path, 0, profile)
                         if INTERRUPT is True:
                             raise KeyboardInterrupt()
 
             if len(source.file_paths) != 0:
-                report.summary(args.clear)
+                report.summary()
 
-                # Handle clear option
-                if args.clear is True:
-                    clear = Clear()
-                    clear.run()
-                elif args.grouping is True:
-                    grouping = Grouping(Context().working_dirs,
-                                        Context().root_workdir,
-                                        Context().tag,
-                                        Context().time_stamp)
+                if args.grouping is True:
+                    grouping = Grouping(args.clear)
                     grouping.run()
 
             self._end_processing(2, rc)
 
         except KeyboardInterrupt:
             rc = -3
-            self._end_processing(3, rc, report, file_path, 0, profile)
+            self._end_processing(3, rc)
 
         return rc

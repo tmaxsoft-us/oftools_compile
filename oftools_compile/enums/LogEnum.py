@@ -24,10 +24,6 @@ class LogMessage(enum.Enum):
     RUN_COMMAND = '[%s] %s'
     START_SECTION = '[%s] Start section: Input filename: %s'
 
-    # Clear module
-    CLEAR_REPORT_FILE = '(CLEAR) Remove report file: %s'
-    CLEAR_WORKING_DIRECTORY = '(CLEAR) Remove working directories one by one'
-
     # CompileJob module
     SETUP_NOT_COMPLETE = '[%s] Abort compile job execution: setup section not complete'
 
@@ -52,9 +48,7 @@ class LogMessage(enum.Enum):
     START_TDL = '[%s] Process TDL option'
 
     # Grouping module
-    AGGREGATE_LOG_FILE = '(GROUPING) Aggregate oftools_compile.log to group.log'
-    CREATE_GROUP_DIRECTORY = '(GROUPING) Create group directory: %s'
-    MOVE_WORKING_DIRECTORY = '(GROUPING) Move working directory %s to group directory %s'
+    AGGREGATE_LOG_FILE = '(GROUPING) Aggregate %s to group.log'
 
     # Main module
     ABORT_FILE = 'Aborting source file processing: %s'
