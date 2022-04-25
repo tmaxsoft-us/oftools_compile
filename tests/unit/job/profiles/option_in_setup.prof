@@ -1,0 +1,10 @@
+[setup]
+workdir = /opt/tmaxapp/compile
+$ENV_VARIABLE = 'Hello World!'
+
+[ofcbpp]
+$OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
+args = -i $OF_COMPILE_IN -o $OF_COMPILE_OUT
+
+[ofcob]
+args = $OF_COMPILE_IN -o $OF_COMPILE_OUT --enable-debug

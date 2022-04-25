@@ -386,8 +386,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.critical(ErrorMessage.OS_DIRECTORY_CREATION.value %
                                   error)
             sys.exit(-1)
-        else:
-            return rc
+
+        return rc
 
     @staticmethod
     def move_directory(src, dst):

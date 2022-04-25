@@ -78,4 +78,4 @@ class TestProcessSection(object):
         sys.argv.extend(['--profile', init_pwd + 'profiles/abort_section.prof'])
         sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
 
-        assert Main().run() == 1
+        assert Main().run() == 255

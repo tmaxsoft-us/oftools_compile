@@ -22,6 +22,7 @@ class TestProcessRegion(object):
         shared
     
     Tests:
+        test_empty
         test_invalid_list
         test_multiple
         test_not_exist
@@ -43,6 +44,19 @@ class TestProcessRegion(object):
         """
         pwd = os.getcwd() + '/tests/shared/'
         return pwd
+    
+    @staticmethod
+    def test_empty(init_pwd, shared):
+        """Test with the region option empty.
+        """
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('--clear')
+        sys.argv.extend(['--log-level', 'DEBUG'])
+        sys.argv.extend(
+            ['--profile', init_pwd + 'profiles/region_empty.prof'])
+        sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
+
+        assert Main().run() == 0
 
     @staticmethod
     @pytest.mark.skip(reason='Test not currently supported')

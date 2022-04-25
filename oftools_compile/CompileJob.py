@@ -56,11 +56,6 @@ class CompileJob(Job):
         else:
             rc = 1
 
-        if self._profile.is_section_complete('setup', skip=False) == False:
-            rc = -1
-            Log().logger.error(LogMessage.SETUP_NOT_COMPLETE.value %
-                               self._section_name)
-
         return rc
 
     def _process_section(self):
@@ -94,12 +89,12 @@ class CompileJob(Job):
                 rc = self._compile(value)
                 status = 'done'
 
-            if rc != 0:
+            if rc not in (0,1):
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
                                    (self._section_name, key))
                 break
 
-        if rc == 0:
+        if rc in (0,1):
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
             self._profile.section_completed(self._section_no_filter)
@@ -137,14 +132,11 @@ class CompileJob(Job):
 
         rc = self._analyze()
         if rc != 0:
-            if rc > 0:
-                rc = 0
             self._file_name_out = file_path_in
             return rc
 
         rc = self._process_section()
-        if rc != 0:
+        if rc not in (0,1):
             self._file_name_out = file_path_in
-            return rc
 
         return rc

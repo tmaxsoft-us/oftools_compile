@@ -125,13 +125,10 @@ class Report(object):
             Context().report_file_path = path
 
         # Get input source file name
-        try:
-            source_file_name = source_file_path.rsplit('/', 1)[1]
-        except IndexError:
-            source_file_name = source_file_path
+        source_file_name = source_file_path.rsplit('/', 1)[1]
 
         # Analyze input parameter: rc
-        if rc == 0:
+        if rc in (0,1):
             self._success_count += 1
             processing_status = 'SUCCESSFUL'
             color = self._green

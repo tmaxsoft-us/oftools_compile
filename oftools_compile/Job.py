@@ -114,7 +114,6 @@ class Job(object):
         Raises:
             Warning -- Exception raised if the input option (key and value pair) is not supported.
         """
-        #TODO Update the return code logic of this method
         try:
             if key.startswith('$'):
                 Context().add_env_variable(key, value)
@@ -122,12 +121,15 @@ class Job(object):
                     self._file_name_in = Context().env['OF_COMPILE_IN']
                 elif key == '$OF_COMPILE_OUT':
                     self._file_name_out = Context().env['OF_COMPILE_OUT']
+                rc = 0
             elif key.startswith('?'):
                 Context().add_filter(key, value)
+                rc = 0
             else:
                 raise Warning()
         except Warning:
             Log().logger.warning(ErrorMessage.OPTION_NOT_SUPPORTED.value %
                                  (self._section_name, key))
+            rc = 1
 
-        return 0
+        return rc

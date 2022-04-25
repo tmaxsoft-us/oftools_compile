@@ -77,45 +77,33 @@ class SetupJob(Job):
             integer -- Return code of the method.
         """
         rc = 0
-        backup_run = False
         Log().logger.debug(LogMessage.START_SECTION.value %
                            (self._section_name, self._file_path_in))
 
         for key, value in self._profile.data[self._section_name].items():
             if key == 'workdir':
-                rc = self._init_current_workdir()
-                if rc != 0:
-                    Log().logger.error(LogMessage.ABORT_SECTION.value %
-                                       (self._section_name, key))
-                    break
+                self._init_current_workdir()
                 rc = self._init_file()
                 self._init_log_file()
             elif key == 'mandatory':
                 continue
+            elif key == 'housekeeping':
+                rc = self._process_housekeeping(value)
             elif key == 'backup':
-                if self._profile.data.has_option(
-                        'setup',
-                        'housekeeping') is False and backup_run is False:
+                if self._profile.data.has_option('setup',
+                                                 'housekeeping') is False:
                     rc = self._process_backup(value)
                 else:
                     continue
-            elif key == 'housekeeping':
-                rc = self._process_housekeeping(value)
-                if rc == 0:
-                    backup_value = self._profile.data.get('setup', 'backup')
-                    rc = self._process_backup(backup_value)
-                    backup_run = True
-                elif rc == 1:
-                    rc = 0
             else:
                 rc = self._process_option(key, value)
 
-            if rc != 0:
+            if rc < 0:
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
                                    (self._section_name, key))
                 break
 
-        if rc == 0:
+        if rc in (0,1):
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
             self._profile.section_completed(self._section_no_filter)
@@ -124,9 +112,6 @@ class SetupJob(Job):
 
     def _init_current_workdir(self):
         """Initializes the working directory for the file being currently processed.
-
-        Returns:
-            integer -- Return code of the method.
         """
         Log().logger.debug(LogMessage.START_WORKING_DIRECTORY.value %
                            self._section_name)
@@ -137,7 +122,7 @@ class SetupJob(Job):
                 self._file_name_in + Context().tag + Context().time_stamp)
 
             rc = FileHandler().create_directory(current_workdir)
-            if rc != 0:
+            if rc == 1:
                 Log().logger.debug(LogMessage.ADD_TIME_TO_TIME_STAMP.value %
                                    (self._section_name, current_workdir))
                 Context().time_stamp = 1
@@ -149,8 +134,6 @@ class SetupJob(Job):
 
         Log().logger.debug(LogMessage.END_WORKING_DIRECTORY.value %
                            self._section_name)
-
-        return rc
 
     def _init_file(self):
         """Copies the file to the current working directory.
@@ -211,9 +194,7 @@ class SetupJob(Job):
             if value != '':
                 value = int(value)
                 backup_paths = FileHandler().get_duplicates(
-                    Context().root_workdir,
-                    self._file_name_in,
-                )[0]
+                    Context().root_workdir, self._file_name_in)
 
                 if len(backup_paths) > value:
                     creation_times = FileHandler().get_modified_times(
@@ -235,12 +216,11 @@ class SetupJob(Job):
 
                 Log().logger.debug(LogMessage.END_CLEANING.value %
                                    (self._section_name, 'backup'))
+                rc = 0
             else:
-                Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
                                      ('setup', 'backup'))
-                Log().logger.info(ErrorMessage.VALUE_SKIP.value % 'backup')
-
-            rc = 0
+                rc = 1
         except ValueError:
             Log().logger.error(ErrorMessage.VALUE_BACKUP.value % value)
             rc = -1
@@ -271,7 +251,7 @@ class SetupJob(Job):
                         threshold = datetime.datetime.today(
                         ) - datetime.timedelta(days=int(days))
                         backup_paths = FileHandler().get_duplicates(
-                            Context().root_workdir, self._file_name_in)[0]
+                            Context().root_workdir, self._file_name_in)
                         backup_value = int(
                             self._profile.data.get('setup', 'backup'))
 
@@ -314,17 +294,14 @@ class SetupJob(Job):
                     else:
                         raise ValueError()
                 else:
-                    Log().logger.warning(LogMessage.MISSING_BACKUP.value %
-                                         self._section_name)
-                    Log().logger.debug(LogMessage.ABORT_HOUSEKEEPING.value %
-                                       self._section_name)
-                    rc = 1
+                    raise SystemError()
             else:
-                Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
                                      ('setup', 'housekeeping'))
-                Log().logger.info(ErrorMessage.VALUE_SKIP.value %
-                                  'housekeeping')
-                rc = 0
+                rc = 1
+        except SystemError:
+            Log().logger.error(ErrorMessage.MISSING_BACKUP.value)
+            rc = -1
         except ValueError:
             Log().logger.error(ErrorMessage.VALUE_HOUSEKEEPING.value % value)
             rc = -1
@@ -342,14 +319,11 @@ class SetupJob(Job):
 
         rc = self._analyze()
         if rc != 0:
-            if rc > 0:
-                rc = 0
             self._file_name_out = file_path_in
             return rc
 
         rc = self._process_section()
-        if rc != 0:
+        if rc not in (0,1):
             self._file_name_out = file_path_in
-            return rc
 
         return rc

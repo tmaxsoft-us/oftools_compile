@@ -23,14 +23,10 @@ class LogMessage(enum.Enum):
     RETURN_CODE = 'Return code: %s'
     RUN_COMMAND = '[%s] %s'
     START_SECTION = '[%s] Start section: Input filename: %s'
-
-    # CompileJob module
-    SETUP_NOT_COMPLETE = '[%s] Abort compile job execution: setup section not complete'
+    VALUE_EMPTY = 'Option empty in the %s section: Skipping option: %s'
 
     # Context module
     MANDATORY_ADD = 'Adding section to mandatory sections: %s'
-    SECTION_MANDATORY = '[%s] Execute section: Section is mandatory'
-    SECTION_COMPLETE = '[%s] Skip section: Section has already been processed'
 
     # DeployJob module
     COMPILE_FOUND = '[%s] Evaluate completion status: Compile section found'
@@ -64,6 +60,8 @@ class LogMessage(enum.Enum):
     MANDATORY_FILTER = 'Filter function not allowed in mandatory section: %s'
     MANDATORY_NOT_FOUND = 'Mandatory section not found in profile: %s'
     PROFILE_SECTIONS = 'Profile sections: %s'
+    SECTION_MANDATORY = '[%s] Execute section: Section is mandatory'
+    SECTION_COMPLETE = '[%s] Skip section: Section has already been processed'
 
     # Report module
     BUILD_STATUS = 'BUILD %s (%fs)'
@@ -76,14 +74,12 @@ class LogMessage(enum.Enum):
     TOTAL_TIME = 'TOTAL TIME : %fs'
 
     # SetupJob module
-    ABORT_HOUSEKEEPING = '[%s] Aborting housekeeping execution'
     ADD_TIME_TO_TIME_STAMP = '[%s] Add 1 second to the time stamp: directory already exists: %s'
     CD_COMMAND = '[%s] cd %s'
     END_LOG_FILE = '[%s] End log file initialization'
     END_CLEANING = '[%s] Root working directory now clean: %s'
     END_SETUP_FILE = '[%s] End source file copy'
     END_WORKING_DIRECTORY = '[%s] End working directory creation'
-    MISSING_BACKUP = '[%s] "backup" option required to run housekeeping'
     MKDIR_COMMAND = '[%s] mkdir %s'
     NOT_OLD_ENOUGH = '[%s] No directory found old enough to be deleted: Skipping option: %s'
     START_CLEANING = '[%s] Start cleaning root working directory: %s'
