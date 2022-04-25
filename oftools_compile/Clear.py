@@ -15,51 +15,37 @@ compilation process is running fine.
 
 # Owned modules
 from .Context import Context
-from .enums.LogEnum import LogMessage
 from .handlers.FileHandler import FileHandler
-from .Log import Log
 
 
 class Clear(object):
     """A class used to remove all generated files during compilation.
 
-    Attributes:
-        _working_directory_list {list} -- Absolute path of working directories.
-        _report_file_path {string} -- Absolute path of the report file generated during execution.
-
     Methods:
-        __init__(grouping) -- Initializes the class with all the attributes.
-        _clear_work_directories() -- Removes all the working directories created during the given 
-            execution.
-        _clear_report_file() -- Removes the report file from the report folder.
+        __init__() -- Initializes the class with all the attributes.
         run() -- General run method to execute the clear option.
     """
 
     def __init__(self):
         """Initializes the class with all the attributes.
         """
-        self._working_directories = Context().working_dirs
-        self._report_file_path = Context().report_file_path
+        self._file_name_out = ''
 
-    def _clear_working_directories(self):
-        """Removes all the working directories created during the given execution.
+    @property
+    def file_name_out(self):
+        """Getter method for the attribute _file_name_out.
         """
-        Log().logger.debug(LogMessage.CLEAR_WORKING_DIRECTORY.value)
+        return self._file_name_out
 
-        for directory in self._working_directories:
-            FileHandler().delete_directory(directory)
-
-    def _clear_report_file(self):
-        """Removes the report file from the report folder.
-        """
-        Log().logger.debug(LogMessage.CLEAR_REPORT_FILE.value %
-                           self._report_file_path)
-        FileHandler().delete_file(self._report_file_path)
-
-    def run(self):
+    def run(self, file_name_in):
         """General run method to execute the clear option.
-        """
-        self._clear_working_directories()
-        self._clear_report_file()
 
-        return 0
+        Removes the current working directory created during the given execution.
+
+        Returns:
+            integer -- Return code of the method.
+        """
+        self._file_name_out = file_name_in
+        rc = FileHandler().delete_directory(Context().current_workdir)
+
+        return rc

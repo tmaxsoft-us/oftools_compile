@@ -11,8 +11,9 @@ Typical usage example:
 # Third-party modules
 
 # Owned modules
-from .DeployJob import DeployJob
+from .Clear import Clear
 from .CompileJob import CompileJob
+from .DeployJob import DeployJob
 from .SetupJob import SetupJob
 
 
@@ -24,7 +25,7 @@ class JobFactory(object):
 
     Methods:
         __init__(profile) -- Initializes the class with the _profile attribute.
-        create(section_name) -- Creates the job according to the input parameter.
+        create(job_name) -- Creates the job according to the input parameter.
     """
 
     def __init__(self, profile):
@@ -32,18 +33,20 @@ class JobFactory(object):
         """
         self._profile = profile
 
-    def create(self, section_name):
+    def create(self, job_name):
         """Creates the job according to the input parameter.
 
         Arguments:
-            section_name {string} -- Name of the section in the profile.
+            job_name {string} -- Name of the section in the profile or name of the command line option used (grouping and clear).
 
         Returns:
             Job object -- Appropriate Job object depending on the input.
         """
-        if section_name.startswith('setup'):
-            return SetupJob(self._profile, section_name)
-        elif section_name.startswith('deploy'):
-            return DeployJob(self._profile, section_name)
+        if job_name.startswith('setup'):
+            return SetupJob(self._profile, job_name)
+        elif job_name.startswith('deploy'):
+            return DeployJob(self._profile, job_name)
+        elif job_name == 'clear':
+            return Clear()
         else:
-            return CompileJob(self._profile, section_name)
+            return CompileJob(self._profile, job_name)

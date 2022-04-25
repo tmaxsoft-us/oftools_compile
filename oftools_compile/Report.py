@@ -65,19 +65,27 @@ class Report(object):
     """A class used to create a report of the compilation.
 
     Attributes:
+        _clear {boolean} -- Value of the argument clear from the CLI.
         _success_count {integer} -- Number of successes.
         _fail_count {integer} -- Number of fails.
+        _total_count {integer} -- Number of programs processed.
         _total_time {integer} -- Accumulated elapsed time.
+        
+        _green {string} -- Green color for log messages.
+        _red {string} -- Red color for log messages.
+        _white {string} -- White color for log messages.
 
     Methods:
-        __init__() -- Initializes the class with all the attributes.
+        __init__(clear) -- Initializes the class with all the attributes.
         add_entry(source_file_path, rc, elapsed_time) -- Adds a new record to the report of the compilation.
-        summary(clear) -- Generates a quick summary of the compilation.
+        summary() -- Generates a quick summary of the compilation.
     """
 
-    def __init__(self):
+    def __init__(self, clear):
         """Initializes the class with all the attributes.
         """
+        self._clear = clear
+
         self._success_count = 0
         self._fail_count = 0
         self._total_count = 0
@@ -103,7 +111,7 @@ class Report(object):
             IndexError -- Exception raised if there is no '/' symbol in the filename, which means the file 
                 name only has been provided and not the absolute file path.
         """
-        if Context().report_file_path == '':
+        if Context().report_file_path == '' and self._clear is False:
             report_file_name = 'report/oftools_compile' + Context(
             ).tag + Context().time_stamp + '.csv'
             path = os.path.join(Context().root_workdir, report_file_name)
@@ -138,23 +146,22 @@ class Report(object):
         print('')
 
         self._total_count = self._success_count + self._fail_count
-        record = Record(self._total_count, source_file_name,
-                        Context().current_workdir, processing_status, rc,
-                        Context().last_section, elapsed_time)
-        row = record.to_csv()
-        FileHandler().write_file(Context().report_file_path, row, mode='a')
+
+        if self._clear is False:
+            record = Record(self._total_count, source_file_name,
+                            Context().current_workdir, processing_status, rc,
+                            Context().last_section, elapsed_time)
+            row = record.to_csv()
+            FileHandler().write_file(Context().report_file_path, row, mode='a')
 
         # Analyze input parameter: elapsed_time, cumulate compilation times
         self._total_time += elapsed_time
 
-    def summary(self, clear=False):
+    def summary(self):
         """Generates a quick summary of the compilation.
 
         If the user enables the clear option, the program deletes the report file and that's why the 
         log message is being skipped.
-
-        Arguments:
-            clear {boolean} -- Value of the argument clear from the CLI.
         """
 
         Log().logger.info(LogMessage.REPORT_SUMMARY.value)
@@ -169,6 +176,6 @@ class Report(object):
                           round(self._total_time, 4))
 
         # Inform the user that the report has been successfully generated
-        if clear is False:
+        if self._clear is False:
             Log().logger.info(LogMessage.REPORT_GENERATED.value %
                               Context().report_file_path)
