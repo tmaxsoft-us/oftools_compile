@@ -122,7 +122,8 @@ class TestProcessHousekeeping(object):
         ])
         sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
 
-        assert Main().run() == 0
+        # ValueError
+        assert Main().run() == -1
 
     @staticmethod
     def test_empty(init_pwd, shared):
@@ -138,7 +139,6 @@ class TestProcessHousekeeping(object):
         assert Main().run() == 0
 
     @staticmethod
-    @pytest.mark.xfail
     def test_value_error(init_pwd, shared):
         """Test with the housekeeping value in the profile being a string and not an int, raising the ValueError exception.
         """
@@ -149,5 +149,4 @@ class TestProcessHousekeeping(object):
             ['--profile', init_pwd + 'profiles/housekeeping_value_error.prof'])
         sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
 
-        with pytest.raises(ValueError):
-            Main().run()
+        assert Main().run() == -1

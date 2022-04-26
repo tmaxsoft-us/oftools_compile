@@ -75,17 +75,17 @@ reinstall_user_diff:
 #================================================================#
 #                   TESTING                                      #
 #================================================================#
-func_test:
+test_func:
 	pytest --color=yes --durations=5 -v -c tests/pytest.ini tests/functional/
 
-unit_test:
+test_unit:
 	pytest --color=yes --durations=5 -v -c tests/pytest.ini tests/unit/
 # Optional arguments:
 # --maxfail = <num> : Stop test suite after n test failures
 
 coverage:
 	coverage run --source=oftools_compile -m pytest --color=yes -v -s
-	coverage report
+	coverage report --show-missing
 
 #================================================================#
 #                   PyPI UPLOADING                               #

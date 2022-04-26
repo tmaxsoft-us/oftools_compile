@@ -3,4 +3,4 @@ workdir = /opt/tmaxapp/compile
 
 [ofcbpp]
 $OF_COMPILE_OUT = $OF_COMPILE_BASE.cob
-args = failed
+option = 

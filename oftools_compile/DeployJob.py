@@ -123,12 +123,12 @@ class DeployJob(Job):
             else:
                 rc = self._process_option(key, value)
 
-            if rc != 0:
+            if rc not in (0, 1):
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
                                    (self._section_name, key))
                 break
 
-        if rc == 0:
+        if rc in (0, 1):
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
             self._profile.section_completed(self._section_no_filter)
@@ -157,7 +157,6 @@ class DeployJob(Job):
         if rc == 1:
             Log().logger.warning(LogMessage.FILE_ALREADY_EXISTS.value %
                                  (self._section_name, self._file_name_out))
-            rc = 0
 
         Log().logger.debug(LogMessage.END_DEPLOY_FILE.value %
                            self._section_name)
@@ -189,6 +188,10 @@ class DeployJob(Job):
                     Context().env)
                 if rc != 0:
                     break
+            else:
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
+                                     (self._section_name, 'dataset'))
+                rc = 1
 
         Log().logger.debug(LogMessage.END_DATASET.value % self._section_name)
 
@@ -225,6 +228,10 @@ class DeployJob(Job):
                     Context().env)
                 if rc != 0:
                     break
+            else:
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
+                                     (self._section_name, 'region'))
+                rc = 1
 
         Log().logger.debug(LogMessage.END_REGION.value % self._section_name)
 
@@ -260,6 +267,10 @@ class DeployJob(Job):
                     Context().env)
                 if rc != 0:
                     break
+            else:
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
+                                     (self._section_name, 'tdl'))
+                rc = 1
 
         Log().logger.debug(LogMessage.END_TDL.value % self._section_name)
 
@@ -276,14 +287,11 @@ class DeployJob(Job):
 
         rc = self._analyze()
         if rc != 0:
-            if rc > 0:
-                rc = 0
             self._file_name_out = file_path_in
             return rc
 
         rc = self._process_section()
-        if rc != 0:
+        if rc not in (0, 1):
             self._file_name_out = file_path_in
-            return rc
 
         return rc

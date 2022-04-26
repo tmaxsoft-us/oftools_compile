@@ -218,42 +218,36 @@ class Profile(object):
         if self._data.has_option('setup', 'mandatory'):
             value = self._data.get('setup', 'mandatory')
 
-            try:
-                if value != '':
-                    # Split the mandatory sections in a list
-                    value = value.split(':')
-                    # Check that the mandatory section actually exist in the profile
-                    for mandatory_section in value:
-                        try:
-                            if mandatory_section in self._sections_no_filter.values(
-                            ):
+            if value != '':
+                # Split the mandatory sections in a list
+                value = value.split(':')
+                # Check that the mandatory section actually exist in the profile
+                for mandatory_section in value:
+                    try:
+                        if mandatory_section in self._sections_no_filter.values(
+                        ):
+                            Log().logger.info(LogMessage.MANDATORY_ADD.value %
+                                              mandatory_section)
+                            self._sections_mandatory.append(mandatory_section)
+                        else:
+                            if mandatory_section in self._sections and '?' in mandatory_section:
                                 Log().logger.info(
-                                    LogMessage.MANDATORY_ADD.value %
-                                    mandatory_section)
-                                self._sections_mandatory.append(
+                                    LogMessage.MANDATORY_FILTER.value %
                                     mandatory_section)
                             else:
-                                if mandatory_section in self._sections and '?' in mandatory_section:
-                                    Log().logger.info(
-                                        LogMessage.MANDATORY_FILTER.value %
-                                        mandatory_section)
-                                else:
-                                    Log().logger.info(
-                                        LogMessage.MANDATORY_NOT_FOUND.value %
-                                        mandatory_section)
-                                raise Warning()
-                        except Warning:
-                            Log().logger.warning(
-                                ErrorMessage.WARNING_MANDATORY.value %
-                                mandatory_section)
-                    Log().logger.debug(LogMessage.MANDATORY_SECTIONS.value %
-                                       self._sections_mandatory)
-                else:
-                    raise ValueError()
-            except ValueError:
-                Log().logger.warning(ErrorMessage.VALUE_EMPTY.value %
+                                Log().logger.info(
+                                    LogMessage.MANDATORY_NOT_FOUND.value %
+                                    mandatory_section)
+                            raise Warning()
+                    except Warning:
+                        Log().logger.warning(
+                            ErrorMessage.WARNING_MANDATORY.value %
+                            mandatory_section)
+                Log().logger.debug(LogMessage.MANDATORY_SECTIONS.value %
+                                   self._sections_mandatory)
+            else:
+                Log().logger.warning(LogMessage.VALUE_EMPTY.value %
                                      ('setup', 'mandatory'))
-                Log().logger.info(ErrorMessage.VALUE_SKIP.value % 'mandatory')
 
     def _analyze_compile(self, section):
         """Analyzes any compile section of the profile.

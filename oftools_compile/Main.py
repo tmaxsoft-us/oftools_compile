@@ -41,7 +41,7 @@ class Main(object):
     Methods:
         _parse_args() -- Parses command-line options.
         _create_jobs(profile) -- Creates job depending on the section of the profile.
-        _end_processing(mode, rc, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program
+        _end_processing(mode, rc, clear, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program.
         run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
     """
 
@@ -354,7 +354,7 @@ class Main(object):
                             # is just the name of the file
                             file_name_in = file_name_out
                             rc = job.run(file_name_in)
-                            if rc != 0:
+                            if rc not in (0, 1):
                                 Log().logger.error(LogMessage.ABORT_FILE.value %
                                                    file_name_in)
                                 break

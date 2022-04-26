@@ -386,8 +386,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.critical(ErrorMessage.OS_DIRECTORY_CREATION.value %
                                   error)
             sys.exit(-1)
-        else:
-            return rc
+
+        return rc
 
     @staticmethod
     def move_directory(src, dst):
@@ -617,20 +617,22 @@ class FileHandler(object, metaclass=SingletonMeta):
             OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
         """
         duplicate_directories = []
-        duplicate_files = []
+        # duplicate_files = []
 
         try:
             path_expand = os.path.expandvars(path)
 
             if os.path.exists(path_expand):
                 if os.path.isdir(path_expand):
-                    for element in os.scandir(path_expand):
-                        if element.is_dir(follow_symlinks=True
-                                         ) and pattern in element.name:
-                            duplicate_directories.append(element.path)
-                        elif element.is_file(follow_symlinks=True
-                                            ) and pattern in element.name:
-                            duplicate_files.append(element.path)
+                    for root, dir_names, _ in os.walk(path_expand):
+                        for dir_name in dir_names:
+                            if pattern in dir_name:
+                                duplicate = os.path.join(root, dir_name)
+                                duplicate_directories.append(duplicate)
+                        # for file_name in file_names:
+                        #     if pattern in file_name:
+                        #         duplicate = os.path.join(root, file_name)
+                        #         duplicate_files.append(duplicate)
                 else:
                     raise NotADirectoryError()
             else:
@@ -649,7 +651,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.error(ErrorMessage.OS_DUPLICATE.value % error)
             sys.exit(-1)
         else:
-            return duplicate_directories, duplicate_files
+            return duplicate_directories
 
     @staticmethod
     def get_modified_times(path):
