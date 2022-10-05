@@ -27,20 +27,28 @@ class DeployJob(Job):
         Inherited from Job module.
 
     Methods:
-        _analyze(): Analyzes prerequisites before running the job for the section.
-        _process_section(): Read the section line by line to execute the corresponding methods.
-        _process_file(option): Creates a new copy of the file based on the option value.
-        _process_dataset(option): Runs the dlupdate command to deploy the compiled object.
-        _process_region(option): Runs the osctdlupdate command to deploy the compiled object.
-        _process_tdl(option): Runs the tdlupdate command to deploy the compiled object.
-        run(file_path_in): Performs all the steps for the deploy section of the profile.
+        _analyze(): Analyzes prerequisites before running the job for the
+            section.
+        _process_section(): Read the section line by line to execute the
+            corresponding methods.
+        _process_file(option): Creates a new copy of the file based on the
+            option value.
+        _process_dataset(option): Runs the dlupdate command to deploy the
+            compiled object.
+        _process_region(option): Runs the osctdlupdate command to deploy the
+            compiled object.
+        _process_tdl(option): Runs the tdlupdate command to deploy the compiled
+            object.
+        run(file_path_in): Performs all the steps for the deploy section of the
+            profile.
     """
 
     def _analyze(self):
         """Analyzes prerequisites before running the job for the section.
 
         It evaluates all the following elements:
-            - is the section already complete, based on the name without the filter function
+            - is the section already complete, based on the name without the
+                filter function
             - is the section mandatory, list of sections in the setup section
             - is the filter of the section True or False, if there is one
             - is any of the compile section complete
@@ -92,9 +100,9 @@ class DeployJob(Job):
     def _process_section(self):
         """Read the section line by line to execute the corresponding methods.
 
-        For the deploy section, it analyzes either file, dataset, region or tdl options to find 
-        where to deploy the compiled program. And as any other section, it looks for environment and
-        filter variables.
+        For the deploy section, it analyzes either file, dataset, region or tdl
+        options to find where to deploy the compiled program. And as any other
+        section, it looks for environment and filter variables.
 
         Returns:
             integer - Return code of the method.

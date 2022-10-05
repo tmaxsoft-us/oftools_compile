@@ -18,6 +18,12 @@ import sys
 
 
 class SingletonType(type):
+    """This pattern restricts the instantiation of a class to one object.
+
+    It is a type of creational pattern and involves only one class to create
+    methods and specified objects. It provides a global point of access to the
+    instance created.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -27,26 +33,34 @@ class SingletonType(type):
         return cls._instances[cls]
 
 
-class Log(object, metaclass=SingletonType):
+class Log(metaclass=SingletonType):
     """A class used to log all the events of the program execution.
 
     Attributes:
-        _level_dict {dictionary} -- associate a string and its corresponding log level from logging 
-            module.
+        _level_dict {dictionary} -- associate a string and its corresponding
+            log level from logging module.
         _logger {getLogger}
         _formatter {Formatter} -- object used to properly format log messages.
-        _formatter {Formatter} -- custom object used to add color to log messages.
-        _file_handler {FileHandler} -- used to be able to write log messages to the current log file.
-        _stream_handler_out {StreamHandler} -- object used to write log messages to stdout.
-        _stream_handler_err {StreamHandler} -- object used to write log messages to stderr.
+        _formatter {Formatter} -- custom object used to add color to log
+            messages.
+        _file_handler {FileHandler} -- used to be able to write log messages to
+            the current log file.
+        _stream_handler_out {StreamHandler} -- object used to write log
+            messages to stdout.
+        _stream_handler_err {StreamHandler} -- object used to write log
+            messages to stderr.
 
     Methods:
         __init__() -- Initializes the class with all the attributes.
         set_level(level) -- Changes log level based on user input.
-        open_stream() -- Opens the stream handler to write log messages to stdout.
-        close_stream() -- Closes the stream handler at the end of the program execution.
-        open_file(path_to_file) -- Opens the file handler to write log messages to the log file.
-        close_file() -- Closes the file handler at the end of each file processing.
+        open_stream() -- Opens the stream handler to write log messages to
+            stdout.
+        close_stream() -- Closes the stream handler at the end of the program
+            execution.
+        open_file(path_to_file) -- Opens the file handler to write log messages
+            to the log file.
+        close_file() -- Closes the file handler at the end of each file
+            processing.
     """
 
     def __init__(self):
@@ -151,7 +165,7 @@ class Log(object, metaclass=SingletonType):
 
 
 class CustomFormatter(logging.Formatter):
-    """A class used to override the default logging.Formatter and set colors 
+    """A class used to override the default logging.Formatter and set colors
     for log messages.
     """
 
@@ -185,8 +199,10 @@ class CustomFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
+
 class LogFilter(logging.Filter):
-    """A class used to send all log messages below ERROR level (not included) to stdout.
+    """A class used to send all log messages below ERROR level (not included)
+    to stdout.
     """
 
     def filter(self, record):

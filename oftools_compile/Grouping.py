@@ -18,9 +18,9 @@ from .handlers.FileHandler import FileHandler
 from .Log import Log
 
 
-class Grouping(object):
-    """A class used to group all working directory in on group directory, as well as aggregating all 
-    compilation logs in one group log.
+class Grouping():
+    """A class used to group all working directory in on group directory, as
+    well as aggregating all compilation logs in one group log.
 
     Attributes:
         _clear {boolean} -- Value of the argument clear from the CLI.
@@ -45,7 +45,8 @@ class Grouping(object):
         """Performs log aggregation.
 
         Arguments:
-            working_dir {string} -- Absolute path of the current working directory.
+            working_dir {string} -- Absolute path of the current working
+                directory.
         """
         working_dirs = [
             d.path for d in os.scandir(self._directory) if d.is_dir()

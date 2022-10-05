@@ -18,25 +18,34 @@ from .enums.ErrorEnum import ErrorMessage
 from .Log import Log
 
 
-class Job(object):
-    """A class used to store common values and execute common methods to all type of jobs.
+class Job():
+    """A class used to store common values and execute common methods to all
+    type of jobs.
 
     Attributes:
         _section_name {string} -- Name of the section in the profile.
         _profile {dictionary} -- From the Profile module, the data attribute.
-        _section_name_no_filter {string} -- Name of the section without the filter if there is one.
-        _filter {string} -- Name of the filter extracted from the name of the section if there is one.
-        _filter_function {string} -- Corresponding function to the filter, empty if there is no filter for the section.
-        _file_path_in {string} -- Absolute path of the input file, which could also be just the file name, depending on the type of job.
+        _section_name_no_filter {string} -- Name of the section without the
+            filter if there is one.
+        _filter {string} -- Name of the filter extracted from the name of the
+            section if there is one.
+        _filter_function {string} -- Corresponding function to the filter,
+            empty if there is no filter for the section.
+        _file_path_in {string} -- Absolute path of the input file, which could
+            also be just the file name, depending on the type of job.
         _file_name_in {string} -- Job input file name.
         _file_name_out {string} -- Job output file name.
 
     Methods:
-        __init__(profile section_name) -- Initializes the class with all the attributes.
-        _initialize_file_variables(file_path_in) -- Detects if the source provided is a file or a 
-            directory, and properly retrieve the name of the file to initialize class attributes.
-        _update_context() -- Updates Context with name of files being manipulated in this job execution.
-        _process_option(key, value) -- Processes option like environment variable or filter function.
+        __init__(profile section_name) -- Initializes the class with all the
+            attributes.
+        _initialize_file_variables(file_path_in) -- Detects if the source
+            provided is a file or a directory, and properly retrieve the name
+            of the file to initialize class attributes.
+        _update_context() -- Updates Context with name of files being
+            manipulated in this job execution.
+        _process_option(key, value) -- Processes option like environment
+            variable or filter function.
     """
 
     def __init__(self, profile, section_name):
@@ -58,14 +67,16 @@ class Job(object):
         return self._file_name_out
 
     def _initialize_file_variables(self, file_path_in):
-        """Detects if the source provided is a file or a directory, and properly retrieve the name of the file to update class attributes.
+        """Detects if the source provided is a file or a directory, and
+        properly retrieve the name of the file to update class attributes.
 
         Arguments:
             file_path_in {string} -- Path of the input file.
 
         Raises:
-            IndexError -- Exception raised if there is no '/' symbol in the file path, which means only 
-                the file name has been provided and not the absolute file path.
+            IndexError -- Exception raised if there is no '/' symbol in the
+                file path, which means only the file name has been provided and
+                not the absolute file path.
         """
         # Initialize file_path_in
         self._file_path_in = file_path_in
@@ -88,7 +99,8 @@ class Job(object):
             self._file_name_out = '\\' + self._file_name_out
 
     def _update_context(self):
-        """Updates Context with the name of files being manipulated in this job execution.
+        """Updates Context with the name of files being manipulated in this job
+        execution.
         """
         base_file_name = self._file_name_out.rsplit('.', 1)[0]
 
@@ -101,8 +113,9 @@ class Job(object):
     def _process_option(self, key, value):
         """Processes option like an environment variable or a filter function.
 
-        The return code of this method is either 0 or 1, and not negative since it is just a warning 
-        and not an error worth stopping the program execution.
+        The return code of this method is either 0 or 1, and not negative since
+        it is just a warning and not an error worth stopping the program
+        execution.
 
         Arguments:
             key {string} -- Option name.
@@ -112,7 +125,8 @@ class Job(object):
             integer -- Return code of the method.
 
         Raises:
-            Warning -- Exception raised if the input option (key and value pair) is not supported.
+            Warning -- Exception raised if the input option (key and value
+                pair) is not supported.
         """
         try:
             if key.startswith('$'):

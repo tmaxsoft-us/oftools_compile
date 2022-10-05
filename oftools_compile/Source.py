@@ -17,11 +17,13 @@ from .Log import Log
 
 
 class Source(object):
-    """A class used to initialize the source and analyze it, to see if this is a file or a directory.
+    """A class used to initialize the source and analyze it, to see if this is
+    a file or a directory.
 
     Attributes:
         _source_path {string} -- Absolute path of the source.
-        _source_type {string} -- Type of source specified, whether a list, a file, or default.
+        _source_type {string} -- Type of source specified, whether a list, a
+            file, or default.
         _file_paths {list[string]} - List of files found in the source provided.
 
     Methods:
@@ -59,11 +61,15 @@ class Source(object):
     def _analyze(self):
         """Creates the source list based on the input.
 
-        It checks whether source is a file, list of files or a directory and then creates the source list.
+        It checks whether source is a file, list of files or a directory and
+        then creates the source list.
 
         Returns:
             integer -- Return code of the method.
         """
+        rc = 0
+        sources = []
+        
         self._get_source_type()
 
         if self._source_type == 'list' or self._source_type == 'file':
@@ -94,4 +100,3 @@ class Source(object):
                            len(self._file_paths))
 
         return rc
-        

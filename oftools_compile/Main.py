@@ -32,36 +32,45 @@ INTERRUPT = False
 
 
 def main():
+    """Main run method call.
+    """
     return Main().run()
 
 
-class Main(object):
-    """Main class containing the methods for parsing the command arguments and running OpenFrame Tools 
-    Compile.
+class Main():
+    """Main class containing the methods for parsing the command arguments and
+    running OpenFrame Tools Compile.
 
     Methods:
         _parse_args() -- Parses command-line options.
-        _signal_handler(signum, frame) -- Handles signal SIGQUIT for the program execution.
-        _create_jobs(profile) -- Creates job depending on the section of the profile.
-        _end_processing(mode, rc, clear, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program.
-        run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
+        _signal_handler(signum, frame) -- Handles signal SIGQUIT for the
+            program execution.
+        _create_jobs(profile) -- Creates job depending on the section of the
+            profile.
+        _end_processing(mode, rc, clear, report, file_path, elapsed_time,
+            profile) -- Common method to end file processing or entire program.
+        run() -- Performs all the steps to run compilation for all sources
+            using the appropriate profile.
     """
 
     @staticmethod
     def _parse_args():
         """Parses command-line options.
 
-        The program defines what arguments it requires, and argparse will figure out how to parse those 
-        out of sys.argv. The argparse module also automatically generates help, usage messages and 
-        issues errors when users give the program invalid arguments.
+        The program defines what arguments it requires, and argparse will
+        figure out how to parse those out of sys.argv. The argparse module also
+        automatically generates help, usage messages and issues errors when
+        users give the program invalid arguments.
 
         Returns:
-            args {ArgumentParser} -- List of all arguments of the tool with their corresponding value.
+            args {ArgumentParser} -- List of all arguments of the tool with
+                their corresponding value.
 
         Raises:
-            argparse.ArgumentError -- Exception raised if there is an issue parsing the command arguments.
-            SystemError -- Exception raised if the numbers of profile and source are not 
-                matching.           
+            argparse.ArgumentError -- Exception raised if there is an issue
+                parsing the command arguments.
+            SystemError -- Exception raised if the numbers of profile and
+                source are not matching.
         """
         parser = argparse.ArgumentParser(
             add_help=False,
@@ -79,8 +88,8 @@ class Main(object):
             '--profile',
             action='append',
             dest='profile_list',
-            help=
-            'profile name, contains the description of the processing target',
+            help='''profile name, contains the description of the processing
+            target''',
             metavar='FILE',
             required=True,
             type=str)
@@ -90,8 +99,9 @@ class Main(object):
             '--source',
             action='append',
             dest='source_list',
-            help=
-            'source name, currently supported:\n- file or a directory\n- colon-separated list of files of directories\n- text file containing a list of files or directories',
+            help='''source name, currently supported:\n- file or a directory\n-
+            colon-separated list of files of directories\n- text file
+            containing a list of files or directories''',
             metavar='SOURCE',
             required=True,
             type=str)
@@ -110,8 +120,8 @@ class Main(object):
             '--grouping',
             action='store_true',
             dest='grouping',
-            help=
-            'flag used to put the working directories in a single one and aggregate the logs',
+            help='''flag used to put the working directories in a single one
+            and aggregate the logs''',
             required=False)
 
         optional.add_argument(
@@ -121,8 +131,8 @@ class Main(object):
             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
             default='INFO',
             dest='log_level',
-            help=
-            'log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
+            help='''log level, potential values:\n- DEBUG\n- INFO (default)\n-
+            WARNING\n- ERROR\n-CRITICAL''',
             metavar='LEVEL',
             required=False,
             type=str)
@@ -139,8 +149,8 @@ class Main(object):
             '--tag',
             action='store',
             dest='tag',
-            help=
-            'add a tag to the name of the report file and the working directory',
+            help='''add a tag to the name of the report file and the working
+            directory''',
             metavar='TAG',
             required=False,
             type=str)
@@ -180,7 +190,8 @@ class Main(object):
             Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
 
-        # Analyze profiles, making sure a file with .prof extension is specified for each profile
+        # Analyze profiles, making sure a file with .prof extension is
+        # specified for each profile
         for profile in args.profile_list:
             is_valid_ext = FileHandler().check_extension(profile, 'prof')
             if is_valid_ext is False:
@@ -212,19 +223,22 @@ class Main(object):
     def _create_jobs(profile, clear):
         """Creates job depending on the section of the profile.
 
-        Running the method 'sections' on the profile which is a ConfigParser object allow us to create 
-        a list of strings, the name of each section of the profile. And then a call to the method 
-        create of the JobFactory module generate the corresponding job.
+        Running the method 'sections' on the profile which is a ConfigParser
+        object allow us to create a list of strings, the name of each section
+        of the profile. And then a call to the method create of the JobFactory
+        module generate the corresponding job.
 
         Arguments:
-            profile {ConfigParser} -- Compilation profile specified for the current source.
+            profile {ConfigParser} -- Compilation profile specified for the
+                current source.
             clear {boolean} -- Value of the argument clear from the CLI.
 
         Returns:
             list[Job] -- List of Job objects.
 
         Raises:
-            #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
+            #TODO Complete docstrings, maybe change the behavior to print
+            #TODO traceback only with DEBUG as log level
         """
         jobs = []
         job_factory = JobFactory(profile)
@@ -250,7 +264,7 @@ class Main(object):
         mode,
         rc,
         clear=None,
-        report=None,
+        report=Report(False),
         file_path=None,
         elapsed_time=None,
         profile=None,
@@ -267,10 +281,10 @@ class Main(object):
             mode {integer} -- Ending mode for the program.
             rc {integer} -- Return code of the file processing.
             clear {boolean} -- Value of the argument clear from the CLI.
-            report {Report}
+            report {Report} --
             file_path {string} -- Absolute path to the source file.
             elapsed_time {integer} -- Elapsed processing time.
-            profile {Profile}
+            profile {Profile} --
         """
         if mode == 1:
             Log().logger.critical(
@@ -296,13 +310,15 @@ class Main(object):
             Log().close_stream()
 
     def run(self):
-        """Performs all the steps to run compilation for all sources using the appropriate profile.
+        """Performs all the steps to run compilation for all sources using the
+        appropriate profile.
 
         Returns:
             integer -- Return code of the program.
 
         Raises:
-            KeyboardInterrupt -- Exception raised if the user press Ctrl + C or Ctrl + \.
+            KeyboardInterrupt -- Exception raised if the user press Ctrl + C or
+            Ctrl + \.
         """
         rc = 0
         # Normal if there is an error on Windows, SIGQUIT only exist on Unix

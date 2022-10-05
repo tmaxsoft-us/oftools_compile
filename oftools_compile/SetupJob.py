@@ -30,22 +30,29 @@ class SetupJob(Job):
         Inherited from Job module.
 
     Methods:
-        _analyze() -- Analyzes prerequisites before running the job for the section.
-        _process_section() -- Reads the section line by line to execute the corresponding methods.
-        _init_current_workdir() -- Initializes the working directory for the file being currently 
-            processed.
+        _analyze() -- Analyzes prerequisites before running the job for the
+            section.
+        _process_section() -- Reads the section line by line to execute the
+            corresponding methods.
+        _init_current_workdir() -- Initializes the working directory for the
+            file being currently processed.
         _init_file() -- Copies the file to the working directory.
-        _init_log_file() -- Initializes the log file for the file being currently processed.
-        _process_backup(value) -- Cleans the root working directory from old compilation directories based on the number of backups to be kept.
-        _process_housekeeping(value) -- Cleans the root working directory from compilation directories older than the input number of days.
-        run(file_path_in) -- Performs all the steps for the setup section of the profile.
+        _init_log_file() -- Initializes the log file for the file being
+            currently processed.
+        _process_backup(value) -- Cleans the root working directory from old
+            compilation directories based on the number of backups to be kept.
+        _process_housekeeping(value) -- Cleans the root working directory from
+            compilation directories older than the input number of days.
+        run(file_path_in) -- Performs all the steps for the setup section of
+            the profile.
     """
 
     def _analyze(self):
         """Analyzes prerequisites before running the job for the section.
 
         It evaluates the following statements:
-            - is the section already complete, based on the name without the filter function
+            - is the section already complete, based on the name without the
+                filter function
             - is the section mandatory, list of sections in the setup section
             - is the filter of the section True or False, if there is one
 
@@ -70,8 +77,9 @@ class SetupJob(Job):
     def _process_section(self):
         """Reads the section line by line to execute the corresponding methods.
 
-        For the setup section, it mainly analyzes the workdir options, but also processes options such as mandatory, backup and housekeeping. And as any other 
-        section, it looks for environment and filter variables.
+        For the setup section, it mainly analyzes the workdir options, but also
+        processes options such as mandatory, backup and housekeeping. And as
+        any other section, it looks for environment and filter variables.
 
         Returns:
             integer -- Return code of the method.
@@ -111,7 +119,8 @@ class SetupJob(Job):
         return rc
 
     def _init_current_workdir(self):
-        """Initializes the working directory for the file being currently processed.
+        """Initializes the working directory for the file being currently
+        processed.
         """
         Log().logger.debug(LogMessage.START_WORKING_DIRECTORY.value %
                            self._section_name)
@@ -127,7 +136,8 @@ class SetupJob(Job):
                                    (self._section_name, current_workdir))
                 Context().time_stamp = 1
             else:
-                # Update Context and change directory to current working directory
+                # Update Context and change directory to current working
+                # directory
                 Context().current_workdir = current_workdir
                 os.chdir(current_workdir)
                 break
@@ -154,7 +164,8 @@ class SetupJob(Job):
     def _init_log_file(self):
         """Initializes the log file for the file being currently processed.
 
-        It first opens the file, then write the header and the setup section steps to the file.
+        It first opens the file, then write the header and the setup section
+        steps to the file.
         """
         Log().logger.debug(LogMessage.START_LOG_FILE.value % self._section_name)
 
@@ -176,7 +187,8 @@ class SetupJob(Job):
         Log().logger.debug(LogMessage.END_LOG_FILE.value % self._section_name)
 
     def _process_backup(self, value):
-        """Cleans the root working directory from old compilation directories based on the number of backups to be kept.
+        """Cleans the root working directory from old compilation directories
+        based on the number of backups to be kept.
 
         Arguments:
             value {string} -- Value of the backup option, this is an integer.
@@ -185,7 +197,8 @@ class SetupJob(Job):
             integer -- Return code of the method.
 
         Raises:
-            ValueError -- Exception raised if the input value cannot be converted from string to integer.
+            ValueError -- Exception raised if the input value cannot be
+                converted from string to integer.
         """
         Log().logger.debug(LogMessage.START_CLEANING.value %
                            (self._section_name, 'backup'))
@@ -199,7 +212,8 @@ class SetupJob(Job):
                 if len(backup_paths) > value:
                     creation_times = FileHandler().get_modified_times(
                         backup_paths)
-                    # Sorting the backup_paths list based on a sorting of the creation_times list
+                    # Sorting the backup_paths list based on a sorting of the
+                    # creation_times list
                     backup_paths = [
                         path
                         for _, path in sorted(zip(creation_times, backup_paths))
@@ -228,16 +242,19 @@ class SetupJob(Job):
         return rc
 
     def _process_housekeeping(self, value):
-        """Cleans the root working directory from compilation directories older than the input number of days.
+        """Cleans the root working directory from compilation directories older
+        than the input number of days.
 
         Arguments:
-            value {string} -- Value of the housekeeping option, this must be a number of days.
+            value {string} -- Value of the housekeeping option, this must be a
+                number of days.
 
         Returns:
             integer -- Return code of the method.
 
         Raises:
-            ValueError -- Exception raised if part of the input value cannot be converted from string to integer.
+            ValueError -- Exception raised if part of the input value cannot be
+                converted from string to integer.
         """
         Log().logger.debug(LogMessage.START_CLEANING.value %
                            (self._section_name, 'housekeeping'))

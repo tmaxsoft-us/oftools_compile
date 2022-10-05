@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""This module can be used for test purposes, to clear all generated files and check only of the 
-compilation process is running fine.
+"""This module can be used for test purposes, to clear all generated files and
+check only of the compilation process is running fine.
 
   Typical usage example:
 
@@ -18,7 +18,7 @@ from .Context import Context
 from .handlers.FileHandler import FileHandler
 
 
-class Clear(object):
+class Clear():
     """A class used to remove all generated files during compilation.
 
     Methods:
@@ -40,7 +40,8 @@ class Clear(object):
     def run(self, file_name_in):
         """General run method to execute the clear option.
 
-        Removes the current working directory created during the given execution.
+        Removes the current working directory created during the given
+        execution.
 
         Returns:
             integer -- Return code of the method.

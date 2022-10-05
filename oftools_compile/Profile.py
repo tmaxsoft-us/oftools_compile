@@ -20,30 +20,37 @@ from .handlers.FileHandler import FileHandler
 from .Log import Log
 
 
-class Profile(object):
+class Profile():
     """A class used to initialize the Profile object and analyze it.
 
     Attributes:
         _data {ConfigParser} -- Data extracted from the profile.
         _sections {dictionary} -- List of the section names in the profile.
         _filters {dictionary} -- List of the filter functions.
-        _sections_complete {dictionary} -- List of the section names and their completion status.
+        _sections_complete {dictionary} -- List of the section names and their
+            completion status.
         _sections_mandatory_ {list} -- Sections that are listed as mandatory.
-        _sections_no_filter {dictionary} -- List of the section names without filters if any.
+        _sections_no_filter {dictionary} -- List of the section names without
+            filters if any.
 
     Methods:
         __init__(profile_path) -- Initializes the class with all the attributes.
-        _split_section_and_filter(section) -- Separates the section name from the filter function if any.
+        _split_section_and_filter(section) -- Separates the section name from
+            the filter function if any.
         _analyze() -- Analyzes the sections of the profile.
         _analyze_setup(section) -- Analyzes the setup section of the profile.
-        _analyze_mandatory(section) -- Analyzes the mandatory option in the setup section.
-        _analyze_compile(section) -- Analyzes any compile section of the profile.
+        _analyze_mandatory(section) -- Analyzes the mandatory option in the
+            setup section.
+        _analyze_compile(section) -- Analyzes any compile section of the
+            profile.
         _analyze_deploy(section) -- Analyzes the deploy section of the profile.
-        
-        is_section_mandatory(section_name_no_filter) -- Checks if given section is mandatory or not.
-        is_section_complete(section_name_no_filter, skip=True) -- Checks if given section is already 
-            complete.
-        section_completed(section_name_no_filter) -- Changes the status of the given section to complete.
+
+        is_section_mandatory(section_name_no_filter) -- Checks if given section
+            is mandatory or not.
+        is_section_complete(section_name_no_filter, skip=True) -- Checks if
+            given section is already complete.
+        section_completed(section_name_no_filter) -- Changes the status of the
+            given section to complete.
     """
 
     def __init__(self, profile_path):
@@ -99,7 +106,7 @@ class Profile(object):
         Arguments:
             section {string} -- Full name of the setup section.
         """
-        # Spliting section name and filter function
+        # Splitting section name and filter function
         if '?' in section:
             section_no_filter = section.split('?')[0]
             filter_name = section.split('?')[1]
@@ -117,10 +124,12 @@ class Profile(object):
     def _analyze(self):
         """Analyzes the sections of the profile.
 
-        Makes sure that there is a setup section, and analyzes individually each section depending on its type.
+        Makes sure that there is a setup section, and analyzes individually
+        each section depending on its type.
 
         Raises:
-            SystemError -- Exception raised if the setup section is missing in the profile.
+            SystemError -- Exception raised if the setup section is missing in
+                the profile.
         """
         try:
             if 'setup' not in self._sections:
@@ -151,9 +160,11 @@ class Profile(object):
             section {string} -- Full name of the setup section.
 
         Raises:
-            SystemError -- Exception raised if the workdir option is missing from the setup section.
+            SystemError -- Exception raised if the workdir option is missing
+                from the setup section.
             ValueError -- Exception raised if the workdir option is empty.
-            OSError -- Exception raised if there is an issue with the workdir option in the setup section.
+            OSError -- Exception raised if there is an issue with the workdir
+                option in the setup section.
         """
         try:
             # Analyze working directory option
@@ -162,10 +173,10 @@ class Profile(object):
 
                 if working_directory != '':
                     if FileHandler().is_a_directory(
-                            working_directory) and FileHandler(
-                            ).check_write_access(working_directory):
+                            working_directory) and FileHandler().check_write_access(working_directory):
 
-                        # Set group directory as working directory for the execution if grouping option used
+                        # Set group directory as working directory for the
+                        # execution if grouping option used
                         if Context().grouping:
                             group_directory = os.path.join(
                                 working_directory,
@@ -212,7 +223,8 @@ class Profile(object):
 
         Raises:
             ValueError -- Exception raised if the mandatory option is empty.
-            Warning -- Exception raised if the mandatory option value contains a section that does not exist in the profile.
+            Warning -- Exception raised if the mandatory option value contains
+                a section that does not exist in the profile.
         """
         # Analyze mandatory option
         if self._data.has_option('setup', 'mandatory'):
@@ -258,9 +270,10 @@ class Profile(object):
             section {string} -- Full name of the compile section.
 
         Raises:
-            SystemError -- An error occurs if the given compile section does not contain an 'args' or 
-                'option' option.
-            ValueError -- Exception raised if the 'args' or 'option' option is empty.
+            SystemError -- An error occurs if the given compile section does
+                not contain an 'args' or 'option' option.
+            ValueError -- Exception raised if the 'args' or 'option' option is
+                empty.
         """
         try:
             if self._data.has_option(section, 'args'):
@@ -293,7 +306,8 @@ class Profile(object):
             section {string} -- Full name of the deploy section.
 
         Raises:
-            SystemError -- An error occurs if the deploy section does not contain a 'file' option.
+            SystemError -- An error occurs if the deploy section does not
+                contain a 'file' option.
             ValueError -- Exception raised if the file option is empty.
         """
         try:

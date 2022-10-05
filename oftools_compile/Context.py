@@ -21,9 +21,11 @@ from .handlers.ShellHandler import ShellHandler
 
 
 class SingletonMeta(type):
-    """This pattern restricts the instantiation of a class to one object. 
-    
-    It is a type of creational pattern and involves only one class to create methods and specified objects. It provides a global point of access to the instance created.
+    """This pattern restricts the instantiation of a class to one object.
+
+    It is a type of creational pattern and involves only one class to create
+    methods and specified objects. It provides a global point of access to the
+    instance created.
     """
     _instances = {}
 
@@ -34,42 +36,51 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class Context(object, metaclass=SingletonMeta):
-    """A class used to store a set of variables and parameters across all modules.
+class Context(metaclass=SingletonMeta):
+    """A class used to store a set of variables and parameters across all
+    modules for the execution of the program.
 
     Attributes:
         _init_env {dictionary} -- Output of the os.environ.copy method.
-        _env {dictionary} -- All the environment variables for the current execution of the program.
+        _env {dictionary} -- All the environment variables for the current
+            execution of the program.
 
         _root_workdir {string} -- Absolute path of the root working directory.
-        _exec_working_dir {string} -- Absolute path of the working directory where new working directories are created and files processed.
-        _current_workdir {string} -- Absolute path of the current working directory.
+        _exec_working_dir {string} -- Absolute path of the working directory
+            where new working directories are created and files processed.
+        _current_workdir {string} -- Absolute path of the current working
+            directory.
 
-        _last_section {string} -- Name of the last section being executed, whether it succeeds or 
-            fails.
+        _last_section {string} -- Name of the last section being executed,
+            whether it succeeds or fails.
 
         _filters {dictionary} -- Filter names and their respective values.
 
-        _report_file_path {string} -- Absolute path of the report file of the compilation.
+        _report_file_path {string} -- Absolute path of the report file of the
+            compilation.
 
-        _grouping {boolean} -- Flag used to group all working directories into one group directory.
+        _grouping {boolean} -- Flag used to group all working directories into
+            one group directory.
         _skip {boolean} -- Flag used to skip source files if not found or not.
 
         _tag {string} -- Keyword to tag working directories and report file.
-        
-        _time_stamp {string} -- Datetime respecting _%Y%m%d_%H%M%S format for working directories and 
+
+        _time_stamp {Datetime} -- Date and time for working directories and
             report identification purposes.
 
-        _init_pwd {string} -- Absolute path of the initial directory where the command has been executed. 
+        _init_pwd {string} -- Absolute path of the initial directory where the
+            command has been executed.
 
     Methods:
         __init__() -- Initializes all attributes of the class.
         add_env_variable(key, value) -- Adds a variable to the environment.
         add_filter(key, value) -- Adds a filter function to the list of filters.
-        get_filter_function(key) -- Retrieves the expression of the filter function from the Context.
+        get_filter_function(key) -- Retrieves the expression of the filter
+            function from theContext.
 
         clear() -- Clears context after each file processing.
-        clear_all() -- Clears context completely at the end of the program execution.
+        clear_all() -- Clears context completely at the end of the program
+            execution.
     """
 
     def __init__(self):
@@ -232,7 +243,8 @@ class Context(object, metaclass=SingletonMeta):
         """Setter method for the attribute _time_stamp.
 
         Arguments:
-            update {integer} -- Number of seconds needed to update the time stamp.
+            update {integer} -- Number of seconds needed to update the time
+                stamp.
         """
         time_update = datetime.timedelta(seconds=update)
         self._time_stamp += time_update
@@ -279,7 +291,8 @@ class Context(object, metaclass=SingletonMeta):
             string -- Expression of the filter function.
 
         Raises:
-            KeyError -- Exception raised if a filter function is used in the profile before being defined.
+            KeyError -- Exception raised if a filter function is used in the
+                profile before being defined.
         """
         try:
             if key == '':

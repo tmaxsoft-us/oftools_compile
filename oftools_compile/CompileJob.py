@@ -24,19 +24,23 @@ class CompileJob(Job):
 
     Attributes:
         Inherited from Job module.
-    
+
     Methods:
-        _analyze() -- Analyzes prerequisites before running the job for the section.
-        _process_section() -- Reads the section line by line to execute the corresponding methods.
+        _analyze() -- Analyzes prerequisites before running the job for the
+            section.
+        _process_section() -- Reads the section line by line to execute the
+            corresponding methods.
         _compile(args) -- Runs the given shell command with all its arguments.
-        run(file_path_in) -- Performs all the steps for any compile section of the profile.
+        run(file_path_in) -- Performs all the steps for any compile section of
+            the profile.
     """
 
     def _analyze(self):
         """Analyzes prerequisites before running the job for the section.
 
         It evaluates all the following elements:
-            - is the section already complete, based on the name without the filter function
+            - is the section already complete, based on the name without the
+                filter function
             - is the section mandatory, list of sections in the setup section
             - is the filter of the section True or False, if there is one
             - is the the setup section successful or not
@@ -62,8 +66,9 @@ class CompileJob(Job):
     def _process_section(self):
         """Reads the section line by line to execute the corresponding methods.
 
-        For any compile section, it mainly analyzes the args or 'option' option. And as any other 
-        section, it looks for environment and filter variables.
+        For any compile section, it mainly analyzes the args or 'option'
+        option. And as any other section, it looks for environment and filter
+        variables.
 
         Returns:
             integer -- Return code of the method.
