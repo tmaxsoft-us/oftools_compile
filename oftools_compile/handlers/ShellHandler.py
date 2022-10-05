@@ -178,7 +178,7 @@ class ShellHandler(metaclass=SingletonMeta):
         except KeyboardInterrupt:
             raise KeyboardInterrupt()
         except SystemError:
-            Log().logger.error(ErrorMessage.SYSTEM_SHELL % root_command)
+            Log().logger.error(ErrorMessage.SYSTEM_SHELL.value % root_command)
             stdout = None
             stderr = None
             return_code = -1
