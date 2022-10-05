@@ -62,7 +62,7 @@ class Log(object, metaclass=SingletonType):
         self._level = ''
 
         self._logger = logging.getLogger(__name__)
-        self._logger.setLevel(logging.INFO)
+        self._logger.setLevel(self._level_dict['INFO'])
 
         fmt = "%(asctime)-8s [%(levelname)-8s] %(message)s"
         self._formatter = logging.Formatter(fmt, datefmt="%H:%M:%S")
@@ -104,13 +104,13 @@ class Log(object, metaclass=SingletonType):
 
             self._stream_handler_out = logging.StreamHandler(stream=sys.stdout)
             self._stream_handler_out.setFormatter(self._custom_formatter)
-            self._stream_handler_out.setLevel(logging.DEBUG)
+            self._stream_handler_out.setLevel(self._level_dict['DEBUG'])
             self._stream_handler_out.addFilter(LogFilter())
             self._logger.addHandler(self._stream_handler_out)
 
             self._stream_handler_err = logging.StreamHandler(stream=sys.stderr)
             self._stream_handler_err.setFormatter(self._custom_formatter)
-            self._stream_handler_err.setLevel(logging.ERROR)
+            self._stream_handler_err.setLevel(self._level_dict['ERROR'])
             self._logger.addHandler(self._stream_handler_err)
 
     def close_stream(self):
@@ -131,12 +131,15 @@ class Log(object, metaclass=SingletonType):
         Args:
             file_path {string} -- Absolute path to the current log file.
         """
-        if self._file_handler is None:
-            self._file_handler = logging.FileHandler(filename=file_path,
-                                                     mode='a',
-                                                     encoding='utf-8')
-            self._file_handler.setFormatter(self._formatter)
-            self._logger.addHandler(self._file_handler)
+        try:
+            if self._file_handler is None:
+                self._file_handler = logging.FileHandler(filename=file_path,
+                                                         mode='a',
+                                                         encoding='utf-8')
+                self._file_handler.setFormatter(self._formatter)
+                self._logger.addHandler(self._file_handler)
+        except FileNotFoundError:
+            pass
 
     def close_file(self):
         """Closes the file handler at the end of each file processing.
@@ -151,6 +154,7 @@ class CustomFormatter(logging.Formatter):
     """A class used to override the default logging.Formatter and set colors 
     for log messages.
     """
+
     # DEBUG & INFO
     white = '\x1b[39m'
     # WARNING
@@ -186,4 +190,6 @@ class LogFilter(logging.Filter):
     """
 
     def filter(self, record):
+        """Filters the log messages below ERROR level (not included) to stdout.
+        """
         return record.levelno in (logging.DEBUG, logging.INFO, logging.WARNING)
