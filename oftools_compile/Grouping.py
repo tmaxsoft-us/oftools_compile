@@ -52,7 +52,7 @@ class Grouping():
             d.path for d in os.scandir(self._directory) if d.is_dir()
         ]
 
-        with open(self._log, 'w') as group_log:
+        with open(self._log, 'w', encoding="utf-8") as group_log:
 
             for working_dir in working_dirs:
                 files = os.listdir(working_dir)
@@ -62,7 +62,7 @@ class Grouping():
                         # Retrieve absolute path of the current log file
                         file_path = os.path.join(working_dir, file_name)
 
-                        with open(file_path, 'r') as oftools_compile_log:
+                        with open(file_path, 'r', encoding="utf-8") as oftools_compile_log:
                             # Read the log file and write to group log file
                             Log().logger.debug(
                                 LogMessage.AGGREGATE_LOG_FILE.value % file_path)

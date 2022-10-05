@@ -100,7 +100,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             path {string} -- Absolute path of the file.
 
         Returns:
-            Parsed file, the type depends on the extension of the processed file.
+            Parsed file, the type depends on the extension of the processed
+            file.
 
         Raises:
             SystemError -- Exception raised if the file is empty.
@@ -108,7 +109,8 @@ class FileHandler(object, metaclass=SingletonMeta):
                 instead of a file.
             FileNotFoundError -- Exception raised if the file does not exist or
                 is not found.
-            PermissionError -- Exception raised if the user does not have the required permissions to read the file.
+            PermissionError -- Exception raised if the user does not have the
+                required permissions to read the file.
             IndexError -- Exception raised if the file extension is not found.
             TypeError --  Exception raised if the file extension is not
                 supported.
@@ -139,7 +141,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                 if os.path.getsize(path_expand) <= 0:
                     raise SystemError()
 
-                with open(path_expand, mode='r') as fd:
+                with open(path_expand, mode='r', encoding="utf-8") as fd:
                     extension = path_expand.rsplit('.', 1)[1]
 
                     if extension in self._config_extensions:
@@ -241,7 +243,7 @@ class FileHandler(object, metaclass=SingletonMeta):
 
             if os.path.isdir(path_expand) is False:
 
-                with open(path_expand, mode) as fd:
+                with open(path_expand, mode, encoding="utf-8") as fd:
                     extension = path_expand.rsplit('.', 1)[1]
 
                     if extension in self._config_extensions:
