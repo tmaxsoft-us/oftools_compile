@@ -13,7 +13,6 @@ Typical usage example:
 import configparser
 import collections
 import csv
-import hashlib
 import json
 import os
 import shutil
@@ -26,6 +25,7 @@ import untangle
 # Owned modules
 from ..Context import Context
 from ..enums.ErrorEnum import ErrorMessage
+from ..enums.LogEnum import LogMessage
 from ..Log import Log
 
 
@@ -274,7 +274,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             dst_expand = os.path.expandvars(dst)
 
             shutil.copy(src_expand, dst_expand)
-            Log().logger.debug('Successful copy of ' + src + ' to ' + dst)
+            Log().logger.debug(LogMessage.CP_SUCCESS.value % (src, dst))
             rc = 0
         except shutil.SameFileError:
             Log().logger.debug(ErrorMessage.SHUTIL_SAME_FILE.value % (src, dst))
@@ -368,11 +368,10 @@ class FileHandler(object, metaclass=SingletonMeta):
 
             # Check if the directory already exists
             if os.path.isdir(path_expand) is False:
-                Log().logger.debug(
-                    'Directory does not exist: Creating new directory: ' + path)
+                Log().logger.debug(LogMessage.DIRECTORY_NOT_EXIST.value % path)
                 os.mkdir(path_expand)
 
-                Log().logger.debug('Directory successfully created: ' + path)
+                Log().logger.debug(LogMessage.DIRECTORY_CREATED.value % path)
                 rc = 0
             else:
                 raise FileExistsError()
@@ -407,12 +406,10 @@ class FileHandler(object, metaclass=SingletonMeta):
             shutil.move(src, dst)
             rc = 0
         except FileNotFoundError:
-            Log().logger.warning(ErrorMessage.FILE_NOT_FOUND.value % src)
-            Log().logger.warning('Skipping directory')
+            Log().logger.error(ErrorMessage.FILE_NOT_FOUND.value % src)
             sys.exit(-1)
         except shutil.Error as error:
-            Log().logger.warning('Error: ' + str(error) +
-                                 '. Skipping directory move command')
+            Log().logger.error(ErrorMessage.SHUTIL.value % error)
             sys.exit(-1)
         else:
             return rc
@@ -441,7 +438,8 @@ class FileHandler(object, metaclass=SingletonMeta):
 
                     # Check if directory is empty
                     if len(os.listdir(path_expand)) == 0:
-                        Log().logger.debug('Directory empty: ' + path)
+                        Log().logger.debug(LogMessage.DIRECTORY_EMPTY.value %
+                                           path)
                         os.rmdir(path_expand)
                     else:
                         # Check on directory size
@@ -451,11 +449,11 @@ class FileHandler(object, metaclass=SingletonMeta):
                             if element.is_file(follow_symlinks=True))
                         if size == 0:
                             Log().logger.debug(
-                                'Size of directory equal to 0: ' + path)
+                                LogMessage.DIRECTORY_SIZE_0.value % path)
 
                         shutil.rmtree(path_expand, ignore_errors=False)
 
-                    Log().logger.debug('Directory successfully removed: ' +
+                    Log().logger.debug(LogMessage.DIRECTORY_REMOVED.value %
                                        path)
                     rc = 0
                 else:

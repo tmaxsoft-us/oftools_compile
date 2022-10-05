@@ -69,6 +69,7 @@ class ErrorMessage(enum.Enum):
     OS_SIZE = 'OSError: Failed to get file size: %s'
     PERMISSION = 'PermissionError: Permission denied: %s'
     PERMISSION_WRITE = 'PermissionError: Permission denied: No write access on: %s'
+    SHUTIL = 'shutil.Error: %s'
     SHUTIL_SAME_FILE = 'shutil.SameFileError: %s and %s are the same file'
     SYSTEM_EMPTY = 'EmptyError: File empty: %s'
     TYPE_EXTENSION = 'TypeError: Unsupported %s file extension: %s'

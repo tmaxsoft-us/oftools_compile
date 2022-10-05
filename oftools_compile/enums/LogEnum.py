@@ -43,6 +43,14 @@ class LogMessage(enum.Enum):
     START_REGION = '[%s] Process region option'
     START_TDL = '[%s] Process TDL option'
 
+    # FileHandler module
+    CP_SUCCESS = 'Successful copy of %s to %s'
+    DIRECTORY_CREATED = 'Directory successfully created: %s'
+    DIRECTORY_EMPTY = 'Directory empty: %s'
+    DIRECTORY_NOT_EXIST = 'Directory does not exist: Creating new directory: %s'
+    DIRECTORY_REMOVED = 'Directory successfully removed: %s'
+    DIRECTORY_SIZE_0 = 'Directory size equal to 0: %s'
+
     # Grouping module
     AGGREGATE_LOG_FILE = '(GROUPING) Aggregate %s to group.log'
 
