@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Main module of OpenFrame Tools Compile.
 """
+
 # Generic/Built-in modules
 import argparse
 import os
@@ -40,6 +41,7 @@ class Main(object):
 
     Methods:
         _parse_args() -- Parses command-line options.
+        _signal_handler(signum, frame) -- Handles signal SIGQUIT for the program execution.
         _create_jobs(profile) -- Creates job depending on the section of the profile.
         _end_processing(mode, rc, clear, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program.
         run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
@@ -78,8 +80,8 @@ class Main(object):
             action='append',
             dest='profile_list',
             help=
-            'profile name, contains the description of the compilation target',
-            metavar='FILENAME',
+            'profile name, contains the description of the processing target',
+            metavar='FILE',
             required=True,
             type=str)
 
@@ -100,7 +102,7 @@ class Main(object):
             '--clear',
             action='store_true',
             dest='clear',
-            help='clear all the files generated during compilation',
+            help='flag used to clear all the files generated during processing',
             required=False)
 
         optional.add_argument(
@@ -109,7 +111,7 @@ class Main(object):
             action='store_true',
             dest='grouping',
             help=
-            'put all the compilation directories in a single one and aggregate all the logs',
+            'flag used to put the working directories in a single one and aggregate the logs',
             required=False)
 
         optional.add_argument(
@@ -120,16 +122,17 @@ class Main(object):
             default='INFO',
             dest='log_level',
             help=
-            'set log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
+            'log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
             metavar='LEVEL',
             required=False,
             type=str)
 
-        optional.add_argument('--skip',
-                              action='store_true',
-                              dest='skip',
-                              help='skip source files if not found',
-                              required=False)
+        optional.add_argument(
+            '--skip',
+            action='store_true',
+            dest='skip',
+            help='flag used to skip source files when not found',
+            required=False)
 
         optional.add_argument(
             '-t',
@@ -137,7 +140,7 @@ class Main(object):
             action='store',
             dest='tag',
             help=
-            'add a tag to the name of the report file and the compilation directory',
+            'add a tag to the name of the report file and the working directory',
             metavar='TAG',
             required=False,
             type=str)
@@ -199,7 +202,7 @@ class Main(object):
 
     @staticmethod
     def _signal_handler(signum, frame):
-        """
+        """Handles signal SIGQUIT for the program execution.
         """
         global INTERRUPT
         INTERRUPT = True
@@ -213,12 +216,12 @@ class Main(object):
         a list of strings, the name of each section of the profile. And then a call to the method 
         create of the JobFactory module generate the corresponding job.
 
-        Args:
+        Arguments:
             profile {ConfigParser} -- Compilation profile specified for the current source.
             clear {boolean} -- Value of the argument clear from the CLI.
 
         Returns:
-            list[Job] -- list of Job objects.
+            list[Job] -- List of Job objects.
 
         Raises:
             #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
@@ -239,8 +242,8 @@ class Main(object):
             Log().logger.critical(ErrorMessage.JOB.value)
             Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
-
-        return jobs
+        else:
+            return jobs
 
     @staticmethod
     def _end_processing(
@@ -297,11 +300,14 @@ class Main(object):
 
         Returns:
             integer -- Return code of the program.
+
+        Raises:
+            KeyboardInterrupt -- Exception raised if the user press Ctrl + C or Ctrl + \.
         """
-        # This is normal if there is an error using this with Windows as the OS, SIGQUIT only exist in Unix
+        rc = 0
+        # Normal if there is an error on Windows, SIGQUIT only exist on Unix
         signal.signal(signal.SIGQUIT, self._signal_handler)
 
-        rc = 0
         # For testing purposes. allow to remove logs when executing coverage
         # logging.disable(logging.CRITICAL)
         Log().open_stream()
@@ -309,7 +315,7 @@ class Main(object):
         # Parse command-line options
         args = self._parse_args()
 
-        # Set log level and log oftools_compile command as DEBUG
+        # Set log level and log oftools_compile command as DEBUG level
         Log().set_level(args.log_level)
         Log().logger.debug(' '.join((arg for arg in sys.argv)))
 
@@ -354,7 +360,9 @@ class Main(object):
                             # is just the name of the file
                             file_name_in = file_name_out
                             rc = job.run(file_name_in)
-                            if rc not in (0, 1):
+                            if rc == 1:
+                                rc = 0
+                            elif rc not in (0, 1):
                                 Log().logger.error(LogMessage.ABORT_FILE.value %
                                                    file_name_in)
                                 break
