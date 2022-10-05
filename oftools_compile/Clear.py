@@ -47,6 +47,6 @@ class Clear():
             integer -- Return code of the method.
         """
         self._file_name_out = file_name_in
-        rc = FileHandler().delete_directory(Context().current_workdir)
+        return_code = FileHandler().delete_directory(Context().current_workdir)
 
-        return rc
+        return return_code

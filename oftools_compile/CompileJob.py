@@ -51,17 +51,17 @@ class CompileJob(Job):
         filter_function = Context().get_filter_function(self._filter)
 
         if self._profile.is_section_complete(self._section_name):
-            rc = 1
+            return_code = 1
         elif self._profile.is_section_mandatory(self._section_name):
-            rc = 0
+            return_code = 0
         elif ShellHandler().evaluate_filter(filter_function, self._filter,
                                             self._section_name,
                                             Context().env) in (True, None):
-            rc = 0
+            return_code = 0
         else:
-            rc = 1
+            return_code = 1
 
-        return rc
+        return return_code
 
     def _process_section(self):
         """Reads the section line by line to execute the corresponding methods.
@@ -73,7 +73,7 @@ class CompileJob(Job):
         Returns:
             integer -- Return code of the method.
         """
-        rc = 0
+        return_code = 0
         Log().logger.debug(LogMessage.START_SECTION.value %
                            (self._section_name, self._file_path_in))
 
@@ -89,23 +89,23 @@ class CompileJob(Job):
                 else:
                     compilation = True
             else:
-                rc = self._process_option(key, value)
+                return_code = self._process_option(key, value)
 
             if compilation and status == 'incomplete':
-                rc = self._compile(value)
+                return_code = self._compile(value)
                 status = 'done'
 
-            if rc not in (0, 1):
+            if return_code not in (0, 1):
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
                                    (self._section_name, key))
                 break
 
-        if rc in (0, 1):
+        if return_code in (0, 1):
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
             self._profile.section_completed(self._section_no_filter)
 
-        return rc
+        return return_code
 
     def _compile(self, args):
         """Runs the given shell command with all its arguments.
@@ -123,10 +123,10 @@ class CompileJob(Job):
         Log().logger.info(
             LogMessage.RUN_COMMAND.value %
             (self._section_name, os.path.expandvars(shell_command)))
-        _, _, rc = ShellHandler().execute_command(shell_command,
+        _, _, return_code = ShellHandler().execute_command(shell_command,
                                                   env=Context().env)
 
-        return rc
+        return return_code
 
     def run(self, file_path_in):
         """Performs all the steps for any compile section of the profile.
@@ -137,13 +137,13 @@ class CompileJob(Job):
         self._initialize_file_variables(file_path_in)
         self._update_context()
 
-        rc = self._analyze()
-        if rc != 0:
+        return_code = self._analyze()
+        if return_code != 0:
             self._file_name_out = file_path_in
-            return rc
+            return return_code
 
-        rc = self._process_section()
-        if rc not in (0, 1):
+        return_code = self._process_section()
+        if return_code not in (0, 1):
             self._file_name_out = file_path_in
 
-        return rc
+        return return_code

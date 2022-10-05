@@ -77,9 +77,9 @@ class Grouping():
             integer -- Return code of the method.
         """
         if self._clear is True:
-            rc = FileHandler().delete_directory(self._directory)
+            return_code = FileHandler().delete_directory(self._directory)
         else:
             self._aggregate_logs()
-            rc = 0
+            return_code = 0
 
-        return rc
+        return return_code

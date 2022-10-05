@@ -135,15 +135,15 @@ class Job():
                     self._file_name_in = Context().env['OF_COMPILE_IN']
                 elif key == '$OF_COMPILE_OUT':
                     self._file_name_out = Context().env['OF_COMPILE_OUT']
-                rc = 0
+                return_code = 0
             elif key.startswith('?'):
                 Context().add_filter(key, value)
-                rc = 0
+                return_code = 0
             else:
                 raise Warning()
         except Warning:
             Log().logger.warning(ErrorMessage.OPTION_NOT_SUPPORTED.value %
                                  (self._section_name, key))
-            rc = 1
+            return_code = 1
 
-        return rc
+        return return_code

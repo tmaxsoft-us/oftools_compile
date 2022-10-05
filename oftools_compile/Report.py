@@ -4,7 +4,7 @@
 
 Typical usage example:
   report = Report()
-  report.add_entry(file_path, rc, elapsed_time)
+  report.add_entry(file_path, return_code, elapsed_time)
   report.generate()
 """
 # Generic/Built-in modules
@@ -34,7 +34,7 @@ class Record():
         _elapsed_time {integer} -- Elapsed processing time.
 
     Methods:
-        __init__(count, file_name, working_directory, processing_status, rc,
+        __init__(count, file_name, working_directory, processing_status, return_code,
             last_section, elapsed_time) -- Initializes the record with all the
             attributes.
         to_csv() -- Converts the record data to a CSV record format, with a ","
@@ -42,14 +42,14 @@ class Record():
     """
 
     def __init__(self, count, file_name, working_directory, processing_status,
-                 rc, last_section, elapsed_time):
+                 return_code, last_section, elapsed_time):
         """Initializes the record with all the attributes.
         """
         self._count = str(count)
         self._file_name = file_name
         self._working_directory = working_directory
         self._processing_status = processing_status
-        self._rc = str(rc)
+        self._rc = str(return_code)
         self._last_section = last_section
         self._elapsed_time = str(round(elapsed_time, 4))
 
@@ -83,7 +83,7 @@ class Report(object):
 
     Methods:
         __init__(clear) -- Initializes the class with all the attributes.
-        add_entry(source_file_path, rc, elapsed_time) -- Adds a new record to
+        add_entry(source_file_path, return_code, elapsed_time) -- Adds a new record to
             the report of the compilation.
         summary() -- Generates a quick summary of the compilation.
     """
@@ -102,7 +102,7 @@ class Report(object):
         self._red = '\x1b[91m'
         self._white = '\x1b[39m'
 
-    def add_entry(self, source_file_path, rc, elapsed_time):
+    def add_entry(self, source_file_path, return_code, elapsed_time):
         """Adds a new record to the report of the compilation.
 
         It first creates the report file if it does not already exist, then
@@ -112,7 +112,7 @@ class Report(object):
 
         Arguments:
             source_file_path {string} -- Absolute path of the source file.
-            rc {integer} -- Return code of the file processing.
+            return_code {integer} -- Return code of the file processing.
             elapsed_time {integer} --Processing time.
 
         Raises:
@@ -127,7 +127,7 @@ class Report(object):
             Log().logger.debug(LogMessage.CREATE_REPORT_FILE.value % path)
 
             headers = [
-                'count', 'source', 'working_directory', 'result', 'rc',
+                'count', 'source', 'working_directory', 'result', 'return_code',
                 'section', 'time(s)'
             ]
             FileHandler().write_file(path, headers)
@@ -136,8 +136,8 @@ class Report(object):
         # Get input source file name
         source_file_name = source_file_path.rsplit('/', 1)[1]
 
-        # Analyze input parameter: rc
-        if rc in (0, 1):
+        # Analyze input parameter: return_code
+        if return_code in (0, 1):
             self._success_count += 1
             processing_status = 'SUCCESSFUL'
             color = self._green
@@ -155,7 +155,7 @@ class Report(object):
 
         if self._clear is False:
             record = Record(self._total_count, source_file_name,
-                            Context().current_workdir, processing_status, rc,
+                            Context().current_workdir, processing_status, return_code,
                             Context().last_section, elapsed_time)
             row = record.to_csv()
             FileHandler().write_file(Context().report_file_path, row, mode='a')

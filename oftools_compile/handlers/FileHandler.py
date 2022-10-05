@@ -262,24 +262,24 @@ class FileHandler(object, metaclass=SingletonMeta):
                                 fd.write(line)
                     else:
                         raise TypeError()
-                rc = 0
+                return_code = 0
             else:
                 raise IsADirectoryError()
 
         except IsADirectoryError:
             Log().logger.critical(ErrorMessage.IS_A_DIRECTORY.value % path)
-            rc = -1
+            return_code = -1
         except PermissionError:
             Log().logger.critical(ErrorMessage.PERMISSION.value % path)
-            rc = -1
+            return_code = -1
         except IndexError:
             Log().logger.critical(ErrorMessage.INDEX_EXTENSION.value % path)
-            rc = -1
+            return_code = -1
         except TypeError:
             Log().logger.critical(ErrorMessage.TYPE_EXTENSION.value % path)
-            rc = -1
+            return_code = -1
 
-        return rc
+        return return_code
 
     @staticmethod
     def copy_file(src, dst):
@@ -303,15 +303,15 @@ class FileHandler(object, metaclass=SingletonMeta):
 
             shutil.copy(src_expand, dst_expand)
             Log().logger.debug(LogMessage.CP_SUCCESS.value % (src, dst))
-            rc = 0
+            return_code = 0
         except shutil.SameFileError:
             Log().logger.debug(ErrorMessage.SHUTIL_SAME_FILE.value % (src, dst))
-            rc = 1
+            return_code = 1
         except OSError as error:
             Log().logger.critical(ErrorMessage.OS_COPY.value % error)
-            rc = -1
+            return_code = -1
 
-        return rc
+        return return_code
 
     @staticmethod
     def delete_file(path):
@@ -331,7 +331,7 @@ class FileHandler(object, metaclass=SingletonMeta):
         """
         try:
             os.remove(path)
-            rc = 0
+            return_code = 0
         except IsADirectoryError:
             Log().logger.debug(ErrorMessage.IS_A_DIRECTORY.value % path)
             sys.exit(-1)
@@ -339,7 +339,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.debug(ErrorMessage.FILE_NOT_FOUND.value % path)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def check_extension(path, extension):
@@ -405,7 +405,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                 os.mkdir(path_expand)
 
                 Log().logger.debug(LogMessage.DIRECTORY_CREATED.value % path)
-                rc = 0
+                return_code = 0
             else:
                 raise FileExistsError()
         except FileExistsError:
@@ -413,13 +413,13 @@ class FileHandler(object, metaclass=SingletonMeta):
                 Log().logger.error(ErrorMessage.FILE_EXISTS.value % path)
             # else:
             #     Log().logger.debug(ErrorMessage.FILE_EXISTS.value % path)
-            rc = 1
+            return_code = 1
         except OSError as error:
             Log().logger.critical(ErrorMessage.OS_DIRECTORY_CREATION.value %
                                   error)
             sys.exit(-1)
 
-        return rc
+        return return_code
 
     @staticmethod
     def move_directory(src, dst):
@@ -438,7 +438,7 @@ class FileHandler(object, metaclass=SingletonMeta):
         """
         try:
             shutil.move(src, dst)
-            rc = 0
+            return_code = 0
         except FileNotFoundError:
             Log().logger.error(ErrorMessage.FILE_NOT_FOUND.value % src)
             sys.exit(-1)
@@ -446,7 +446,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.error(ErrorMessage.SHUTIL.value % error)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def delete_directory(path):
@@ -493,7 +493,7 @@ class FileHandler(object, metaclass=SingletonMeta):
 
                     Log().logger.debug(LogMessage.DIRECTORY_REMOVED.value %
                                        path)
-                    rc = 0
+                    return_code = 0
                 else:
                     raise NotADirectoryError()
             else:
@@ -512,7 +512,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.critical(ErrorMessage.OS_DELETE.value % error)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def is_a_directory(path):
@@ -718,7 +718,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                 of the previous exceptions.
         """
         creation_times = []
-        
+
         try:
             if isinstance(path, str):
                 path_expand = os.path.expandvars(path)

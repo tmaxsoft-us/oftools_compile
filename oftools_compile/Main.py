@@ -47,7 +47,7 @@ class Main():
             program execution.
         _create_jobs(profile) -- Creates job depending on the section of the
             profile.
-        _end_processing(mode, rc, clear, report, file_path, elapsed_time,
+        _end_processing(mode, return_code, clear, report, file_path, elapsed_time,
             profile) -- Common method to end file processing or entire program.
         run() -- Performs all the steps to run compilation for all sources
             using the appropriate profile.
@@ -262,7 +262,7 @@ class Main():
     @staticmethod
     def _end_processing(
         mode,
-        rc,
+        return_code,
         clear=None,
         report=Report(False),
         file_path=None,
@@ -279,7 +279,7 @@ class Main():
 
         Arguments:
             mode {integer} -- Ending mode for the program.
-            rc {integer} -- Return code of the file processing.
+            return_code {integer} -- Return code of the file processing.
             clear {boolean} -- Value of the argument clear from the CLI.
             report {Report} --
             file_path {string} -- Absolute path to the source file.
@@ -300,12 +300,12 @@ class Main():
             if clear is not True:
                 Log().logger.info(LogMessage.WORKING_DIRECTORY.value %
                                   Context().current_workdir)
-            report.add_entry(file_path, rc, elapsed_time)
+            report.add_entry(file_path, return_code, elapsed_time)
             Context().clear(profile)
             Log().close_file()
 
         if mode in (2, 3):
-            Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
+            Log().logger.debug(LogMessage.RETURN_CODE.value % return_code)
             Context().clear_all()
             Log().close_stream()
 
@@ -320,7 +320,7 @@ class Main():
             KeyboardInterrupt -- Exception raised if the user press Ctrl + C or
             Ctrl + \.
         """
-        rc = 0
+        return_code = 0
         # Normal if there is an error on Windows, SIGQUIT only exist on Unix
         signal.signal(signal.SIGQUIT, self._signal_handler)
 
@@ -375,10 +375,10 @@ class Main():
                             # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
                             # is just the name of the file
                             file_name_in = file_name_out
-                            rc = job.run(file_name_in)
-                            if rc == 1:
-                                rc = 0
-                            elif rc not in (0, 1):
+                            return_code = job.run(file_name_in)
+                            if return_code == 1:
+                                return_code = 0
+                            elif return_code not in (0, 1):
                                 Log().logger.error(LogMessage.ABORT_FILE.value %
                                                    file_name_in)
                                 break
@@ -386,12 +386,12 @@ class Main():
 
                         # Report related tasks
                         elapsed_time = time.time() - start_time
-                        self._end_processing(0, rc, args.clear, report,
+                        self._end_processing(0, return_code, args.clear, report,
                                              file_path, elapsed_time, profile)
 
                     except KeyboardInterrupt:
-                        rc = -2
-                        self._end_processing(1, rc, args.clear, report,
+                        return_code = -2
+                        self._end_processing(1, return_code, args.clear, report,
                                              file_path, 0, profile)
                         if INTERRUPT is True:
                             raise KeyboardInterrupt()
@@ -403,10 +403,10 @@ class Main():
                     grouping = Grouping(args.clear)
                     grouping.run()
 
-            self._end_processing(2, rc)
+            self._end_processing(2, return_code)
 
         except KeyboardInterrupt:
-            rc = -3
-            self._end_processing(3, rc)
+            return_code = -3
+            self._end_processing(3, return_code)
 
-        return rc
+        return return_code

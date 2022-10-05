@@ -67,7 +67,7 @@ class Source(object):
         Returns:
             integer -- Return code of the method.
         """
-        rc = 0
+        return_code = 0
         sources = []
         
         self._get_source_type()
@@ -83,20 +83,20 @@ class Source(object):
                 if FileHandler().check_path_exists(source):
                     files = FileHandler().get_files(source)
                     self._file_paths.extend(files)
-                    rc = 0
+                    return_code = 0
                 else:
                     Log().logger.info(LogMessage.SOURCE_SKIP.value)
-                    rc = 1
+                    return_code = 1
 
         elif self._source_type == 'default':
             if FileHandler().check_path_exists(self._source_path):
                 self._file_paths = FileHandler().get_files(self._source_path)
-                rc = 0
+                return_code = 0
             else:
                 Log().logger.info(LogMessage.SOURCE_SKIP.value)
-                rc = 1
+                return_code = 1
 
         Log().logger.debug(LogMessage.SOURCE_COUNT.value %
                            len(self._file_paths))
 
-        return rc
+        return return_code

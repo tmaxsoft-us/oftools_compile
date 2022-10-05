@@ -227,10 +227,10 @@ class ShellHandler(metaclass=SingletonMeta):
             None or boolean -- Result of the filter function evaluation.
         """
         if function != '':
-            _, _, rc = self.execute_command(function, 'filter', env)
+            _, _, return_code = self.execute_command(function, 'filter', env)
 
             # grep command returns 0 if there is any line match
-            if rc == 0:
+            if return_code == 0:
                 result = True
                 Log().logger.debug(LogMessage.FILTER_TRUE.value %
                                    (section, name))
