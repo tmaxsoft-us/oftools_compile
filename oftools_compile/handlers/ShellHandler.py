@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """Set of methods useful in any module.
 
-This module gathers a set of methods that are useful in many other modules. When a method is widely 
-used in different modules, a general version of it is created and can be found here.
+This module gathers a set of methods that are useful in many other modules.
+When a method is widely  used in different modules, a general version of it is
+created and can be found here.
 
 Typical usage example:
-    ShellHandler().execute_command(command)
+  ShellHandler().execute_command(command)
 """
 
 # Generic/Built-in modules
@@ -25,8 +26,10 @@ from ..Log import Log
 
 class SingletonMeta(type):
     """This pattern restricts the instantiation of a class to one object.
-    
-    It is a type of creational pattern and involves only one class to create methods and specified objects. It provides a global point of access to the instance created.
+
+    It is a type of creational pattern and involves only one class to create
+    methods and specified objects. It provides a global point of access to the
+    instance created.
     """
     _instances = {}
 
@@ -41,18 +44,26 @@ class ShellHandler(metaclass=SingletonMeta):
     """A class used to run shell related tasks across all modules.
 
     Attributes:
-        _env {dictionary} -- Environment variables for the execution of the program.
+        _env {dictionary} -- Environment variables for the execution of the
+            program.
 
     Methods:
-        _is_command_exist(command) -- Checks if the command exists in the environment using which.
-        _run_command(command, env) -- Runs the command, using variables from the environment if any.
-        _read_command(process) -- Decode stdout and stderr from the CompletedProcess object.
-        _log_command(stdout, stderr, return_code, command_type) -- Log output and errors if any, with different log levels.
-        execute_command(command, command_type, env=None) -- Executes shell command.
-        
-        evaluate_filter(section, filter_name): Evaluates the status of the filter function passed as an argument.
+        _is_command_exist(command) -- Checks if the command exists in the
+            environment using which.
+        _run_command(command, env) -- Runs the command, using variables from
+            the environment if any.
+        _read_command(process) -- Decode stdout and stderr from the
+            CompletedProcess object.
+        _log_command(stdout, stderr, return_code, command_type) -- Log output
+            and errors if any, with different log levels.
+        execute_command(command, command_type, env=None) -- Executes shell
+            command.
 
-        evaluate_env_variable(self, environment_variable) -- Evaluates if the input variable exists in the current environment.
+        evaluate_filter(section, filter_name): Evaluates the status of the
+            filter function passed as an argument.
+
+        evaluate_env_variable(self, environment_variable) -- Evaluates if the
+            input variable exists in the current environment.
     """
 
     def __init__(self):
@@ -80,10 +91,12 @@ class ShellHandler(metaclass=SingletonMeta):
 
         Arguments:
             command {string} -- Shell command that needs to be executed.
-            env {dictionary} -- Environment variables currently in the shell environment.
+            env {dictionary} -- Environment variables currently in the shell
+                environment.
 
         Returns:
-            CompletedProcess object -- Object containing multiple information on the command execution.
+            CompletedProcess object -- Object containing multiple information
+                on the command execution.
         """
         process = subprocess.run(command,
                                  shell=True,
@@ -98,13 +111,15 @@ class ShellHandler(metaclass=SingletonMeta):
         """Decode stdout and stderr from the CompletedProcess object.
 
         Arguments:
-            process {CompletedProcess object} -- Object containing multiple information on the command execution.
+            process {CompletedProcess object} -- Object containing multiple
+                information on the command execution.
 
         Returns:
             tuple -- stdout, stderr, and return code of the shell command.
 
         Raises:
-            UnicodeDecodeError -- Exception raised if there is an issue decoding a certain character in stdout or stderr.
+            UnicodeDecodeError -- Exception raised if there is an issue
+                decoding a certain character in stdout or stderr.
         """
         try:
             stdout = process.stdout.decode('utf_8')
@@ -143,21 +158,25 @@ class ShellHandler(metaclass=SingletonMeta):
 
     def execute_command(self, command, command_type='', env=None):
         """Executes shell command.
-        
-        This method is dedicated to execute a shell command and it handles exceptions in case of failure.
+
+        This method is dedicated to execute a shell command and it handles
+        exceptions in case of failure.
 
         Arguments:
             command {string} -- Shell command that needs to be executed.
             command_type {string} -- Type of the command to execute.
-            env {dictionary} -- Environment variables currently in the shell environment.
+            env {dictionary} -- Environment variables currently in the shell
+                environment.
 
         Returns:
             tuple -- stdout, stderr, and return code of the shell command.
 
         Raises:
-            KeyboardInterrupt -- Exception raised if the user press Ctrl+C during the command shell execution.
+            KeyboardInterrupt -- Exception raised if the user press Ctrl+C
+                during the command shell execution.
             SystemError -- Exception raised if the command does not exist.
-            subprocess.CalledProcessError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            subprocess.CalledProcessError -- Exception raised if an error
+                didn't already raised one of the previous exceptions.
         """
         if env is None:
             env = self._env
@@ -201,7 +220,8 @@ class ShellHandler(metaclass=SingletonMeta):
             function {string} -- Shell command that needs to be executed.
             name {string} -- Name of the filter function.
             section {string} -- Name of the section.
-            env {dictionary} -- Environment variables currently in the shell environment.
+            env {dictionary} -- Environment variables currently in the shell
+                environment.
 
         Returns:
             None or boolean -- Result of the filter function evaluation.
@@ -231,7 +251,8 @@ class ShellHandler(metaclass=SingletonMeta):
         """Evaluates if the input variable exists in the current environment.
 
         Arguments:
-            environment_variable {string} -- Environment variable that needs to be evaluated.
+            environment_variable {string} -- Environment variable that needs to
+                be evaluated.
 
         Returns:
             string -- Result of the environment variable evaluation.
