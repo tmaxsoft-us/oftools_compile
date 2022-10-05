@@ -7,6 +7,7 @@ Typical usage example:
   job.run(file_path_in)
 """
 # Generic/Built-in modules
+import os
 
 # Third-party modules
 
@@ -89,12 +90,12 @@ class CompileJob(Job):
                 rc = self._compile(value)
                 status = 'done'
 
-            if rc not in (0,1):
+            if rc not in (0, 1):
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
                                    (self._section_name, key))
                 break
 
-        if rc in (0,1):
+        if rc in (0, 1):
             Log().logger.debug(LogMessage.END_SECTION.value %
                                (self._section_name, self._file_name_out))
             self._profile.section_completed(self._section_no_filter)
@@ -114,8 +115,9 @@ class CompileJob(Job):
         shell_command = self._section_no_filter + ' ' + args
 
         # Run command
-        Log().logger.info(LogMessage.RUN_COMMAND.value %
-                          (self._section_name, shell_command))
+        Log().logger.info(
+            LogMessage.RUN_COMMAND.value %
+            (self._section_name, os.path.expandvars(shell_command)))
         _, _, rc = ShellHandler().execute_command(shell_command,
                                                   env=Context().env)
 
@@ -136,7 +138,7 @@ class CompileJob(Job):
             return rc
 
         rc = self._process_section()
-        if rc not in (0,1):
+        if rc not in (0, 1):
             self._file_name_out = file_path_in
 
         return rc
