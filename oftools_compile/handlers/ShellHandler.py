@@ -122,12 +122,12 @@ class ShellHandler(metaclass=SingletonMeta):
                 decoding a certain character in stdout or stderr.
         """
         try:
-            stdout = process.stdout.decode('utf_8')
-            stderr = process.stderr.decode('utf_8')
+            stdout = process.stdout.decode("utf_8")
+            stderr = process.stderr.decode("utf_8")
         except UnicodeDecodeError:
             Log().logger.debug(ErrorMessage.UNICODE.value)
-            stdout = process.stdout.decode('latin_1')
-            stderr = process.stderr.decode('latin_1')
+            stdout = process.stdout.decode("latin_1")
+            stderr = process.stderr.decode("latin_1")
 
         return_code = process.returncode
 
@@ -143,8 +143,8 @@ class ShellHandler(metaclass=SingletonMeta):
             return_code {integer} -- Return code of the command.
             command_type {string} -- Type of the command to execute.
         """
-        if Log().level == 'DEBUG':
-            if return_code != 0 and command_type != 'filter':
+        if Log().level == "DEBUG":
+            if return_code != 0 and command_type != "filter":
                 Log().logger.error(stdout)
                 Log().logger.error(stderr)
                 Log().logger.error(LogMessage.RETURN_CODE.value % return_code)
@@ -152,11 +152,11 @@ class ShellHandler(metaclass=SingletonMeta):
                 Log().logger.debug(stdout)
                 Log().logger.debug(stderr)
                 Log().logger.debug(LogMessage.RETURN_CODE.value % return_code)
-        elif return_code != 0 and command_type != 'filter':
+        elif return_code != 0 and command_type != "filter":
             Log().logger.error(stdout)
             Log().logger.error(stderr)
 
-    def execute_command(self, command, command_type='', env=None):
+    def execute_command(self, command, command_type="", env=None):
         """Executes shell command.
 
         This method is dedicated to execute a shell command and it handles
@@ -184,7 +184,7 @@ class ShellHandler(metaclass=SingletonMeta):
         try:
             command = os.path.expandvars(command)
 
-            if command_type != 'deploy':
+            if command_type != "deploy":
                 Log().logger.debug(command)
 
             root_command = command.split()[0]
@@ -226,8 +226,8 @@ class ShellHandler(metaclass=SingletonMeta):
         Returns:
             None or boolean -- Result of the filter function evaluation.
         """
-        if function != '':
-            _, _, return_code = self.execute_command(function, 'filter', env)
+        if function != "":
+            _, _, return_code = self.execute_command(function, "filter", env)
 
             # grep command returns 0 if there is any line match
             if return_code == 0:

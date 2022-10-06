@@ -66,7 +66,7 @@ class CompileJob(Job):
     def _process_section(self):
         """Reads the section line by line to execute the corresponding methods.
 
-        For any compile section, it mainly analyzes the args or 'option'
+        For any compile section, it mainly analyzes the args or "option"
         option. And as any other section, it looks for environment and filter
         variables.
 
@@ -78,22 +78,22 @@ class CompileJob(Job):
                            (self._section_name, self._file_path_in))
 
         compilation = False
-        status = 'incomplete'
+        status = "incomplete"
 
         for key, value in self._profile.data[self._section_name].items():
-            if key == 'args':
+            if key == "args":
                 compilation = True
-            elif key == 'option':
-                if 'args' in self._profile.data[self._section_name].keys():
+            elif key == "option":
+                if "args" in self._profile.data[self._section_name].keys():
                     continue
                 else:
                     compilation = True
             else:
                 return_code = self._process_option(key, value)
 
-            if compilation and status == 'incomplete':
+            if compilation and status == "incomplete":
                 return_code = self._compile(value)
-                status = 'done'
+                status = "done"
 
             if return_code not in (0, 1):
                 Log().logger.error(LogMessage.ABORT_SECTION.value %
@@ -117,7 +117,7 @@ class CompileJob(Job):
             integer -- Return code of the shell command executed.
         """
         # Build command
-        shell_command = self._section_no_filter + ' ' + args
+        shell_command = self._section_no_filter + " " + args
 
         # Run command
         Log().logger.info(

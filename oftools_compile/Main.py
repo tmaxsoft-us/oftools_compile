@@ -74,109 +74,109 @@ class Main():
         """
         parser = argparse.ArgumentParser(
             add_help=False,
-            description='OpenFrame Tools Compile',
+            description="OpenFrame Tools Compile",
             formatter_class=argparse.RawTextHelpFormatter)
 
         parser._action_groups.pop()
-        required = parser.add_argument_group('Required arguments')
-        optional = parser.add_argument_group('Optional arguments')
-        others = parser.add_argument_group('Help & version')
+        required = parser.add_argument_group("Required arguments")
+        optional = parser.add_argument_group("Optional arguments")
+        others = parser.add_argument_group("Help & version")
 
         # Required arguments
         required.add_argument(
-            '-p',
-            '--profile',
-            action='append',
-            dest='profile_list',
-            help='''profile name, contains the description of the processing
-            target''',
-            metavar='FILE',
+            "-p",
+            "--profile",
+            action="append",
+            dest="profile_list",
+            help="""profile name, contains the description of the processing
+            target""",
+            metavar="FILE",
             required=True,
             type=str)
 
         required.add_argument(
-            '-s',
-            '--source',
-            action='append',
-            dest='source_list',
-            help='''source name, currently supported:\n- file or a directory\n-
+            "-s",
+            "--source",
+            action="append",
+            dest="source_list",
+            help="""source name, currently supported:\n- file or a directory\n-
             colon-separated list of files of directories\n- text file
-            containing a list of files or directories''',
-            metavar='SOURCE',
+            containing a list of files or directories""",
+            metavar="SOURCE",
             required=True,
             type=str)
 
         # Optional arguments
         optional.add_argument(
-            '-c',
-            '--clear',
-            action='store_true',
-            dest='clear',
-            help='flag used to clear all the files generated during processing',
+            "-c",
+            "--clear",
+            action="store_true",
+            dest="clear",
+            help="flag used to clear all the files generated during processing",
             required=False)
 
         optional.add_argument(
-            '-g',
-            '--grouping',
-            action='store_true',
-            dest='grouping',
-            help='''flag used to put the working directories in a single one
-            and aggregate the logs''',
+            "-g",
+            "--grouping",
+            action="store_true",
+            dest="grouping",
+            help="""flag used to put the working directories in a single one
+            and aggregate the logs""",
             required=False)
 
         optional.add_argument(
-            '-l',
-            '--log-level',
-            action='store',
-            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-            default='INFO',
-            dest='log_level',
-            help='''log level, potential values:\n- DEBUG\n- INFO (default)\n-
-            WARNING\n- ERROR\n-CRITICAL''',
-            metavar='LEVEL',
+            "-l",
+            "--log-level",
+            action="store",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default="INFO",
+            dest="log_level",
+            help="""log level, potential values:\n- DEBUG\n- INFO (default)\n-
+            WARNING\n- ERROR\n-CRITICAL""",
+            metavar="LEVEL",
             required=False,
             type=str)
 
         optional.add_argument(
-            '--skip',
-            action='store_true',
-            dest='skip',
-            help='flag used to skip source files when not found',
+            "--skip",
+            action="store_true",
+            dest="skip",
+            help="flag used to skip source files when not found",
             required=False)
 
         optional.add_argument(
-            '-t',
-            '--tag',
-            action='store',
-            dest='tag',
-            help='''add a tag to the name of the report file and the working
-            directory''',
-            metavar='TAG',
+            "-t",
+            "--tag",
+            action="store",
+            dest="tag",
+            help="""add a tag to the name of the report file and the working
+            directory""",
+            metavar="TAG",
             required=False,
             type=str)
 
         # Other arguments
-        others.add_argument('-h',
-                            '--help',
-                            action='help',
-                            help='show this help message and exit')
+        others.add_argument("-h",
+                            "--help",
+                            action="help",
+                            help="show this help message and exit")
 
         others.add_argument(
-            '-v',
-            '--version',
-            action='version',
-            help='show this version message and exit',
-            version='%(prog)s {version}'.format(version=__version__))
+            "-v",
+            "--version",
+            action="version",
+            help="show this version message and exit",
+            version="%(prog)s {version}".format(version=__version__))
 
         # Deprecated arguments
-        optional.add_argument('-r',
-                              '--recursive',
-                              action='store',
+        optional.add_argument("-r",
+                              "--recursive",
+                              action="store",
                               help=argparse.SUPPRESS)
 
-        optional.add_argument('-e',
-                              '--export',
-                              action='store',
+        optional.add_argument("-e",
+                              "--export",
+                              action="store",
                               help=argparse.SUPPRESS)
 
         # Do the parsing
@@ -193,7 +193,7 @@ class Main():
         # Analyze profiles, making sure a file with .prof extension is
         # specified for each profile
         for profile in args.profile_list:
-            is_valid_ext = FileHandler().check_extension(profile, 'prof')
+            is_valid_ext = FileHandler().check_extension(profile, "prof")
             if is_valid_ext is False:
                 Log().logger.critical(ErrorMessage.ABORT.value)
                 sys.exit(-1)
@@ -223,7 +223,7 @@ class Main():
     def _create_jobs(profile, clear):
         """Creates job depending on the section of the profile.
 
-        Running the method 'sections' on the profile which is a ConfigParser
+        Running the method "sections" on the profile which is a ConfigParser
         object allow us to create a list of strings, the name of each section
         of the profile. And then a call to the method create of the JobFactory
         module generate the corresponding job.
@@ -249,7 +249,7 @@ class Main():
                 jobs.append(job)
 
             if clear is True:
-                job = job_factory.create('clear')
+                job = job_factory.create("clear")
                 jobs.append(job)
         except:
             traceback.print_exc()
@@ -333,7 +333,7 @@ class Main():
 
         # Set log level and log oftools_compile command as DEBUG level
         Log().set_level(args.log_level)
-        Log().logger.debug(' '.join((arg for arg in sys.argv)))
+        Log().logger.debug(" ".join((arg for arg in sys.argv)))
 
         # Initialize variables for program execution
         Context().grouping = args.grouping
@@ -367,7 +367,7 @@ class Main():
                 for file_path in source.file_paths:
                     try:
                         # Initialization of variables before running the jobs
-                        file_name_in = ''
+                        file_name_in = ""
                         file_name_out = file_path
                         start_time = time.time()
 

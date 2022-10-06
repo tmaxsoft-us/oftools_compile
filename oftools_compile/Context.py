@@ -91,25 +91,25 @@ class Context(metaclass=SingletonMeta):
         self._env = self._init_env
 
         # Directories
-        self._root_workdir = ''
-        self._exec_working_dir = ''
-        self._current_workdir = ''
+        self._root_workdir = ""
+        self._exec_working_dir = ""
+        self._current_workdir = ""
 
         # Profile sections
-        self._last_section = ''
+        self._last_section = ""
 
         # Filter variables
         self._filters = {}
 
         # Report
-        self._report_file_path = ''
+        self._report_file_path = ""
 
         # Argument flags
         self._grouping = False
         self._skip = False
 
         # Tag
-        self._tag = ''
+        self._tag = ""
 
         # Timestamp
         self._time_stamp = datetime.datetime.now()
@@ -227,16 +227,16 @@ class Context(metaclass=SingletonMeta):
         """
         if tag is None:
             self._tag, _, _ = ShellHandler().execute_command(
-                'logname', 'tag', self._env)
-            self._tag = '_' + self._tag.replace('\n', '')
+                "logname", "tag", self._env)
+            self._tag = "_" + self._tag.replace("\n", "")
         else:
-            self._tag = '_' + tag
+            self._tag = "_" + tag
 
     @property
     def time_stamp(self):
         """Getter method for the attribute _time_stamp.
         """
-        return self._time_stamp.strftime('_%Y%m%d_%H%M%S')
+        return self._time_stamp.strftime("_%Y%m%d_%H%M%S")
 
     @time_stamp.setter
     def time_stamp(self, update):
@@ -256,14 +256,14 @@ class Context(metaclass=SingletonMeta):
             key {string} -- Name of the environment variable.
             value {string} -- Value of the environment variable.
         """
-        if not value.startswith('$(') and not value.startswith('`'):
+        if not value.startswith("$(") and not value.startswith("`"):
             self._env[key[1:]] = os.path.expandvars(value)
         else:
-            if value.startswith('$(') and value.endswith(')'):
+            if value.startswith("$(") and value.endswith(")"):
                 value = value[2:-1]
-            elif value.startswith('`') and value.endswith('`'):
+            elif value.startswith("`") and value.endswith("`"):
                 value = value[1:-1]
-            out, _, _ = ShellHandler().execute_command(value, 'env_variable',
+            out, _, _ = ShellHandler().execute_command(value, "env_variable",
                                                        self._env)
             value = out.rstrip()
             # Write to env dictionary without dollar sign
@@ -295,8 +295,8 @@ class Context(metaclass=SingletonMeta):
                 profile before being defined.
         """
         try:
-            if key == '':
-                filter_function = ''
+            if key == "":
+                filter_function = ""
             else:
                 filter_function = self.filters[key]
         except KeyError:
@@ -315,7 +315,7 @@ class Context(metaclass=SingletonMeta):
         self._env = self._init_env
         os.environ.update(self._init_env)
 
-        self._current_workdir = ''
+        self._current_workdir = ""
 
         self._filters.clear()
         for key in profile.sections_complete.keys():
@@ -326,13 +326,13 @@ class Context(metaclass=SingletonMeta):
     def clear_all(self):
         """Clears context completely at the end of the program execution.
         """
-        self._root_workdir = ''
-        self._exec_working_dir = ''
+        self._root_workdir = ""
+        self._exec_working_dir = ""
 
         self._filters = {}
-        self._last_section = ''
-        self._report_file_path = ''
-        self._tag = ''
+        self._last_section = ""
+        self._report_file_path = ""
+        self._tag = ""
         self._time_stamp = datetime.datetime.now()
 
         os.chdir(self._init_pwd)

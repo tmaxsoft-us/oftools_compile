@@ -89,17 +89,17 @@ class SetupJob(Job):
                            (self._section_name, self._file_path_in))
 
         for key, value in self._profile.data[self._section_name].items():
-            if key == 'workdir':
+            if key == "workdir":
                 self._init_current_workdir()
                 return_code = self._init_file()
                 self._init_log_file()
-            elif key == 'mandatory':
+            elif key == "mandatory":
                 continue
-            elif key == 'housekeeping':
+            elif key == "housekeeping":
                 return_code = self._process_housekeeping(value)
-            elif key == 'backup':
-                if self._profile.data.has_option('setup',
-                                                 'housekeeping') is False:
+            elif key == "backup":
+                if self._profile.data.has_option("setup",
+                                                 "housekeeping") is False:
                     return_code = self._process_backup(value)
                 else:
                     continue
@@ -170,9 +170,9 @@ class SetupJob(Job):
         Log().logger.debug(LogMessage.START_LOG_FILE.value % self._section_name)
 
         current_workdir = Context().current_workdir
-        Log().open_file(os.path.join(current_workdir, 'oftools_compile.log'))
-        header = '================================================================================'
-        header = header[0:8] + ' ' + self._file_name_in + ' ' + header[
+        Log().open_file(os.path.join(current_workdir, "oftools_compile.log"))
+        header = "================================================================================"
+        header = header[0:8] + " " + self._file_name_in + " " + header[
             len(self._file_name_in) + 8:]
 
         Log().logger.info(header)
@@ -201,10 +201,10 @@ class SetupJob(Job):
                 converted from string to integer.
         """
         Log().logger.debug(LogMessage.START_CLEANING.value %
-                           (self._section_name, 'backup'))
+                           (self._section_name, "backup"))
 
         try:
-            if value != '':
+            if value != "":
                 value = int(value)
                 backup_paths = FileHandler().get_duplicates(
                     Context().root_workdir, self._file_name_in)
@@ -226,14 +226,14 @@ class SetupJob(Job):
                 else:
                     Log().logger.debug(LogMessage.VALUE_BELOW_THRESHOLD.value %
                                        (self._section_name,
-                                        len(backup_paths) - 1, value, 'backup'))
+                                        len(backup_paths) - 1, value, "backup"))
 
                 Log().logger.debug(LogMessage.END_CLEANING.value %
-                                   (self._section_name, 'backup'))
+                                   (self._section_name, "backup"))
                 return_code = 0
             else:
                 Log().logger.warning(LogMessage.VALUE_EMPTY.value %
-                                     ('setup', 'backup'))
+                                     ("setup", "backup"))
                 return_code = 1
         except ValueError:
             Log().logger.error(ErrorMessage.VALUE_BACKUP.value % value)
@@ -257,12 +257,12 @@ class SetupJob(Job):
                 converted from string to integer.
         """
         Log().logger.debug(LogMessage.START_CLEANING.value %
-                           (self._section_name, 'housekeeping'))
+                           (self._section_name, "housekeeping"))
 
         try:
-            if value != '':
-                if self._profile.data.has_option('setup', 'backup'):
-                    if value[-1] == 'd':
+            if value != "":
+                if self._profile.data.has_option("setup", "backup"):
+                    if value[-1] == "d":
 
                         days = int(value[:-1])
                         threshold = datetime.datetime.today(
@@ -270,7 +270,7 @@ class SetupJob(Job):
                         backup_paths = FileHandler().get_duplicates(
                             Context().root_workdir, self._file_name_in)
                         backup_value = int(
-                            self._profile.data.get('setup', 'backup'))
+                            self._profile.data.get("setup", "backup"))
 
                         if len(backup_paths) > backup_value:
                             creation_times = FileHandler().get_modified_times(
@@ -297,16 +297,16 @@ class SetupJob(Job):
                             if number_of_backups == len(backup_paths):
                                 Log().logger.info(
                                     LogMessage.NOT_OLD_ENOUGH.value %
-                                    (self._section_name, 'housekeeping'))
+                                    (self._section_name, "housekeeping"))
                             else:
                                 Log().logger.debug(
                                     LogMessage.END_CLEANING.value %
-                                    (self._section_name, 'housekeeping'))
+                                    (self._section_name, "housekeeping"))
                         else:
                             Log().logger.debug(
                                 LogMessage.VALUE_BELOW_THRESHOLD.value %
                                 (self._section_name, len(backup_paths) - 1,
-                                 backup_value, 'housekeeping'))
+                                 backup_value, "housekeeping"))
                         return_code = 0
                     else:
                         raise ValueError()
@@ -314,7 +314,7 @@ class SetupJob(Job):
                     raise SystemError()
             else:
                 Log().logger.warning(LogMessage.VALUE_EMPTY.value %
-                                     ('setup', 'housekeeping'))
+                                     ("setup", "housekeeping"))
                 return_code = 1
         except SystemError:
             Log().logger.error(ErrorMessage.MISSING_BACKUP.value)

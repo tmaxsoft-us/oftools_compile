@@ -39,7 +39,7 @@ class Grouping():
         self._clear = clear
 
         self._directory = Context().exec_working_dir
-        self._log = os.path.join(self._directory, 'group.log')
+        self._log = os.path.join(self._directory, "group.log")
 
     def _aggregate_logs(self):
         """Performs log aggregation.
@@ -52,23 +52,23 @@ class Grouping():
             d.path for d in os.scandir(self._directory) if d.is_dir()
         ]
 
-        with open(self._log, 'w', encoding="utf-8") as group_log:
+        with open(self._log, "w", encoding="utf-8") as group_log:
 
             for working_dir in working_dirs:
                 files = os.listdir(working_dir)
 
                 for file_name in files:
-                    if file_name == 'oftools_compile.log':
+                    if file_name == "oftools_compile.log":
                         # Retrieve absolute path of the current log file
                         file_path = os.path.join(working_dir, file_name)
 
-                        with open(file_path, 'r', encoding="utf-8") as oftools_compile_log:
+                        with open(file_path, "r", encoding="utf-8") as oftools_compile_log:
                             # Read the log file and write to group log file
                             Log().logger.debug(
                                 LogMessage.AGGREGATE_LOG_FILE.value % file_path)
 
                             group_log.write(oftools_compile_log.read())
-                            group_log.write('\n\n')
+                            group_log.write("\n\n")
 
     def run(self):
         """General run method for the Grouping module.

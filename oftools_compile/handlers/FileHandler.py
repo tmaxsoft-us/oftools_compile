@@ -86,8 +86,8 @@ class FileHandler(object, metaclass=SingletonMeta):
     def __init__(self):
         """Initialize class attributes.
         """
-        self._config_extensions = ['cfg', 'conf', 'ini', 'prof', 'toml']
-        self._text_extensions = ['log', 'tip', 'txt']
+        self._config_extensions = ["cfg", "conf", "ini", "prof", "toml"]
+        self._text_extensions = ["log", "tip", "txt"]
 
     # File related methods
 
@@ -141,24 +141,24 @@ class FileHandler(object, metaclass=SingletonMeta):
                 if os.path.getsize(path_expand) <= 0:
                     raise SystemError()
 
-                with open(path_expand, mode='r', encoding="utf-8") as fd:
-                    extension = path_expand.rsplit('.', 1)[1]
+                with open(path_expand, mode="r", encoding="utf-8") as fd:
+                    extension = path_expand.rsplit(".", 1)[1]
 
                     if extension in self._config_extensions:
                         file_data = configparser.ConfigParser(
                             dict_type=collections.OrderedDict)
                         file_data.optionxform = str
                         file_data.read(path_expand)
-                    elif extension == 'csv':
-                        out = csv.reader(fd, delimiter=',')
+                    elif extension == "csv":
+                        out = csv.reader(fd, delimiter=",")
                         file_data = []
                         for row in out:
                             file_data.append(row)
-                    elif extension == 'json':
+                    elif extension == "json":
                         file_data = json.load(fd)
                     elif extension in self._text_extensions:
                         file_data = fd.read()
-                    elif extension == 'xml':
+                    elif extension == "xml":
                         file_data = untangle.parse(path_expand)
                     else:
                         raise TypeError()
@@ -216,7 +216,7 @@ class FileHandler(object, metaclass=SingletonMeta):
         else:
             return file_data
 
-    def write_file(self, path, content, mode='w'):
+    def write_file(self, path, content, mode="w"):
         """Writes content to the file.
 
         Arguments:
@@ -224,7 +224,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             content {string or list[string]} -- Content that needs to be
                 written to the file.
             mode {string} -- Mode used to write the file. Most common values:
-                'a' or 'w'.
+                "a" or "w".
 
         Returns:
             integer -- Return code of the method.
@@ -244,17 +244,17 @@ class FileHandler(object, metaclass=SingletonMeta):
             if os.path.isdir(path_expand) is False:
 
                 with open(path_expand, mode, encoding="utf-8") as fd:
-                    extension = path_expand.rsplit('.', 1)[1]
+                    extension = path_expand.rsplit(".", 1)[1]
 
                     if extension in self._config_extensions:
                         content.write(fd)
-                    elif extension == 'csv':
-                        writer = csv.writer(fd, delimiter=',')
+                    elif extension == "csv":
+                        writer = csv.writer(fd, delimiter=",")
                         if isinstance(content, list):
                             writer.writerow(content)
                         elif isinstance(content[0], list):
                             writer.writerows(content)
-                    elif extension == 'json':
+                    elif extension == "json":
                         json.dump(content, fd)
                     elif extension in self._text_extensions:
                         if isinstance(content, str):
@@ -362,7 +362,7 @@ class FileHandler(object, metaclass=SingletonMeta):
         """
         try:
             path_expand = os.path.expandvars(path)
-            ext = path_expand.rsplit('.', 1)[1]
+            ext = path_expand.rsplit(".", 1)[1]
 
             if ext == extension:
                 is_valid_ext = True
@@ -383,7 +383,7 @@ class FileHandler(object, metaclass=SingletonMeta):
     # Directory related methods
 
     @staticmethod
-    def create_directory(path, path_type='default'):
+    def create_directory(path, path_type="default"):
         """Creates the given directory if it does not already exists.
 
         Arguments:
@@ -411,7 +411,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             else:
                 raise FileExistsError()
         except FileExistsError:
-            if path_type == 'group':
+            if path_type == "group":
                 Log().logger.error(ErrorMessage.FILE_EXISTS.value % path)
             # else:
             #     Log().logger.debug(ErrorMessage.FILE_EXISTS.value % path)
@@ -629,7 +629,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                     os.path.abspath(os.path.join(root, filename))
                     for root, _, files in os.walk(path_expand)
                     for filename in files
-                    if not filename.startswith('.')
+                    if not filename.startswith(".")
                 ]
                 # Sort the list alphabetically
                 file_paths.sort()

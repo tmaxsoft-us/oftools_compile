@@ -29,7 +29,7 @@ class Clear():
     def __init__(self):
         """Initializes the class with all the attributes.
         """
-        self._file_name_out = ''
+        self._file_name_out = ""
 
     @property
     def file_name_out(self):

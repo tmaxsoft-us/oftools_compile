@@ -56,9 +56,9 @@ class Job():
         self._section_no_filter = profile.sections_no_filter[section_name]
         self._filter = profile.filters[section_name]
 
-        self._file_path_in = ''
-        self._file_name_in = ''
-        self._file_name_out = ''
+        self._file_path_in = ""
+        self._file_name_in = ""
+        self._file_name_out = ""
 
     @property
     def file_name_out(self):
@@ -74,7 +74,7 @@ class Job():
             file_path_in {string} -- Path of the input file.
 
         Raises:
-            IndexError -- Exception raised if there is no '/' symbol in the
+            IndexError -- Exception raised if there is no "/" symbol in the
                 file path, which means only the file name has been provided and
                 not the absolute file path.
         """
@@ -82,31 +82,31 @@ class Job():
         self._file_path_in = file_path_in
         # Initializes file_name_in
         try:
-            self._file_name_in = self._file_path_in.rsplit('/', 1)[1]
+            self._file_name_in = self._file_path_in.rsplit("/", 1)[1]
         except IndexError:
             self._file_name_in = self._file_path_in
         # Initialize file_name_out
-        if 'setup' in self._section_name or 'deploy' in self._section_name:
+        if "setup" in self._section_name or "deploy" in self._section_name:
             self._file_name_out = self._file_name_in
         else:
-            filename = self._file_name_in.rsplit('.', 1)[0]
+            filename = self._file_name_in.rsplit(".", 1)[0]
             extension = self._section_no_filter
-            self._file_name_out = filename + '.' + extension
+            self._file_name_out = filename + "." + extension
 
         # Handle cases where the file name starts with a special character
-        if self._file_name_in.startswith(('$', '#', '@')):
-            self._file_name_in = '\\' + self._file_name_in
-            self._file_name_out = '\\' + self._file_name_out
+        if self._file_name_in.startswith(("$", "#", "@")):
+            self._file_name_in = "\\" + self._file_name_in
+            self._file_name_out = "\\" + self._file_name_out
 
     def _update_context(self):
         """Updates Context with the name of files being manipulated in this job
         execution.
         """
-        base_file_name = self._file_name_out.rsplit('.', 1)[0]
+        base_file_name = self._file_name_out.rsplit(".", 1)[0]
 
-        Context().add_env_variable('$OF_COMPILE_IN', self._file_name_in)
-        Context().add_env_variable('$OF_COMPILE_OUT', self._file_name_out)
-        Context().add_env_variable('$OF_COMPILE_BASE', base_file_name)
+        Context().add_env_variable("$OF_COMPILE_IN", self._file_name_in)
+        Context().add_env_variable("$OF_COMPILE_OUT", self._file_name_out)
+        Context().add_env_variable("$OF_COMPILE_BASE", base_file_name)
 
         Context().last_section = self._section_name
 
@@ -129,14 +129,14 @@ class Job():
                 pair) is not supported.
         """
         try:
-            if key.startswith('$'):
+            if key.startswith("$"):
                 Context().add_env_variable(key, value)
-                if key == '$OF_COMPILE_IN':
-                    self._file_name_in = Context().env['OF_COMPILE_IN']
-                elif key == '$OF_COMPILE_OUT':
-                    self._file_name_out = Context().env['OF_COMPILE_OUT']
+                if key == "$OF_COMPILE_IN":
+                    self._file_name_in = Context().env["OF_COMPILE_IN"]
+                elif key == "$OF_COMPILE_OUT":
+                    self._file_name_out = Context().env["OF_COMPILE_OUT"]
                 return_code = 0
-            elif key.startswith('?'):
+            elif key.startswith("?"):
                 Context().add_filter(key, value)
                 return_code = 0
             else:

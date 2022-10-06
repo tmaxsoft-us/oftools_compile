@@ -35,7 +35,7 @@ class Source(object):
         """Initializes the class with all the attributes.
         """
         self._source_path = source_path
-        self._source_type = ''
+        self._source_type = ""
         self._file_paths = []
 
         self._analyze()
@@ -49,12 +49,12 @@ class Source(object):
     def _get_source_type(self):
         """Identifies the type of source specified by the user.
         """
-        if ':' in self._source_path:
-            self._source_type = 'list'
-        elif self._source_path.endswith('.txt'):
-            self._source_type = 'file'
+        if ":" in self._source_path:
+            self._source_type = "list"
+        elif self._source_path.endswith(".txt"):
+            self._source_type = "file"
         else:
-            self._source_type = 'default'
+            self._source_type = "default"
 
         Log().logger.debug(LogMessage.SOURCE_TYPE.value % self._source_type)
 
@@ -69,15 +69,15 @@ class Source(object):
         """
         return_code = 0
         sources = []
-        
+
         self._get_source_type()
 
-        if self._source_type == 'list' or self._source_type == 'file':
-            if self._source_type == 'list':
-                sources = self._source_path.split(':')
-            elif self._source_type == 'file':
+        if self._source_type == "list" or self._source_type == "file":
+            if self._source_type == "list":
+                sources = self._source_path.split(":")
+            elif self._source_type == "file":
                 file_data = FileHandler().read_file(self._source_path)
-                sources = file_data.strip().split('\n')
+                sources = file_data.strip().split("\n")
 
             for source in sources:
                 if FileHandler().check_path_exists(source):
@@ -88,7 +88,7 @@ class Source(object):
                     Log().logger.info(LogMessage.SOURCE_SKIP.value)
                     return_code = 1
 
-        elif self._source_type == 'default':
+        elif self._source_type == "default":
             if FileHandler().check_path_exists(self._source_path):
                 self._file_paths = FileHandler().get_files(self._source_path)
                 return_code = 0

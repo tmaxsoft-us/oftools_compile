@@ -98,9 +98,9 @@ class Report(object):
         self._total_count = 0
         self._total_time = 0
 
-        self._green = '\x1b[92m'
-        self._red = '\x1b[91m'
-        self._white = '\x1b[39m'
+        self._green = "\x1b[92m"
+        self._red = "\x1b[91m"
+        self._white = "\x1b[39m"
 
     def add_entry(self, source_file_path, return_code, elapsed_time):
         """Adds a new record to the report of the compilation.
@@ -116,40 +116,40 @@ class Report(object):
             elapsed_time {integer} --Processing time.
 
         Raises:
-            IndexError -- Exception raised if there is no '/' symbol in the
+            IndexError -- Exception raised if there is no "/" symbol in the
                 filename, which means the file name only has been provided and
                 not the absolute file path.
         """
-        if Context().report_file_path == '' and self._clear is False:
-            report_file_name = 'report/oftools_compile' + Context(
-            ).tag + Context().time_stamp + '.csv'
+        if Context().report_file_path == "" and self._clear is False:
+            report_file_name = "report/oftools_compile" + Context(
+            ).tag + Context().time_stamp + ".csv"
             path = os.path.join(Context().root_workdir, report_file_name)
             Log().logger.debug(LogMessage.CREATE_REPORT_FILE.value % path)
 
             headers = [
-                'count', 'source', 'working_directory', 'result', 'return_code',
-                'section', 'time(s)'
+                "count", "source", "working_directory", "result", "return_code",
+                "section", "time(s)"
             ]
             FileHandler().write_file(path, headers)
             Context().report_file_path = path
 
         # Get input source file name
-        source_file_name = source_file_path.rsplit('/', 1)[1]
+        source_file_name = source_file_path.rsplit("/", 1)[1]
 
         # Analyze input parameter: return_code
         if return_code in (0, 1):
             self._success_count += 1
-            processing_status = 'SUCCESSFUL'
+            processing_status = "SUCCESSFUL"
             color = self._green
         else:
             self._fail_count += 1
-            processing_status = 'FAILED'
+            processing_status = "FAILED"
             color = self._red
 
         Log().logger.info(color + LogMessage.BUILD_STATUS.value %
                           (processing_status, round(elapsed_time, 4)) +
                           self._white)
-        print('')
+        print("")
 
         self._total_count = self._success_count + self._fail_count
 
@@ -158,7 +158,7 @@ class Report(object):
                             Context().current_workdir, processing_status, return_code,
                             Context().last_section, elapsed_time)
             row = record.to_csv()
-            FileHandler().write_file(Context().report_file_path, row, mode='a')
+            FileHandler().write_file(Context().report_file_path, row, mode="a")
 
         # Analyze input parameter: elapsed_time, cumulate compilation times
         self._total_time += elapsed_time

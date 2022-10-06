@@ -44,11 +44,11 @@ class JobFactory():
         Returns:
             Job object -- Appropriate Job object depending on the input.
         """
-        if job_name.startswith('setup'):
+        if job_name.startswith("setup"):
             return SetupJob(self._profile, job_name)
-        elif job_name.startswith('deploy'):
+        elif job_name.startswith("deploy"):
             return DeployJob(self._profile, job_name)
-        elif job_name == 'clear':
+        elif job_name == "clear":
             return Clear()
         else:
             return CompileJob(self._profile, job_name)
