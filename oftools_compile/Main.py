@@ -21,7 +21,7 @@ from .enums.ErrorEnum import ErrorMessage
 from .enums.LogEnum import LogMessage
 from .Grouping import Grouping
 from .handlers.FileHandler import FileHandler
-from .JobFactory import JobFactory
+from .jobs.JobFactory import JobFactory
 from .Log import Log
 from .Profile import Profile
 from .Report import Report

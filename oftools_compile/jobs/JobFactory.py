@@ -12,7 +12,7 @@ Typical usage example:
 # Third-party modules
 
 # Owned modules
-from .Clear import Clear
+from ..Clear import Clear
 from .CompileJob import CompileJob
 from .DeployJob import DeployJob
 from .SetupJob import SetupJob

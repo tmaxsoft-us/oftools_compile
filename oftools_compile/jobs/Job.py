@@ -13,9 +13,9 @@ Typical usage example:
 # Third-party modules
 
 # Owned modules
-from .Context import Context
-from .enums.ErrorEnum import ErrorMessage
-from .Log import Log
+from ..Context import Context
+from ..enums.ErrorEnum import ErrorMessage
+from ..Log import Log
 
 
 class Job():
