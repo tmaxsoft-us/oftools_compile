@@ -61,6 +61,7 @@ class LogMessage(enum.Enum):
     SIGINT = 'Signal SIGINT detected'
     SIGQUIT = 'Signal SIGQUIT detected'
     SOURCE_PATH = 'Source path: %s'
+    WARNING_INTERRUPT = "Ctrl+C only interrupts current compilation. Press Ctrl+\\ to interrupt the program"
     WORKING_DIRECTORY = 'Current working directory: %s'
 
     # Profile module

@@ -287,6 +287,8 @@ class Main():
             profile {Profile} --
         """
         if mode == 1:
+            Log().logger.warning(LogMessage.WARNING_INTERRUPT.value)
+            time.sleep(2)
             Log().logger.critical(
                 ErrorMessage.KEYBOARD_ABORT_COMPILATION.value % file_path)
         elif mode == 3:
@@ -321,7 +323,7 @@ class Main():
             Ctrl + \.
         """
         return_code = 0
-        # Normal if there is an error on Windows, SIGQUIT only exist on Unix
+        # Normal if there is an error in Windows, SIGQUIT exists only in Unix
         signal.signal(signal.SIGQUIT, self._signal_handler)
 
         # For testing purposes. allow to remove logs when executing coverage
@@ -389,12 +391,12 @@ class Main():
                         self._end_processing(0, return_code, args.clear, report,
                                              file_path, elapsed_time, profile)
 
-                    except KeyboardInterrupt as exc:
+                    except KeyboardInterrupt as exception:
                         return_code = -2
                         self._end_processing(1, return_code, args.clear, report,
                                              file_path, 0, profile)
                         if INTERRUPT is True:
-                            raise KeyboardInterrupt() from exc
+                            raise KeyboardInterrupt() from exception
 
             if len(source.file_paths) != 0:
                 report.summary()

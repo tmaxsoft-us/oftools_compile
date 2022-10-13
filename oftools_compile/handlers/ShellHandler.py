@@ -181,21 +181,21 @@ class ShellHandler(metaclass=SingletonMeta):
         if env is None:
             env = self._env
 
+        command = os.path.expandvars(command)
+
+        if command_type != "deploy":
+            Log().logger.debug(command)
+
+        root_command = command.split()[0]
+
         try:
-            command = os.path.expandvars(command)
-
-            if command_type != "deploy":
-                Log().logger.debug(command)
-
-            root_command = command.split()[0]
-
             if self._is_command_exist(root_command):
                 process = self._run_command(command, env)
                 stdout, stderr, return_code = self._read_command(process)
             else:
                 raise SystemError()
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
+        except KeyboardInterrupt as exception:
+            raise KeyboardInterrupt() from exception
         except SystemError:
             Log().logger.error(ErrorMessage.SYSTEM_SHELL.value % root_command)
             stdout = None
