@@ -343,7 +343,7 @@ class Main():
         profile_dict = {}
 
         try:
-            for i in range(len(args.source_list)):
+            for i, _ in enumerate(args.source_list):
 
                 # Profile processing
                 profile_path = os.path.expandvars(args.profile_list[i])
@@ -372,8 +372,8 @@ class Main():
                         start_time = time.time()
 
                         for job in jobs:
-                            # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
-                            # is just the name of the file
+                            # For the SetupJob, file_name_in is an absolute path, but for all other
+                            # jobs this is just the name of the file
                             file_name_in = file_name_out
                             return_code = job.run(file_name_in)
                             if return_code == 1:
@@ -389,12 +389,12 @@ class Main():
                         self._end_processing(0, return_code, args.clear, report,
                                              file_path, elapsed_time, profile)
 
-                    except KeyboardInterrupt:
+                    except KeyboardInterrupt as exc:
                         return_code = -2
                         self._end_processing(1, return_code, args.clear, report,
                                              file_path, 0, profile)
                         if INTERRUPT is True:
-                            raise KeyboardInterrupt()
+                            raise KeyboardInterrupt() from exc
 
             if len(source.file_paths) != 0:
                 report.summary()
