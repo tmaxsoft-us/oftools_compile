@@ -39,26 +39,29 @@ class Log(metaclass=SingletonType):
     Attributes:
         _level_dict {dictionary} -- associate a string and its corresponding
             log level from logging module.
-        _logger {getLogger}
-        _formatter {Formatter} -- object used to properly format log messages.
-        _formatter {Formatter} -- custom object used to add color to log
+        _level {string} -- Log level for the current program execution.
+        _logger {getLogger} -- Logger to log all the events of the program
+            execution.
+        _formatter {Formatter} -- Formatter used to properly format log
             messages.
-        _file_handler {FileHandler} -- used to be able to write log messages to
+        _formatter {Formatter} -- Formatter used to add color to log
+            messages.
+        _file_handler {FileHandler} -- Handler used to write log messages to
             the current log file.
-        _stream_handler_out {StreamHandler} -- object used to write log
+        _stream_handler_out {StreamHandler} -- Handler used to write log
             messages to stdout.
-        _stream_handler_err {StreamHandler} -- object used to write log
+        _stream_handler_err {StreamHandler} -- Handler used to write log
             messages to stderr.
 
     Methods:
         __init__() -- Initializes the class with all the attributes.
         set_level(level) -- Changes log level based on user input.
-        open_stream() -- Opens the stream handler to write log messages to
+        open_stream() -- Opens the stream handlers to write log messages to
             stdout.
-        close_stream() -- Closes the stream handler at the end of the program
+        close_stream() -- Closes the stream handlers at the end of the program
             execution.
         open_file(path_to_file) -- Opens the file handler to write log messages
-            to the log file.
+            to the current log file.
         close_file() -- Closes the file handler at the end of each file
             processing.
     """
@@ -101,7 +104,7 @@ class Log(metaclass=SingletonType):
     def set_level(self, level):
         """Changes log level based on user input.
 
-        Args:
+        Arguments:
             level {string} -- User input for log level.
         """
         if level == "DEBUG":
@@ -114,7 +117,8 @@ class Log(metaclass=SingletonType):
     def open_stream(self):
         """Opens the stream handlers to write log messages to stdout and stderr.
         """
-        if self._stream_handler_out is None and self._stream_handler_err is None:
+        if self._stream_handler_out is None and \
+                self._stream_handler_err is None:
 
             self._stream_handler_out = logging.StreamHandler(stream=sys.stdout)
             self._stream_handler_out.setFormatter(self._custom_formatter)
@@ -130,7 +134,9 @@ class Log(metaclass=SingletonType):
     def close_stream(self):
         """Closes the stream handlers at the end of the program execution.
         """
-        if self._stream_handler_out is not None and self._stream_handler_err is not None:
+        if self._stream_handler_out is not None and \
+                self._stream_handler_err is not None:
+
             self._logger.removeHandler(self._stream_handler_out)
             self._stream_handler_out.close()
             self._stream_handler_out = None
@@ -142,7 +148,7 @@ class Log(metaclass=SingletonType):
     def open_file(self, file_path):
         """Opens the file handler to write log messages to the log file.
 
-        Args:
+        Arguments:
             file_path {string} -- Absolute path to the current log file.
         """
         try:
