@@ -20,7 +20,7 @@ class TestProcessDataset(object):
     Fixtures:
         init_pwd
         shared
-    
+
     Tests:
         test_empty
         test_invalid_list
@@ -94,7 +94,7 @@ class TestProcessDataset(object):
             ['--profile', init_pwd + 'profiles/dataset_not_exist.prof'])
         sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
 
-        assert Main().run() == 255
+        assert Main().run() == -1
 
     @staticmethod
     def test_one(init_pwd, shared):

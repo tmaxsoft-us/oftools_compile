@@ -106,7 +106,7 @@ class Report(object):
     def fail_count(self):
         """Getter method for the attribute _fail_count.
         """
-        return self.fail_count
+        return self._fail_count
 
     def add_entry(self, source_file_path, return_code, elapsed_time):
         """Adds a new record to the report of the compilation.

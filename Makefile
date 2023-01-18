@@ -81,7 +81,7 @@ test_func:
 test_unit:
 	pytest --color=yes --durations=5 -v -c tests/pytest.ini tests/unit/
 # Optional arguments:
-# --maxfail = <num> : Stop test suite after n test failures
+# --maxfail=<num> : Stop test suite after n test failures
 
 coverage:
 	coverage run --source=oftools_compile -m pytest --color=yes -v -s

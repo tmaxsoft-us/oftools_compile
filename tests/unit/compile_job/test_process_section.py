@@ -20,11 +20,11 @@ class TestProcessSection(object):
     Fixtures:
         init_pwd
         shared
-    
+
     Tests:
         test_args_and_option
         test_option
-        test_abort_section             
+        test_abort_section
     """
 
     @staticmethod
@@ -78,4 +78,4 @@ class TestProcessSection(object):
         sys.argv.extend(['--profile', init_pwd + 'profiles/abort_section.prof'])
         sys.argv.extend(['--source', shared + 'sources/SAMPLE1.cbl'])
 
-        assert Main().run() == 255
+        assert Main().run() == -1
