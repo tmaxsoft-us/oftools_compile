@@ -14,7 +14,7 @@ build:
 	python3 setup.py sdist
 
 remove:
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 
 #================================================================#
 #                   INSTALLATION                                 #
@@ -26,10 +26,10 @@ install:
 	pip3 install dist/*.whl
 uninstall:
 	pip3 uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 reinstall:
 	pip3 uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 	python3 setup.py bdist_wheel
 	pip3 install dist/*.whl
 
@@ -39,10 +39,10 @@ install_user:
 	pip3 install dist/*.whl --user
 uninstall_user:
 	pip3 uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 reinstall_user:
 	pip3 uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 	python3 setup.py bdist_wheel
 	pip3 install dist/*.whl --user
 
@@ -52,10 +52,10 @@ install_diff:
 	python3 -m pip install dist/*.whl
 uninstall_diff:
 	python3 -m pip uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 reinstall_diff:
 	python3 -m pip uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 	python3 setup.py bdist_wheel
 	python3 -m pip install dist/*.whl
 
@@ -65,10 +65,10 @@ install_user_diff:
 	python3 -m pip install dist/*.whl --user
 uninstall_user_diff:
 	python3 -m pip uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 reinstall_user_diff:
 	python3 -m pip uninstall -y oftools-compile
-	rm -r AUTHORS build ChangeLog dist oftools_compile.egg-info
+	rm -rf AUTHORS build ChangeLog dist oftools_compile.egg-info
 	python3 setup.py bdist_wheel
 	python3 -m pip install dist/*.whl --user
 
@@ -81,7 +81,7 @@ test_func:
 test_unit:
 	pytest --color=yes --durations=5 -v -c tests/pytest.ini tests/unit/
 # Optional arguments:
-# --maxfail = <num> : Stop test suite after n test failures
+# --maxfail=<num> : Stop test suite after n test failures
 
 coverage:
 	coverage run --source=oftools_compile -m pytest --color=yes -v -s
@@ -97,11 +97,10 @@ upload:
 	twine upload dist/*
 
 remove_pypi:
-	echo "curl --form ":action=remove_pkg" --form "name=oftools-compile" --form "version=1.2.0" URL -u id:pass
+	echo "curl --form ":action=remove_pkg" --form "name=oftools-compile" --form "version=1.3.5" URL -u id:pass
 
 #================================================================#
 #                   FORMATTING                                   #
 #================================================================#
 yapf:
 	yapf3 --style='{ based_on_style: google }' *.py -ir
-	

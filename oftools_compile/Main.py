@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Main module of OpenFrame Tools Compile.
 """
+
 # Generic/Built-in modules
 import argparse
 import os
@@ -20,7 +21,7 @@ from .enums.ErrorEnum import ErrorMessage
 from .enums.LogEnum import LogMessage
 from .Grouping import Grouping
 from .handlers.FileHandler import FileHandler
-from .JobFactory import JobFactory
+from .jobs.JobFactory import JobFactory
 from .Log import Log
 from .Profile import Profile
 from .Report import Report
@@ -31,139 +32,151 @@ INTERRUPT = False
 
 
 def main():
+    """Main run method call.
+    """
     return Main().run()
 
 
-class Main(object):
-    """Main class containing the methods for parsing the command arguments and running OpenFrame Tools 
-    Compile.
+class Main():
+    """Main class containing the methods for parsing the command arguments and
+    running OpenFrame Tools Compile.
 
     Methods:
         _parse_args() -- Parses command-line options.
-        _create_jobs(profile) -- Creates job depending on the section of the profile.
-        _end_processing(mode, rc, clear, report, file_path, elapsed_time, profile) -- Common method to end file processing or entire program.
-        run() -- Performs all the steps to run compilation for all sources using the appropriate profile.
+        _signal_handler(signum, frame) -- Handles signal SIGQUIT for the
+            program execution.
+        _create_jobs(profile) -- Creates job depending on the section of the
+            profile.
+        _end_processing(mode, return_code, clear, report, file_path, elapsed_time,
+            profile) -- Common method to end file processing or entire program.
+        run() -- Performs all the steps to run compilation for all sources
+            using the appropriate profile.
     """
 
     @staticmethod
     def _parse_args():
         """Parses command-line options.
 
-        The program defines what arguments it requires, and argparse will figure out how to parse those 
-        out of sys.argv. The argparse module also automatically generates help, usage messages and 
-        issues errors when users give the program invalid arguments.
+        The program defines what arguments it requires, and argparse will
+        figure out how to parse those out of sys.argv. The argparse module also
+        automatically generates help, usage messages and issues errors when
+        users give the program invalid arguments.
 
         Returns:
-            args {ArgumentParser} -- List of all arguments of the tool with their corresponding value.
+            args {ArgumentParser} -- List of all arguments of the tool with
+                their corresponding value.
 
         Raises:
-            argparse.ArgumentError -- Exception raised if there is an issue parsing the command arguments.
-            SystemError -- Exception raised if the numbers of profile and source are not 
-                matching.           
+            argparse.ArgumentError -- Exception raised if there is an issue
+                parsing the command arguments.
+            SystemError -- Exception raised if the numbers of profile and
+                source are not matching.
         """
         parser = argparse.ArgumentParser(
             add_help=False,
-            description='OpenFrame Tools Compile',
+            description="OpenFrame Tools Compile",
             formatter_class=argparse.RawTextHelpFormatter)
 
         parser._action_groups.pop()
-        required = parser.add_argument_group('Required arguments')
-        optional = parser.add_argument_group('Optional arguments')
-        others = parser.add_argument_group('Help & version')
+        required = parser.add_argument_group("Required arguments")
+        optional = parser.add_argument_group("Optional arguments")
+        others = parser.add_argument_group("Help & version")
 
         # Required arguments
         required.add_argument(
-            '-p',
-            '--profile',
-            action='append',
-            dest='profile_list',
-            help=
-            'profile name, contains the description of the compilation target',
-            metavar='FILENAME',
+            "-p",
+            "--profile",
+            action="append",
+            dest="profile_list",
+            help="""profile name, contains the description of the processing
+            target""",
+            metavar="FILE",
             required=True,
             type=str)
 
         required.add_argument(
-            '-s',
-            '--source',
-            action='append',
-            dest='source_list',
-            help=
-            'source name, currently supported:\n- file or a directory\n- colon-separated list of files of directories\n- text file containing a list of files or directories',
-            metavar='SOURCE',
+            "-s",
+            "--source",
+            action="append",
+            dest="source_list",
+            help="""source name, currently supported:\n- file or a directory\n-
+            colon-separated list of files of directories\n- text file
+            containing a list of files or directories""",
+            metavar="SOURCE",
             required=True,
             type=str)
 
         # Optional arguments
         optional.add_argument(
-            '-c',
-            '--clear',
-            action='store_true',
-            dest='clear',
-            help='clear all the files generated during compilation',
+            "-c",
+            "--clear",
+            action="store_true",
+            dest="clear",
+            help="flag used to clear all the files generated during processing",
             required=False)
 
         optional.add_argument(
-            '-g',
-            '--grouping',
-            action='store_true',
-            dest='grouping',
-            help=
-            'put all the compilation directories in a single one and aggregate all the logs',
+            "-g",
+            "--grouping",
+            action="store_true",
+            dest="grouping",
+            help="""flag used to put the working directories in a single one
+            and aggregate the logs""",
             required=False)
 
         optional.add_argument(
-            '-l',
-            '--log-level',
-            action='store',
-            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-            default='INFO',
-            dest='log_level',
-            help=
-            'set log level, potential values:\n- DEBUG\n- INFO (default)\n- WARNING\n- ERROR\n- CRITICAL',
-            metavar='LEVEL',
+            "-l",
+            "--log-level",
+            action="store",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default="INFO",
+            dest="log_level",
+            help="""log level, potential values:\n- DEBUG\n- INFO (default)\n-
+            WARNING\n- ERROR\n-CRITICAL""",
+            metavar="LEVEL",
             required=False,
             type=str)
 
-        optional.add_argument('--skip',
-                              action='store_true',
-                              dest='skip',
-                              help='skip source files if not found',
-                              required=False)
+        optional.add_argument(
+            "--skip",
+            action="store_true",
+            dest="skip",
+            help="flag used to skip source files when not found",
+            required=False)
 
         optional.add_argument(
-            '-t',
-            '--tag',
-            action='store',
-            dest='tag',
-            help=
-            'add a tag to the name of the report file and the compilation directory',
-            metavar='TAG',
+            "-t",
+            "--tag",
+            action="store",
+            dest="tag",
+            help="""add a tag to the name of the report file and the working
+            directory""",
+            metavar="TAG",
             required=False,
             type=str)
 
         # Other arguments
-        others.add_argument('-h',
-                            '--help',
-                            action='help',
-                            help='show this help message and exit')
+        others.add_argument("-h",
+                            "--help",
+                            action="help",
+                            help="show this help message and exit")
 
         others.add_argument(
-            '-v',
-            '--version',
-            action='version',
-            help='show this version message and exit',
-            version='%(prog)s {version}'.format(version=__version__))
+            "-v",
+            "--version",
+            action="version",
+            help="show this version message and exit",
+            version="%(prog)s {version}".format(version=__version__))
 
         # Deprecated arguments
-        optional.add_argument('-r',
-                              '--recursive',
-                              action='store',
+        optional.add_argument("-r",
+                              "--recursive",
+                              action="store",
                               help=argparse.SUPPRESS)
 
-        optional.add_argument('-e',
-                              '--export',
-                              action='store',
+        optional.add_argument("-e",
+                              "--export",
+                              action="store",
                               help=argparse.SUPPRESS)
 
         # Do the parsing
@@ -177,9 +190,10 @@ class Main(object):
             Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
 
-        # Analyze profiles, making sure a file with .prof extension is specified for each profile
+        # Analyze profiles, making sure a file with .prof extension is
+        # specified for each profile
         for profile in args.profile_list:
-            is_valid_ext = FileHandler().check_extension(profile, 'prof')
+            is_valid_ext = FileHandler().check_extension(profile, "prof")
             if is_valid_ext is False:
                 Log().logger.critical(ErrorMessage.ABORT.value)
                 sys.exit(-1)
@@ -199,7 +213,7 @@ class Main(object):
 
     @staticmethod
     def _signal_handler(signum, frame):
-        """
+        """Handles signal SIGQUIT for the program execution.
         """
         global INTERRUPT
         INTERRUPT = True
@@ -209,19 +223,22 @@ class Main(object):
     def _create_jobs(profile, clear):
         """Creates job depending on the section of the profile.
 
-        Running the method 'sections' on the profile which is a ConfigParser object allow us to create 
-        a list of strings, the name of each section of the profile. And then a call to the method 
-        create of the JobFactory module generate the corresponding job.
+        Running the method "sections" on the profile which is a ConfigParser
+        object allow us to create a list of strings, the name of each section
+        of the profile. And then a call to the method create of the JobFactory
+        module generate the corresponding job.
 
-        Args:
-            profile {ConfigParser} -- Compilation profile specified for the current source.
+        Arguments:
+            profile {ConfigParser} -- Compilation profile specified for the
+                current source.
             clear {boolean} -- Value of the argument clear from the CLI.
 
         Returns:
-            list[Job] -- list of Job objects.
+            list[Job] -- List of Job objects.
 
         Raises:
-            #TODO Complete docstrings, maybe change the behavior to print traceback only with DEBUG as log level
+            #TODO Complete docstrings, maybe change the behavior to print
+            #TODO traceback only with DEBUG as log level
         """
         jobs = []
         job_factory = JobFactory(profile)
@@ -232,22 +249,22 @@ class Main(object):
                 jobs.append(job)
 
             if clear is True:
-                job = job_factory.create('clear')
+                job = job_factory.create("clear")
                 jobs.append(job)
         except:
             traceback.print_exc()
             Log().logger.critical(ErrorMessage.JOB.value)
             Log().logger.critical(ErrorMessage.ABORT.value)
             sys.exit(-1)
-
-        return jobs
+        else:
+            return jobs
 
     @staticmethod
     def _end_processing(
         mode,
-        rc,
+        return_code,
         clear=None,
-        report=None,
+        report=Report(False),
         file_path=None,
         elapsed_time=None,
         profile=None,
@@ -262,14 +279,16 @@ class Main(object):
 
         Arguments:
             mode {integer} -- Ending mode for the program.
-            rc {integer} -- Return code of the file processing.
+            return_code {integer} -- Return code of the file processing.
             clear {boolean} -- Value of the argument clear from the CLI.
-            report {Report}
+            report {Report} --
             file_path {string} -- Absolute path to the source file.
             elapsed_time {integer} -- Elapsed processing time.
-            profile {Profile}
+            profile {Profile} --
         """
         if mode == 1:
+            Log().logger.warning(LogMessage.WARNING_INTERRUPT.value)
+            time.sleep(2)
             Log().logger.critical(
                 ErrorMessage.KEYBOARD_ABORT_COMPILATION.value % file_path)
         elif mode == 3:
@@ -283,25 +302,30 @@ class Main(object):
             if clear is not True:
                 Log().logger.info(LogMessage.WORKING_DIRECTORY.value %
                                   Context().current_workdir)
-            report.add_entry(file_path, rc, elapsed_time)
+            report.add_entry(file_path, return_code, elapsed_time)
             Context().clear(profile)
             Log().close_file()
 
         if mode in (2, 3):
-            Log().logger.debug(LogMessage.RETURN_CODE.value % rc)
+            Log().logger.debug(LogMessage.RETURN_CODE.value % return_code)
             Context().clear_all()
             Log().close_stream()
 
     def run(self):
-        """Performs all the steps to run compilation for all sources using the appropriate profile.
+        """Performs all the steps to run compilation for all sources using the
+        appropriate profile.
 
         Returns:
             integer -- Return code of the program.
+
+        Raises:
+            KeyboardInterrupt -- Exception raised if the user press Ctrl + C or
+            Ctrl + \.
         """
-        # This is normal if there is an error using this with Windows as the OS, SIGQUIT only exist in Unix
+        return_code = 0
+        # Normal if there is an error in Windows, SIGQUIT exists only in Unix
         signal.signal(signal.SIGQUIT, self._signal_handler)
 
-        rc = 0
         # For testing purposes. allow to remove logs when executing coverage
         # logging.disable(logging.CRITICAL)
         Log().open_stream()
@@ -309,9 +333,9 @@ class Main(object):
         # Parse command-line options
         args = self._parse_args()
 
-        # Set log level and log oftools_compile command as DEBUG
+        # Set log level and log oftools_compile command as DEBUG level
         Log().set_level(args.log_level)
-        Log().logger.debug(' '.join((arg for arg in sys.argv)))
+        Log().logger.debug(" ".join((arg for arg in sys.argv)))
 
         # Initialize variables for program execution
         Context().grouping = args.grouping
@@ -321,7 +345,7 @@ class Main(object):
         profile_dict = {}
 
         try:
-            for i in range(len(args.source_list)):
+            for i, _ in enumerate(args.source_list):
 
                 # Profile processing
                 profile_path = os.path.expandvars(args.profile_list[i])
@@ -345,19 +369,21 @@ class Main(object):
                 for file_path in source.file_paths:
                     try:
                         # Initialization of variables before running the jobs
-                        file_name_in = ''
+                        file_name_in = ""
                         file_name_out = file_path
                         start_time = time.time()
-                        
+
                         # GH#23: need to filter deployment based on the folder name
                         Context().add_env_variable("$OF_COMPILE_SOURCE", file_path)
 
                         for job in jobs:
-                            # For the SetupJob, file_name_in is an absolute path, but for all other jobs this
-                            # is just the name of the file
+                            # For the SetupJob, file_name_in is an absolute path, but for all other
+                            # jobs this is just the name of the file
                             file_name_in = file_name_out
-                            rc = job.run(file_name_in)
-                            if rc not in (0, 1):
+                            return_code = job.run(file_name_in)
+                            if return_code == 1:
+                                return_code = 0
+                            elif return_code not in (0, 1):
                                 Log().logger.error(LogMessage.ABORT_FILE.value %
                                                    file_name_in)
                                 break
@@ -365,15 +391,15 @@ class Main(object):
 
                         # Report related tasks
                         elapsed_time = time.time() - start_time
-                        self._end_processing(0, rc, args.clear, report,
+                        self._end_processing(0, return_code, args.clear, report,
                                              file_path, elapsed_time, profile)
 
-                    except KeyboardInterrupt:
-                        rc = -2
-                        self._end_processing(1, rc, args.clear, report,
+                    except KeyboardInterrupt as exception:
+                        return_code = -2
+                        self._end_processing(1, return_code, args.clear, report,
                                              file_path, 0, profile)
                         if INTERRUPT is True:
-                            raise KeyboardInterrupt()
+                            raise KeyboardInterrupt() from exception
 
             if len(source.file_paths) != 0:
                 report.summary()
@@ -382,10 +408,13 @@ class Main(object):
                     grouping = Grouping(args.clear)
                     grouping.run()
 
-            self._end_processing(2, rc)
+            self._end_processing(2, return_code)
+
+            if report.fail_count > 0:
+                return_code = -1
 
         except KeyboardInterrupt:
-            rc = -3
-            self._end_processing(3, rc)
+            return_code = -3
+            self._end_processing(3, return_code)
 
-        return rc
+        return return_code

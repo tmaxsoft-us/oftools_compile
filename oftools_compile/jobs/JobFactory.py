@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Module to retrieve the parameters entered by the user and launch the corresponding job.
+"""Module to retrieve the parameters entered by the user and launch the
+corresponding job.
 
 Typical usage example:
   job_factory = JobFactory(profile)
@@ -11,13 +12,13 @@ Typical usage example:
 # Third-party modules
 
 # Owned modules
-from .Clear import Clear
+from ..Clear import Clear
 from .CompileJob import CompileJob
 from .DeployJob import DeployJob
 from .SetupJob import SetupJob
 
 
-class JobFactory(object):
+class JobFactory():
     """A class used to create all the jobs required with the given profile.
 
     Attributes:
@@ -37,16 +38,17 @@ class JobFactory(object):
         """Creates the job according to the input parameter.
 
         Arguments:
-            job_name {string} -- Name of the section in the profile or name of the command line option used (grouping and clear).
+            job_name {string} -- Name of the section in the profile or name of
+                the command line option used (grouping and clear).
 
         Returns:
             Job object -- Appropriate Job object depending on the input.
         """
-        if job_name.startswith('setup'):
+        if job_name.startswith("setup"):
             return SetupJob(self._profile, job_name)
-        elif job_name.startswith('deploy'):
+        elif job_name.startswith("deploy"):
             return DeployJob(self._profile, job_name)
-        elif job_name == 'clear':
+        elif job_name == "clear":
             return Clear()
         else:
             return CompileJob(self._profile, job_name)

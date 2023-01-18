@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """Set of methods useful in any module.
 
-This module gathers a set of methods that are useful in many other modules. When a method is widely 
-used in different modules, a general version of it is created and can be found here.
+This module gathers a set of methods that are useful in many other modules.
+When a method is widely used in different modules, a general version of it is
+created and can be found here.
 
 Typical usage example:
   FileHandler().read_file(path)
@@ -13,7 +14,6 @@ Typical usage example:
 import configparser
 import collections
 import csv
-import hashlib
 import json
 import os
 import shutil
@@ -26,13 +26,16 @@ import untangle
 # Owned modules
 from ..Context import Context
 from ..enums.ErrorEnum import ErrorMessage
+from ..enums.LogEnum import LogMessage
 from ..Log import Log
 
 
 class SingletonMeta(type):
-    """This pattern restricts the instantiation of a class to one object. 
-    
-    It is a type of creational pattern and involves only one class to create methods and specified objects. It provides a global point of access to the instance created.
+    """This pattern restricts the instantiation of a class to one object.
+
+    It is a type of creational pattern and involves only one class to create
+    methods and specified objects. It provides a global point of access to the
+    instance created.
     """
     _instances = {}
 
@@ -44,36 +47,47 @@ class SingletonMeta(type):
 
 
 class FileHandler(object, metaclass=SingletonMeta):
-    """A class used to run file and directories related tasks across all modules.
+    """A class used to run file and directories related tasks across all
+    modules.
 
     Attributes:
-        _config_extensions {list[string]} -- List of supported extensions for configuration files.
-        _text_extensions {list[string]} -- List of supported extensions for text files.
+        _config_extensions {list[string]} -- List of supported extensions for
+            configuration files.
+        _text_extensions {list[string]} -- List of supported extensions for
+            text files.
 
     Methods:
         read_file(path) -- Opens and reads a file.
         write_file(path, content, mode) -- Writes content to the file.
         copy_file(src, dst) -- Copies the source file to its given destination.
         delete_file(path) -- Deletes the file.
-        check_extension(path, extension) -- Checks of the given file has the correct extension.
+        check_extension(path, extension) -- Checks of the given file has the
+            correct extension.
 
-        create_directory(path) -- Creates the given directory if it does not already exists.
-        move_directory (src, dst) -- Moves the source directory to its given destination.
-        delete_directory(path) -- Deletes an entire directory tree, whether it is empty or not.
-        is_a_directory(path) -- Evaluates if the given path is a directory or not.
-        
+        create_directory(path) -- Creates the given directory if it does not
+            already exists.
+        move_directory (src, dst) -- Moves the source directory to its given
+            destination.
+        delete_directory(path) -- Deletes an entire directory tree, whether it
+            is empty or not.
+        is_a_directory(path) -- Evaluates if the given path is a directory or
+            not.
+
         check_path_exists(path) -- Evaluates if the given path exists or not.
-        check_write_access (path) -- Evaluates if the user has write access on the given path.
+        check_write_access (path) -- Evaluates if the user has write access on
+            the given path.
         get_files (path) -- Gets the list of files in a given path.
-        get_duplicates(path, pattern) -- Gets duplicate files and folders in given path.
-        get_creation_times(path) -- Gets modified timestamp of the input path(s).
+        get_duplicates(path, pattern) -- Gets duplicate files and folders in
+            given path.
+        get_creation_times(path) -- Gets modified timestamp of the input path
+            (s).
     """
 
     def __init__(self):
         """Initialize class attributes.
         """
-        self._config_extensions = ['cfg', 'conf', 'ini', 'prof', 'toml']
-        self._text_extensions = ['log', 'tip', 'txt']
+        self._config_extensions = ["cfg", "conf", "ini", "prof", "toml"]
+        self._text_extensions = ["log", "tip", "txt"]
 
     # File related methods
 
@@ -86,27 +100,38 @@ class FileHandler(object, metaclass=SingletonMeta):
             path {string} -- Absolute path of the file.
 
         Returns:
-            Parsed file, the type depends on the extension of the processed file.
+            Parsed file, the type depends on the extension of the processed
+            file.
 
         Raises:
             SystemError -- Exception raised if the file is empty.
-            IsADirectoryError -- Exception raised if a directory is specified instead of a file.
-            FileNotFoundError -- Exception raised if the file does not exist or is not found.
-            PermissionError -- Exception raised if the user does not have the required permissions to read the file.
+            IsADirectoryError -- Exception raised if a directory is specified
+                instead of a file.
+            FileNotFoundError -- Exception raised if the file does not exist or
+                is not found.
+            PermissionError -- Exception raised if the user does not have the
+                required permissions to read the file.
             IndexError -- Exception raised if the file extension is not found.
-            TypeError --  Exception raised if the file extension is not supported.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            TypeError --  Exception raised if the file extension is not
+                supported.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
 
-            MissingSectionHeaderError -- Exception raised if there is no section in the config file specified.
-            DuplicateSectionError -- Exception raised if there are two sections with the same name in the 
-                config file specified.
-            DuplicateOptionError -- Exception raised if there is a duplicate option in one of the sections 
-                of the config file specified.
-            
-            JSONDecodeError -- Exception raised if there is an error decoding the JSON file specified.
-            ValueError -- Exception raised if the first argument is None / empty string.
-            AttributeError -- Exception raised if a requested xml.sax feature is not found in xml.sax.handler.
-            xml.sax.SAXParseException -- Exception raised if something goes wrong during parsing.
+            MissingSectionHeaderError -- Exception raised if there is no
+                section in the config file specified.
+            DuplicateSectionError -- Exception raised if there are two sections
+                with the same name in the config file specified.
+            DuplicateOptionError -- Exception raised if there is a duplicate
+                option in one of the sections of the config file specified.
+
+            JSONDecodeError -- Exception raised if there is an error decoding
+                the JSON file specified.
+            ValueError -- Exception raised if the first argument is None /
+                empty string.
+            AttributeError -- Exception raised if a requested xml.sax feature
+                is not found in xml.sax.handler.
+            xml.sax.SAXParseException -- Exception raised if something goes
+                wrong during parsing.
         """
         try:
             path_expand = os.path.expandvars(path)
@@ -116,24 +141,24 @@ class FileHandler(object, metaclass=SingletonMeta):
                 if os.path.getsize(path_expand) <= 0:
                     raise SystemError()
 
-                with open(path_expand, mode='r') as fd:
-                    extension = path_expand.rsplit('.', 1)[1]
+                with open(path_expand, mode="r", encoding="utf-8") as fd:
+                    extension = path_expand.rsplit(".", 1)[1]
 
                     if extension in self._config_extensions:
                         file_data = configparser.ConfigParser(
                             dict_type=collections.OrderedDict)
                         file_data.optionxform = str
                         file_data.read(path_expand)
-                    elif extension == 'csv':
-                        out = csv.reader(fd, delimiter=',')
+                    elif extension == "csv":
+                        out = csv.reader(fd, delimiter=",")
                         file_data = []
                         for row in out:
                             file_data.append(row)
-                    elif extension == 'json':
+                    elif extension == "json":
                         file_data = json.load(fd)
                     elif extension in self._text_extensions:
                         file_data = fd.read()
-                    elif extension == 'xml':
+                    elif extension == "xml":
                         file_data = untangle.parse(path_expand)
                     else:
                         raise TypeError()
@@ -191,41 +216,45 @@ class FileHandler(object, metaclass=SingletonMeta):
         else:
             return file_data
 
-    def write_file(self, path, content, mode='w'):
+    def write_file(self, path, content, mode="w"):
         """Writes content to the file.
-        
+
         Arguments:
             path {string} -- Absolute path of the file.
-            content {string or list[string]} -- Content that needs to be written to the file.
-            mode {string} -- Mode used to write the file. Most common values: 'a' or 
-            'w'.
+            content {string or list[string]} -- Content that needs to be
+                written to the file.
+            mode {string} -- Mode used to write the file. Most common values:
+                "a" or "w".
 
         Returns:
             integer -- Return code of the method.
-        
+
         Raises:
-            IsADirectoryError -- Exception raised if a directory is specified instead of a file.
-            PermissionError -- Exception raised if  the user does not have the required permissions to write to the file.
+            IsADirectoryError -- Exception raised if a directory is specified
+                instead of a file.
+            PermissionError -- Exception raised if  the user does not have the
+                required permissions to write to the file.
             IndexError -- Exception raised if the file extension is not found.
-            TypeError -- Exception raised if the file extension is not supported.
+            TypeError -- Exception raised if the file extension is not
+                supported.
         """
         try:
             path_expand = os.path.expandvars(path)
 
             if os.path.isdir(path_expand) is False:
 
-                with open(path_expand, mode) as fd:
-                    extension = path_expand.rsplit('.', 1)[1]
+                with open(path_expand, mode, encoding="utf-8") as fd:
+                    extension = path_expand.rsplit(".", 1)[1]
 
                     if extension in self._config_extensions:
                         content.write(fd)
-                    elif extension == 'csv':
-                        writer = csv.writer(fd, delimiter=',')
+                    elif extension == "csv":
+                        writer = csv.writer(fd, delimiter=",")
                         if isinstance(content, list):
                             writer.writerow(content)
                         elif isinstance(content[0], list):
                             writer.writerows(content)
-                    elif extension == 'json':
+                    elif extension == "json":
                         json.dump(content, fd)
                     elif extension in self._text_extensions:
                         if isinstance(content, str):
@@ -235,24 +264,24 @@ class FileHandler(object, metaclass=SingletonMeta):
                                 fd.write(line)
                     else:
                         raise TypeError()
-                rc = 0
+                return_code = 0
             else:
                 raise IsADirectoryError()
 
         except IsADirectoryError:
             Log().logger.critical(ErrorMessage.IS_A_DIRECTORY.value % path)
-            rc = -1
+            return_code = -1
         except PermissionError:
             Log().logger.critical(ErrorMessage.PERMISSION.value % path)
-            rc = -1
+            return_code = -1
         except IndexError:
             Log().logger.critical(ErrorMessage.INDEX_EXTENSION.value % path)
-            rc = -1
+            return_code = -1
         except TypeError:
             Log().logger.critical(ErrorMessage.TYPE_EXTENSION.value % path)
-            rc = -1
+            return_code = -1
 
-        return rc
+        return return_code
 
     @staticmethod
     def copy_file(src, dst):
@@ -264,26 +293,27 @@ class FileHandler(object, metaclass=SingletonMeta):
 
         Returns:
             integer -- Return code of the method.
-        
+
         Raises:
             shutil.SameFileError -- Exception raised if the file already exist.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
         """
         try:
             src_expand = os.path.expandvars(src)
             dst_expand = os.path.expandvars(dst)
 
             shutil.copy(src_expand, dst_expand)
-            Log().logger.debug('Successful copy of ' + src + ' to ' + dst)
-            rc = 0
+            Log().logger.debug(LogMessage.CP_SUCCESS.value % (src, dst))
+            return_code = 0
         except shutil.SameFileError:
             Log().logger.debug(ErrorMessage.SHUTIL_SAME_FILE.value % (src, dst))
-            rc = 1
+            return_code = 1
         except OSError as error:
             Log().logger.critical(ErrorMessage.OS_COPY.value % error)
-            rc = -1
+            return_code = -1
 
-        return rc
+        return return_code
 
     @staticmethod
     def delete_file(path):
@@ -294,14 +324,16 @@ class FileHandler(object, metaclass=SingletonMeta):
 
         Returns:
             integer -- Return code of the method.
-        
+
         Raises:
-            IsADirectoryError -- Exception raised if the given path is a directory and not a file.
-            FileNotFoundError -- Exception raised if the file does not exist or is not found.
+            IsADirectoryError -- Exception raised if the given path is a
+                directory and not a file.
+            FileNotFoundError -- Exception raised if the file does not exist or
+                is not found.
         """
         try:
             os.remove(path)
-            rc = 0
+            return_code = 0
         except IsADirectoryError:
             Log().logger.debug(ErrorMessage.IS_A_DIRECTORY.value % path)
             sys.exit(-1)
@@ -309,7 +341,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.debug(ErrorMessage.FILE_NOT_FOUND.value % path)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def check_extension(path, extension):
@@ -320,15 +352,17 @@ class FileHandler(object, metaclass=SingletonMeta):
             extension {string} -- File extension that needs to match.
 
         Returns:
-            boolean -- True if the file extension is correct and False otherwise.
-        
+            boolean -- True if the file extension is correct and False
+                otherwise.
+
         Raises:
-            IndexError -- Exception raised if the given file has an incorrect extension.
+            IndexError -- Exception raised if the given file has an incorrect
+                extension.
             TypeError -- Exception raised if the extension does not match.
         """
         try:
             path_expand = os.path.expandvars(path)
-            ext = path_expand.rsplit('.', 1)[1]
+            ext = path_expand.rsplit(".", 1)[1]
 
             if ext == extension:
                 is_valid_ext = True
@@ -349,7 +383,7 @@ class FileHandler(object, metaclass=SingletonMeta):
     # Directory related methods
 
     @staticmethod
-    def create_directory(path, path_type='default'):
+    def create_directory(path, path_type="default"):
         """Creates the given directory if it does not already exists.
 
         Arguments:
@@ -358,36 +392,36 @@ class FileHandler(object, metaclass=SingletonMeta):
 
         Returns:
             integer -- Return code of the method.
-        
+
         Raises:
             FileExistsError -- Exception raised if the directory already exists.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
         """
         try:
             path_expand = os.path.expandvars(path)
 
             # Check if the directory already exists
             if os.path.isdir(path_expand) is False:
-                Log().logger.debug(
-                    'Directory does not exist: Creating new directory: ' + path)
+                Log().logger.debug(LogMessage.DIRECTORY_NOT_EXIST.value % path)
                 os.mkdir(path_expand)
 
-                Log().logger.debug('Directory successfully created: ' + path)
-                rc = 0
+                Log().logger.debug(LogMessage.DIRECTORY_CREATED.value % path)
+                return_code = 0
             else:
                 raise FileExistsError()
         except FileExistsError:
-            if path_type == 'group':
+            if path_type == "group":
                 Log().logger.error(ErrorMessage.FILE_EXISTS.value % path)
             # else:
             #     Log().logger.debug(ErrorMessage.FILE_EXISTS.value % path)
-            rc = 1
+            return_code = 1
         except OSError as error:
             Log().logger.critical(ErrorMessage.OS_DIRECTORY_CREATION.value %
                                   error)
             sys.exit(-1)
 
-        return rc
+        return return_code
 
     @staticmethod
     def move_directory(src, dst):
@@ -401,21 +435,20 @@ class FileHandler(object, metaclass=SingletonMeta):
             integer -- Return code of the method.
 
         Raises:
-            FileNotFoundError -- Exception raised if the directory does not exist or is not found.
+            FileNotFoundError -- Exception raised if the directory does not
+            exist or is not found.
         """
         try:
             shutil.move(src, dst)
-            rc = 0
+            return_code = 0
         except FileNotFoundError:
-            Log().logger.warning(ErrorMessage.FILE_NOT_FOUND.value % src)
-            Log().logger.warning('Skipping directory')
+            Log().logger.error(ErrorMessage.FILE_NOT_FOUND.value % src)
             sys.exit(-1)
         except shutil.Error as error:
-            Log().logger.warning('Error: ' + str(error) +
-                                 '. Skipping directory move command')
+            Log().logger.error(ErrorMessage.SHUTIL.value % error)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def delete_directory(path):
@@ -428,10 +461,14 @@ class FileHandler(object, metaclass=SingletonMeta):
             integer -- Return code of the method.
 
         Raises:
-            FileNotFoundError -- Exception raised if the directory does not exist or is not found.
-            NotADirectoryError -- Exception raised if the path is not a directory.
-            PermissionError -- Exception raised if the user does not have the required permissions to delete the directory.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            FileNotFoundError -- Exception raised if the directory does not
+                exist or is not found.
+            NotADirectoryError -- Exception raised if the path is not a
+                directory.
+            PermissionError -- Exception raised if the user does not have the
+                required permissions to delete the directory.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
         """
         try:
             path_expand = os.path.expandvars(path)
@@ -441,7 +478,8 @@ class FileHandler(object, metaclass=SingletonMeta):
 
                     # Check if directory is empty
                     if len(os.listdir(path_expand)) == 0:
-                        Log().logger.debug('Directory empty: ' + path)
+                        Log().logger.debug(LogMessage.DIRECTORY_EMPTY.value %
+                                           path)
                         os.rmdir(path_expand)
                     else:
                         # Check on directory size
@@ -451,13 +489,13 @@ class FileHandler(object, metaclass=SingletonMeta):
                             if element.is_file(follow_symlinks=True))
                         if size == 0:
                             Log().logger.debug(
-                                'Size of directory equal to 0: ' + path)
+                                LogMessage.DIRECTORY_SIZE_0.value % path)
 
                         shutil.rmtree(path_expand, ignore_errors=False)
 
-                    Log().logger.debug('Directory successfully removed: ' +
+                    Log().logger.debug(LogMessage.DIRECTORY_REMOVED.value %
                                        path)
-                    rc = 0
+                    return_code = 0
                 else:
                     raise NotADirectoryError()
             else:
@@ -476,12 +514,12 @@ class FileHandler(object, metaclass=SingletonMeta):
             Log().logger.critical(ErrorMessage.OS_DELETE.value % error)
             sys.exit(-1)
         else:
-            return rc
+            return return_code
 
     @staticmethod
     def is_a_directory(path):
         """Evaluates if the given path is a directory or not.
-        
+
         Arguments:
             path {string} -- Absolute path of the directory.
 
@@ -489,7 +527,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             boolean -- True if the path is a directory, False otherwise.
 
         Raises:
-            NotADirectoryError -- Exception raised if the path is not a directory.
+            NotADirectoryError -- Exception raised if the path is not a
+            directory.
         """
         try:
             path_expand = os.path.expandvars(path)
@@ -509,7 +548,7 @@ class FileHandler(object, metaclass=SingletonMeta):
     @staticmethod
     def check_path_exists(path):
         """Evaluates if the given path exists or not.
-        
+
         Arguments:
             path {string} -- Absolute path of the file or directory.
 
@@ -517,7 +556,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             boolean -- True of the path exists, False otherwise.
 
         Raises:
-            FileNotFoundError -- Exception raised if the path does not exist or is not found.
+            FileNotFoundError -- Exception raised if the path does not exist or
+            is not found.
         """
         try:
             path_expand = os.path.expandvars(path)
@@ -544,10 +584,11 @@ class FileHandler(object, metaclass=SingletonMeta):
             path {string} -- Absolute path of the file or directory.
 
         Returns:
-            boolean -- True if the user has write access on the path, False otherwise.
+            boolean -- True if the user has write access on the path, False
+                otherwise.
 
         Raises:
-            PermissionError -- Exception raised if the user does not have the 
+            PermissionError -- Exception raised if the user does not have the
             required permissions to write the file.
         """
         try:
@@ -574,7 +615,8 @@ class FileHandler(object, metaclass=SingletonMeta):
             list[string] -- List of file absolute paths.
 
         Raises:
-            FileNotFoundError -- Exception raised if the path does not exist or is not found.
+            FileNotFoundError -- Exception raised if the path does not exist or
+            is not found.
         """
         try:
             path_expand = os.path.expandvars(path)
@@ -587,7 +629,7 @@ class FileHandler(object, metaclass=SingletonMeta):
                     os.path.abspath(os.path.join(root, filename))
                     for root, _, files in os.walk(path_expand)
                     for filename in files
-                    if not filename.startswith('.')
+                    if not filename.startswith(".")
                 ]
                 # Sort the list alphabetically
                 file_paths.sort()
@@ -608,13 +650,18 @@ class FileHandler(object, metaclass=SingletonMeta):
             pattern {string} -- Pattern to identify duplicates.
 
         Returns:
-            tuple -- Tuple with two lists of strings, one for duplicate directories and one for duplicate files.
-        
+            tuple -- Tuple with two lists of strings, one for duplicate
+                directories and one for duplicate files.
+
         Raises:
-            FileNotFoundError -- Exception raised if the path does not exist or is not found.
-            NotADirectoryError -- Exception raised if the path is not a directory.
-            PermissionError -- Exception raised if the user does not have the required permissions to access the path.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            FileNotFoundError -- Exception raised if the path does not exist or
+                is not found.
+            NotADirectoryError -- Exception raised if the path is not a
+                directory.
+            PermissionError -- Exception raised if the user does not have the
+                required permissions to access the path.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
         """
         duplicate_directories = []
         # duplicate_files = []
@@ -658,16 +705,22 @@ class FileHandler(object, metaclass=SingletonMeta):
         """Gets modified timestamp of the input path(s).
 
         Arguments:
-            path {string or list[string]} - One or several absolute path(s) to files or directories.
+            path {string or list[string]} - One or several absolute path(s) to
+                files or directories.
 
         Returns:
             float or list[float] -- Creation time(s) of the input path(s).
 
         Raises:
-            FileNotFoundError -- Exception raised if the path does not exist or is not found.
-            PermissionError -- Exception raised if the user does not have the required permissions to access the path.
-            OSError -- Exception raised if an error didn't already raised one of the previous exceptions.
+            FileNotFoundError -- Exception raised if the path does not exist or
+                is not found.
+            PermissionError -- Exception raised if the user does not have the
+                required permissions to access the path.
+            OSError -- Exception raised if an error didn't already raised one
+                of the previous exceptions.
         """
+        creation_times = []
+
         try:
             if isinstance(path, str):
                 path_expand = os.path.expandvars(path)
