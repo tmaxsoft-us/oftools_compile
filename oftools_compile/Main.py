@@ -407,6 +407,9 @@ class Main():
 
             self._end_processing(2, return_code)
 
+            if report.fail_count > 0:
+                return_code = -1
+
         except KeyboardInterrupt:
             return_code = -3
             self._end_processing(3, return_code)
