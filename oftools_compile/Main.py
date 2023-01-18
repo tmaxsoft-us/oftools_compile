@@ -373,6 +373,9 @@ class Main():
                         file_name_out = file_path
                         start_time = time.time()
 
+                        # GH#23: need to filter deployment based on the folder name
+                        Context().add_env_variable("$OF_COMPILE_SOURCE", file_path)
+
                         for job in jobs:
                             # For the SetupJob, file_name_in is an absolute path, but for all other
                             # jobs this is just the name of the file

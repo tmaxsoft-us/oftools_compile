@@ -90,11 +90,11 @@ coverage:
 #================================================================#
 #                   PyPI UPLOADING                               #
 #================================================================#
-upload_test:
-	python3 setup.py sdist upload -r testpypi
+#upload_test:
+#	python3 setup.py sdist upload -r testpypi
 
 upload:
-	python3 setup.py sdist upload -r pypi
+	twine upload dist/*
 
 remove_pypi:
 	echo "curl --form ":action=remove_pkg" --form "name=oftools-compile" --form "version=1.3.5" URL -u id:pass
