@@ -356,7 +356,7 @@ class Context(metaclass=SingletonMeta):
     def is_skip(self, section_name_no_filter):
         """check if the section is skip
         """
-        skips = skip.split(":")
+        skips = self.skip.split(":")
         for name in skips:
             if name == section_name_no_filter:
                 return True        
