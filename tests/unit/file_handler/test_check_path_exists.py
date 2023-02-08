@@ -22,7 +22,7 @@ class TestCheckPathExists(object):
 
     Tests:
         test_file_not_found_error
-        test_file_not_found_skip_error
+        test_file_not_found_force_error
     """
 
     @staticmethod
@@ -48,12 +48,12 @@ class TestCheckPathExists(object):
             Main().run()
 
     @staticmethod
-    def test_file_not_found_skip_error(shared):
-        """Test with a source that does not exist and the skip flag being used.
+    def test_file_not_found_force_error(shared):
+        """Test with a source that does not exist and the force flag being used.
         """
         sys.argv = [sys.argv[0]]
         sys.argv.append('--clear')
-        sys.argv.append('--skip')
+        sys.argv.append('--force')
         sys.argv.extend(['--log-level', 'DEBUG'])
         sys.argv.extend(['--profile', shared + 'profiles/default_1.prof'])
         sys.argv.extend(['--source', shared + 'sources/FILENOTFOUND.cbl'])

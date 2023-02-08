@@ -138,10 +138,10 @@ class Main():
             type=str)
 
         optional.add_argument(
-            "--skip",
+            "--force",
             action="store_true",
-            dest="skip",
-            help="flag used to skip source files when not found",
+            dest="force",
+            help="flag used to force source files when not found",
             required=False)
 
         optional.add_argument(
@@ -339,7 +339,7 @@ class Main():
 
         # Initialize variables for program execution
         Context().grouping = args.grouping
-        Context().skip = args.skip
+        Context().force = args.force
         Context().tag = args.tag
         report = Report(args.clear)
         profile_dict = {}

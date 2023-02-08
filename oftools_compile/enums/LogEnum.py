@@ -99,7 +99,7 @@ class LogMessage(enum.Enum):
 
     # Source module
     SOURCE_COUNT = '(SOURCE) Number of source files being compiled: %d'
-    SOURCE_SKIP = '(SOURCE) Skip source: skip option enabled'
+    SOURCE_FORCE = '(SOURCE) Force source: force option enabled'
     SOURCE_TYPE = '(SOURCE) Source type specified: %s'
 
     # Handlers

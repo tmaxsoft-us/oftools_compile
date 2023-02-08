@@ -567,7 +567,7 @@ class FileHandler(object, metaclass=SingletonMeta):
             else:
                 raise FileNotFoundError()
         except FileNotFoundError:
-            if Context().skip:
+            if Context().force:
                 Log().logger.info(ErrorMessage.FILE_NOT_FOUND.value % path)
                 path_exists = False
             else:

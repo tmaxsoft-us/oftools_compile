@@ -61,7 +61,7 @@ class Context(metaclass=SingletonMeta):
 
         _grouping {boolean} -- Flag used to group all working directories into
             one group directory.
-        _skip {boolean} -- Flag used to skip source files if not found or not.
+        _force {boolean} -- Flag used to force source files if not found or not.
 
         _tag {string} -- Keyword to tag working directories and report file.
 
@@ -106,7 +106,7 @@ class Context(metaclass=SingletonMeta):
 
         # Argument flags
         self._grouping = False
-        self._skip = False
+        self._force = False
 
         # Tag
         self._tag = ""
@@ -203,17 +203,17 @@ class Context(metaclass=SingletonMeta):
             self._grouping = grouping
 
     @property
-    def skip(self):
-        """Getter method for the attribute _skip.
+    def force(self):
+        """Getter method for the attribute _force.
         """
-        return self._skip
+        return self._force
 
-    @skip.setter
-    def skip(self, skip):
-        """Setter method for the attribute _skip.
+    @force.setter
+    def force(self, force):
+        """Setter method for the attribute _force.
         """
-        if skip is not None:
-            self._skip = skip
+        if force is not None:
+            self._force = force
 
     @property
     def tag(self):

@@ -85,7 +85,7 @@ class Source(object):
                     self._file_paths.extend(files)
                     return_code = 0
                 else:
-                    Log().logger.info(LogMessage.SOURCE_SKIP.value)
+                    Log().logger.info(LogMessage.SOURCE_FORCE.value)
                     return_code = 1
 
         elif self._source_type == "default":
@@ -93,7 +93,7 @@ class Source(object):
                 self._file_paths = FileHandler().get_files(self._source_path)
                 return_code = 0
             else:
-                Log().logger.info(LogMessage.SOURCE_SKIP.value)
+                Log().logger.info(LogMessage.SOURCE_FORCE.value)
                 return_code = 1
 
         Log().logger.debug(LogMessage.SOURCE_COUNT.value %
