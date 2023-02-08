@@ -47,7 +47,7 @@ class Profile():
 
         is_section_mandatory(section_name_no_filter) -- Checks if given section
             is mandatory or not.
-        is_section_complete(section_name_no_filter, force=True) -- Checks if
+        is_section_complete(section_name_no_filter, skip=True) -- Checks if
             given section is already complete.
         section_completed(section_name_no_filter) -- Changes the status of the
             given section to complete.
@@ -119,7 +119,7 @@ class Profile():
         self._sections_no_filter[section] = section_no_filter
 
         # Initializing complete sections dictionary
-        self._sections_complete[section_no_filter] = False
+        self._sections_complete[section_no_filter] = Context().is_skip(section_no_filter)
 
     def _analyze(self):
         """Analyzes the sections of the profile.
@@ -347,12 +347,12 @@ class Profile():
 
         return status
 
-    def is_section_complete(self, section, force=True):
+    def is_section_complete(self, section, skip=True):
         """Checks if given section is already complete.
 
         Arguments:
             section {string} -- Name of the section.
-            force {boolean} -- Value of the force flag.
+            skip {boolean} -- Value of the skip flag.
 
         Returns:
             boolean -- Status of the section, if it is complete or not.
@@ -360,7 +360,7 @@ class Profile():
         section_no_filter = self.sections_no_filter[section]
         status = self.sections_complete[section_no_filter]
 
-        if status and force is True:
+        if status and skip is True:
             Log().logger.debug(LogMessage.SECTION_COMPLETE.value % section)
 
         return status

@@ -145,6 +145,14 @@ class Main():
             required=False)
 
         optional.add_argument(
+            "--skip",
+            action="store",
+            dest="skip",
+            help="keyword used to define sections to skip",
+            required=False,
+            type=str)
+
+        optional.add_argument(
             "-t",
             "--tag",
             action="store",
@@ -340,6 +348,7 @@ class Main():
         # Initialize variables for program execution
         Context().grouping = args.grouping
         Context().force = args.force
+        Context().skip = args.skip
         Context().tag = args.tag
         report = Report(args.clear)
         profile_dict = {}

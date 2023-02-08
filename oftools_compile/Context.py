@@ -63,6 +63,8 @@ class Context(metaclass=SingletonMeta):
             one group directory.
         _force {boolean} -- Flag used to force source files if not found or not.
 
+        _skip {string} -- Keyword to define section to skip.
+
         _tag {string} -- Keyword to tag working directories and report file.
 
         _time_stamp {Datetime} -- Date and time for working directories and
@@ -107,6 +109,7 @@ class Context(metaclass=SingletonMeta):
         # Argument flags
         self._grouping = False
         self._force = False
+        self._skip = ""
 
         # Tag
         self._tag = ""
@@ -215,6 +218,19 @@ class Context(metaclass=SingletonMeta):
         if force is not None:
             self._force = force
 
+    @property
+    def skip(self):
+        """Getter method for the attribute _skip.
+        """
+        return self._skip
+
+    @skip.setter
+    def skip(self, skip):
+        """Setter method for the attribute _skip.
+        """
+        if skip is not None:
+            self._skip = skip
+            
     @property
     def tag(self):
         """Getter method for the attribute _tag.
@@ -336,3 +352,12 @@ class Context(metaclass=SingletonMeta):
         self._time_stamp = datetime.datetime.now()
 
         os.chdir(self._init_pwd)
+
+    def is_skip(self, section_name_no_filter):
+        """check if the section is skip
+        """
+        skips = skip.split(":")
+        for name in skips:
+            if name == section_name_no_filter:
+                return True        
+        return False
