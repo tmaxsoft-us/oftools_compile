@@ -335,7 +335,7 @@ class Context(metaclass=SingletonMeta):
 
         self._filters.clear()
         for key in profile.sections_complete.keys():
-            profile.sections_complete[key] = False
+            profile.sections_complete[key] = Context().is_skip(key)
 
         os.chdir(self._init_pwd)
 
